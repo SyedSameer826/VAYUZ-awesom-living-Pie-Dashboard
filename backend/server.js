@@ -1,72 +1,41 @@
 import express from "express";
 import cors from "cors";
-
-import { devices, samples, client } from "./mqtt.js";
+import fs from "fs";
+import yaml from "js-yaml";
 
 const app = express();
 
 app.use(cors());
 
-app.use(express.json());
+const CONFIG_PATH = "/home/pi/zigbee2mqtt/data/configuration.yaml";
 
-/* =========================
-   GET ALL DEVICES
-========================= */
+app.get("/devices", async (req, res) => {
+  try {
+    const file = fs.readFileSync(CONFIG_PATH, "utf8");
 
-app.get("/devices", (req, res) => {
-  const result = Object.values(devices).map((device) => {
-    return {
-      friendly_name: device.friendly_name,
+    const config = yaml.load(file);
 
-      ieee_address: device.ieee_address,
+    const devices = [];
 
-      model: device.definition?.model || null,
+    if (config.devices) {
+      Object.entries(config.devices).forEach(([ieee, value]) => {
+        devices.push({
+          ieee_address: ieee,
+          name: value?.friendly_name
+            ? value.friendly_name
+            : `New device: ${ieee}`,
+        });
+      });
+    }
 
-      vendor: device.definition?.vendor || null,
-
-      description: device.definition?.description || null,
-
-      sample: samples[device.friendly_name] || null,
-
-      mapped: !device.friendly_name.startsWith("0x"),
-    };
-  });
-
-  res.json(result);
-});
-
-/* =========================
-   RENAME DEVICE
-========================= */
-
-app.post("/rename", (req, res) => {
-  const { from, to } = req.body;
-
-  if (!from || !to) {
-    return res.status(400).json({
-      success: false,
-      message: "from and to required",
+    res.json(devices);
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
     });
   }
-
-  client.publish(
-    "zigbee2mqtt/bridge/request/device/rename",
-
-    JSON.stringify({
-      from,
-      to,
-    }),
-  );
-
-  res.json({
-    success: true,
-  });
 });
 
-/* =========================
-   START SERVER
-========================= */
-
-app.listen(4000, () => {
-  console.log("🚀 Backend running on port 4000");
+app.listen(4000, "0.0.0.0", () => {
+  console.log("✅ Backend running on port 4000");
 });
