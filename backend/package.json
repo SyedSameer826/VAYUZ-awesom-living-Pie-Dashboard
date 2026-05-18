@@ -7,9 +7,10 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "cors": "^2.8.5",
+    "axios": "^1.16.1",
+    "cors": "^2.8.6",
     "dotenv": "^17.2.1",
-    "express": "^5.1.0",
+    "express": "^5.2.1",
     "js-yaml": "^4.1.1",
     "mqtt": "^5.13.3"
   }
