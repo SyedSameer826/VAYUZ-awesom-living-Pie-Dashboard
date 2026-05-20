@@ -17,7 +17,7 @@ export const Header = ({ collapsed, userEmail, onLogout, onToggleSidebar }) => {
         </button> */}
         <button
           onClick={onToggleSidebar}
-          className="flex items-center justify-center"
+          className="mobile-menu-btn flex items-center justify-center"
         >
           {!collapsed ? (
             <LuPanelLeftClose

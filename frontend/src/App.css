@@ -9,10 +9,12 @@
   --al-danger: #c42a02;
   --al-card-shadow: 0 3px 18px rgba(8, 21, 66, 0.05);
 }
-
+img {
+  max-width: 100%;
+}
 .auth-shell {
   width: 100%;
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   background: #ffffff;
@@ -843,6 +845,7 @@ tbody tr:hover {
 
   .admin-sidebar {
     display: none;
+    z-index: 1001;
   }
 
   .admin-body {
@@ -854,7 +857,9 @@ tbody tr:hover {
   .auth-shell {
     display: block;
   }
-
+  .page-body {
+    padding-top: 70px;
+  }
   .auth-left {
     display: none;
   }
@@ -1073,7 +1078,7 @@ tbody tr:hover {
   .admin-sidebar {
     position: fixed;
     top: 0;
-    left: -280px;
+    transform: translateX(-100%);
     width: 260px;
     height: 100vh;
     z-index: 999;
@@ -1081,7 +1086,7 @@ tbody tr:hover {
   }
 
   .admin-sidebar.mobile-open {
-    left: 0;
+    transform: translateX(0);
   }
 
   .page-body {
@@ -1092,6 +1097,7 @@ tbody tr:hover {
 
   .admin-header {
     padding: 12px 16px;
+    z-index: 1000;
   }
 
   .admin-brand {
@@ -1140,10 +1146,11 @@ tbody tr:hover {
   .table-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
   }
 
   .table-wrap table {
-    min-width: 700px;
+    min-width: 600px;
   }
 
   .logout-modal {
@@ -1164,9 +1171,15 @@ tbody tr:hover {
   .row-actions {
     justify-content: flex-start;
   }
+  input,
+  select,
+  textarea {
+    width: 100%;
+    max-width: 100%;
+  }
 }
-* {
-  word-break: break-word;
+body {
+  overflow-wrap: break-word;
 }
 button {
   min-height: 42px;
@@ -1183,4 +1196,10 @@ button {
   .summary-card {
     padding: 14px;
   }
+}
+.mobile-menu-btn {
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  cursor: pointer;
 }
