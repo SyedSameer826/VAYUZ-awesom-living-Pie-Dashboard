@@ -843,13 +843,8 @@ tbody tr:hover {
     display: none;
   }
 
-  .admin-sidebar {
-    display: none;
-    z-index: 1001;
-  }
-
   .admin-body {
-    padding: 0 12px;
+    padding: 0;
   }
 }
 
@@ -1076,13 +1071,21 @@ tbody tr:hover {
   }
 
   .admin-sidebar {
-    position: fixed;
+    position: fixed !important;
     top: 0;
-    transform: translateX(-100%);
+    left: 0;
+
     width: 260px;
-    height: 100vh;
-    z-index: 999;
-    transition: left 0.3s ease;
+    min-width: 260px;
+
+    height: 100dvh;
+
+    background: #ffffff;
+
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+
+    z-index: 99999 !important;
   }
 
   .admin-sidebar.mobile-open {
@@ -1091,8 +1094,8 @@ tbody tr:hover {
 
   .page-body {
     width: 100%;
+    margin-left: 0 !important;
     padding: 16px;
-    margin-left: 0;
   }
 
   .admin-header {

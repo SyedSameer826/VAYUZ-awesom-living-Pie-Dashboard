@@ -57,7 +57,10 @@ export const Sidebar = ({
         {/* Logout Footer */}
         <div className="sidebar-footer">
           <button
-            onClick={() => setSignOutModalOpen(true)}
+            onClick={() => {
+              setMobileSidebarOpen(false);
+              setSignOutModalOpen(true);
+            }}
             className="logout-btn"
           >
             <LuLogOut size={iconSize} />
