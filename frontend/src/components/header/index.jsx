@@ -2,7 +2,7 @@ import { LuAlignJustify, LuPanelLeftClose, LuUser } from "react-icons/lu";
 import { iconSize } from "../../utils";
 export const Header = ({ collapsed, userEmail, onLogout, onToggleSidebar }) => {
   return (
-    <header className="admin-header">
+    <header className="admin-header sticky top-0 z-40 bg-white">
       <div className="admin-brand">
         <img src="/icons/ALlogo.png" alt="Awesome Living" />
 

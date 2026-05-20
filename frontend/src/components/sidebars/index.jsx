@@ -8,7 +8,12 @@ import { LuLogOut } from "react-icons/lu";
 import { iconSize } from "../../utils";
 import { Button } from "../buttons";
 
-export const Sidebar = ({ collapsed, onLogout }) => {
+export const Sidebar = ({
+  collapsed,
+  mobileSidebarOpen,
+  setMobileSidebarOpen,
+  onLogout,
+}) => {
   const navigate = useNavigate();
 
   const [signOutModalOpen, setSignOutModalOpen] = useState(false);
@@ -21,7 +26,7 @@ export const Sidebar = ({ collapsed, onLogout }) => {
   return (
     <>
       <aside
-        className={collapsed ? "admin-sidebar collapsed" : "admin-sidebar"}
+        className={`admin-sidebar ${collapsed ? "collapsed" : ""} ${mobileSidebarOpen ? "mobile-open" : ""}`}
         aria-label="Sidebar navigation"
       >
         {/* Sidebar Items */}
@@ -34,6 +39,11 @@ export const Sidebar = ({ collapsed, onLogout }) => {
               className={
                 link.active ? "device-nav-item active" : "device-nav-item"
               }
+              onClick={() => {
+                if (window.innerWidth < 768) {
+                  setMobileSidebarOpen(false);
+                }
+              }}
             >
               <svg viewBox="0 0 24 24">
                 <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h4A2.5 2.5 0 0 1 13 6.5v4a2.5 2.5 0 0 1-2.5 2.5h-4A2.5 2.5 0 0 1 4 10.5v-4Zm2.5-.75a.75.75 0 0 0-.75.75v4c0 .41.34.75.75.75h4c.41 0 .75-.34.75-.75v-4a.75.75 0 0 0-.75-.75h-4ZM15 5h5v2h-5V5Zm0 4h5v2h-5V9ZM4 17h16v2H4v-2Zm0-3h16v2H4v-2Z" />
