@@ -41,7 +41,8 @@ app.get("/devices", (req, res) => {
 
 app.post("/assign-name", async (req, res) => {
   try {
-    const { zigbee_ieee, zigbee_name } = req.body;
+    const { zigbee_ieee, zigbee_name, resident, zigbee_type, room, token } =
+      req.body;
 
     const file = fs.readFileSync(CONFIG_PATH, "utf8");
 
@@ -53,22 +54,29 @@ app.post("/assign-name", async (req, res) => {
       });
     }
 
+    // update friendly name locally
     config.devices[zigbee_ieee].friendly_name = zigbee_name;
 
     fs.writeFileSync(CONFIG_PATH, yaml.dump(config));
 
-    // OPTIONAL:
-    // restart zigbee2mqtt automatically
-    // exec('sudo systemctl restart zigbee2mqtt');
-
     // SEND TO YOUR MAIN BACKEND
-    await axios.post("https://YOUR_API.com/device/add", {
-      zigbee_ieee,
-      zigbee_name,
-    });
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    const response = await axios.post(
+      "https://backend-awesomliving.onrender.com/api/user/devices",
+      {
+        type: "Zigbee",
+        resident,
+        name: zigbee_name,
+        zigbee_id: zigbee_name,
+        zigbee_ieee,
+        zigbee_type,
+        room: room || "bathroom",
+      },
+    );
 
     res.json({
       success: true,
+      backend_response: response.data,
     });
   } catch (err) {
     res.status(500).json({
