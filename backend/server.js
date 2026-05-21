@@ -146,7 +146,7 @@ const frontendPath = path.join(__dirname, "../frontend/dist");
 
 app.use(express.static(frontendPath));
 
-app.get("*", (req, res) => {
+app.use((req, res) => {
   res.sendFile(path.join(frontendPath, "index.html"));
 });
 
@@ -154,6 +154,6 @@ app.get("*", (req, res) => {
    START SERVER
 ========================= */
 
-server.listen(3000, () => {
-  console.log("Server running on port 3000");
+server.listen(4000, () => {
+  console.log("Server running on port 4000");
 });
