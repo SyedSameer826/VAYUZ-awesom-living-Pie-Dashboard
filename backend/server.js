@@ -3,13 +3,47 @@ import cors from "cors";
 import fs from "fs";
 import yaml from "js-yaml";
 import axios from "axios";
+import http from "http";
+import path from "path";
+import { fileURLToPath } from "url";
+
+import { Server } from "socket.io";
+
+import { initSocket } from "./socket/socket.js";
+import zigbeeRoutes from "./routes/zigbee.routes.js";
 
 const app = express();
 
+/* =========================
+   PATH CONFIG
+========================= */
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/* =========================
+   MIDDLEWARE
+========================= */
+
 app.use(cors());
+
 app.use(express.json());
 
+/* =========================
+   ROUTES
+========================= */
+
+app.use("/api/zigbee", zigbeeRoutes);
+
+/* =========================
+   ZIGBEE CONFIG
+========================= */
+
 const CONFIG_PATH = "/home/pi/zigbee2mqtt/data/configuration.yaml";
+
+/* =========================
+   GET DEVICES
+========================= */
 
 app.get("/devices", (req, res) => {
   try {
@@ -39,6 +73,10 @@ app.get("/devices", (req, res) => {
   }
 });
 
+/* =========================
+   ASSIGN DEVICE NAME
+========================= */
+
 app.post("/assign-name", async (req, res) => {
   try {
     const { zigbee_ieee, zigbee_name, resident, zigbee_type, room, token } =
@@ -54,13 +92,14 @@ app.post("/assign-name", async (req, res) => {
       });
     }
 
-    // update friendly name locally
+    // Update friendly name locally
     config.devices[zigbee_ieee].friendly_name = zigbee_name;
 
     fs.writeFileSync(CONFIG_PATH, yaml.dump(config));
 
-    // SEND TO YOUR MAIN BACKEND
+    // Send to main backend
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
     const response = await axios.post(
       "https://backend-awesomliving.onrender.com/api/user/devices",
       {
@@ -85,6 +124,36 @@ app.post("/assign-name", async (req, res) => {
   }
 });
 
-app.listen(4000, "0.0.0.0", () => {
-  console.log("✅ Backend running");
+/* =========================
+   SOCKET SERVER
+========================= */
+
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
+
+initSocket(io);
+
+/* =========================
+   SERVE REACT BUILD
+========================= */
+
+const frontendPath = path.join(__dirname, "../frontend/dist");
+
+app.use(express.static(frontendPath));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
+});
+
+/* =========================
+   START SERVER
+========================= */
+
+server.listen(3000, () => {
+  console.log("Server running on port 3000");
 });

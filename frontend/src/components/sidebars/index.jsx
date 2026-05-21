@@ -7,7 +7,7 @@ import { LuLogOut } from "react-icons/lu";
 
 import { iconSize } from "../../utils";
 import { Button } from "../buttons";
-
+import { NavLink } from "react-router-dom";
 export const Sidebar = ({
   collapsed,
   mobileSidebarOpen,
@@ -32,12 +32,12 @@ export const Sidebar = ({
         {/* Sidebar Items */}
         <div className="flex flex-col gap-2 flex-1">
           {sidebarLinks.map((link) => (
-            <a
+            <NavLink
               key={link.label}
-              href={link.url}
+              to={link.url}
               title={link.label}
-              className={
-                link.active ? "device-nav-item active" : "device-nav-item"
+              className={({ isActive }) =>
+                isActive ? "device-nav-item active" : "device-nav-item"
               }
               onClick={() => {
                 if (window.innerWidth < 768) {
@@ -50,7 +50,7 @@ export const Sidebar = ({
               </svg>
 
               {!collapsed && <span>{link.label}</span>}
-            </a>
+            </NavLink>
           ))}
         </div>
 
