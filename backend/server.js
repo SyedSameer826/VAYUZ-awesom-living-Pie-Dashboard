@@ -11,7 +11,7 @@ import { Server } from "socket.io";
 
 import { initSocket } from "./socket/socket.js";
 import zigbeeRoutes from "./routes/zigbee.routes.js";
-
+import { getDevices, upsertDevice } from "./services/deviceStore.js";
 const app = express();
 
 /* =========================
@@ -47,23 +47,7 @@ const CONFIG_PATH = "/home/pi/zigbee2mqtt/data/configuration.yaml";
 
 app.get("/api/devices", (req, res) => {
   try {
-    const file = fs.readFileSync(CONFIG_PATH, "utf8");
-
-    const config = yaml.load(file);
-
-    const devices = [];
-
-    if (config.devices) {
-      Object.entries(config.devices).forEach(([ieee, value]) => {
-        const friendlyName = value?.friendly_name || ieee;
-
-        devices.push({
-          ieee_address: ieee,
-          name: friendlyName,
-          is_unassigned: friendlyName === ieee,
-        });
-      });
-    }
+    const devices = getDevices();
 
     res.json(devices);
   } catch (err) {
@@ -83,7 +67,17 @@ app.post("/api/assign-name", async (req, res) => {
       req.body;
 
     const file = fs.readFileSync(CONFIG_PATH, "utf8");
+    const detectedType =
+      zigbee_type === "door & window" ? "contact" : zigbee_type;
 
+    upsertDevice({
+      ieee_address: zigbee_ieee,
+      name: zigbee_name,
+      type: detectedType,
+      resident,
+      status: "mapped",
+      is_unassigned: false,
+    });
     const config = yaml.load(file);
 
     if (!config.devices[zigbee_ieee]) {
