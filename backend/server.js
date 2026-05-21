@@ -45,7 +45,7 @@ const CONFIG_PATH = "/home/pi/zigbee2mqtt/data/configuration.yaml";
    GET DEVICES
 ========================= */
 
-app.get("/devices", (req, res) => {
+app.get("/api/devices", (req, res) => {
   try {
     const file = fs.readFileSync(CONFIG_PATH, "utf8");
 
@@ -77,7 +77,7 @@ app.get("/devices", (req, res) => {
    ASSIGN DEVICE NAME
 ========================= */
 
-app.post("/assign-name", async (req, res) => {
+app.post("/api/assign-name", async (req, res) => {
   try {
     const { zigbee_ieee, zigbee_name, resident, zigbee_type, room, token } =
       req.body;
