@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://192.168.1.50:4000";
+const API_BASE_URL = "/";
 
 const getAuthHeaders = () => {
   const token = JSON.parse(window.localStorage.getItem("token"));
@@ -10,7 +10,7 @@ const getAuthHeaders = () => {
 };
 
 export const getDeviceDetails = async () => {
-  const response = await fetch(`${API_BASE_URL}/devices`, {
+  const response = await fetch(`${API_BASE_URL}devices`, {
     headers: getAuthHeaders(),
   });
 
@@ -57,7 +57,7 @@ export const assignDeviceName = async ({
   zigbee_type,
   resident,
 }) => {
-  const response = await fetch(`${API_BASE_URL}/assign-name`, {
+  const response = await fetch(`${API_BASE_URL}assign-name`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({
