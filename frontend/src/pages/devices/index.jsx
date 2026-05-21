@@ -44,39 +44,31 @@ function Devices() {
   ).length;
   const inactiveCount = tableRows.length - activeCount;
 
-  useEffect(() => {
-    let isActive = true;
-
-    const loadData = async () => {
-      try {
-        const [deviceData, residentData] = await Promise.all([
-          getDeviceDetails(),
-          getResidents(),
-        ]);
-
-        if (isActive) {
-          setDevices(deviceData.length > 0 ? deviceData : sampleDevices);
-          setResidents(residentData);
-        }
-      } catch {
-        if (isActive) {
-          setDevices(sampleDevices);
-          setResidents([]);
-          setError("");
-        }
-      } finally {
-        if (isActive) {
-          setIsLoading(false);
-        }
+  const loadData = async (showLoader = false) => {
+    try {
+      if (showLoader) {
+        setIsLoading(true);
       }
-    };
 
-    loadData();
+      const [deviceData, residentData] = await Promise.all([
+        getDeviceDetails(),
+        getResidents(),
+      ]);
 
-    return () => {
-      isActive = false;
-    };
-  }, []);
+      const updatedDevices = deviceData.length > 0 ? deviceData : sampleDevices;
+
+      setDevices(updatedDevices);
+      setResidents(residentData);
+    } catch {
+      setDevices(sampleDevices);
+      setResidents([]);
+      setError("");
+    } finally {
+      if (showLoader) {
+        setIsLoading(false);
+      }
+    }
+  };
 
   const openEditForm = (device) => {
     setForm({
@@ -96,6 +88,9 @@ function Devices() {
     setEditingId("");
     setIsFormOpen(false);
   };
+  useEffect(() => {
+    loadData(true);
+  }, []);
 
   const handleFormChange = (event) => {
     const { name, value } = event.target;
@@ -195,7 +190,15 @@ function Devices() {
 
       <section className="crud-card">
         <div className="crud-card-title table-toolbar">
-          <div></div>
+          <div className="header-actions">
+            <button
+              className="outline-button"
+              onClick={() => loadData(true)}
+              disabled={isLoading}
+            >
+              {isLoading ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
           <label className="table-search">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="m20.71 19.29-4.1-4.1A7.5 7.5 0 1 0 15.2 16.6l4.1 4.1 1.41-1.41ZM5.5 10.5a5 5 0 1 1 10 0 5 5 0 0 1-10 0Z" />
