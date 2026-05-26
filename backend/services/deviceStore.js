@@ -30,13 +30,36 @@ export const upsertDevice = (device) => {
     (d) => d.ieee_address === device.ieee_address,
   );
 
+  // =========================================
+  // DEVICE MAPPING LOGIC
+  // =========================================
+
+  const isMapped = device.name !== device.ieee_address;
+
+  const deviceData = {
+    ...device,
+
+    status: isMapped ? "mapped" : "unmapped",
+
+    is_unassigned: !isMapped,
+  };
+
+  // =========================================
+  // UPDATE EXISTING
+  // =========================================
+
   if (index !== -1) {
     devices[index] = {
       ...devices[index],
-      ...device,
+      ...deviceData,
     };
-  } else {
-    devices.push(device);
+  }
+
+  // =========================================
+  // CREATE NEW
+  // =========================================
+  else {
+    devices.push(deviceData);
   }
 
   saveDevices(devices);
