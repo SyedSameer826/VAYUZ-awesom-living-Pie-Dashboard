@@ -63,9 +63,15 @@ app.get("/api/devices", (req, res) => {
 
 app.post("/api/assign-name", async (req, res) => {
   try {
-    const { zigbee_ieee, zigbee_name, resident, zigbee_type, room, token } =
-      req.body;
+    const { zigbee_ieee, zigbee_name, resident, zigbee_type, room } = req.body;
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        error: "Authorization token missing",
+      });
+    }
 
+    const token = authHeader.split(" ")[1];
     const file = fs.readFileSync(CONFIG_PATH, "utf8");
     const detectedType =
       zigbee_type === "door & window" ? "contact" : zigbee_type;
