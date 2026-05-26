@@ -55,10 +55,7 @@ export const upsertDevice = (device) => {
   if (index !== -1) {
     devices[index] = {
       ...devices[index],
-
-      // only live fields
-      name: device.name,
-      type: device.type,
+      ...device,
     };
   }
 
@@ -67,10 +64,9 @@ export const upsertDevice = (device) => {
   // ========================================
   else {
     devices.push({
-      ...device,
-
       status: "unmapped",
       is_unassigned: true,
+      ...device,
     });
   }
 
