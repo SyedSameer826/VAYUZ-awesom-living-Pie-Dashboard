@@ -5,9 +5,7 @@ const client = mqtt.connect("mqtt://localhost");
 client.on("connect", () => {
   console.log("MQTT Connected");
 
-  client.subscribe("zigbee2mqtt/bridge/log");
-  client.subscribe("zigbee2mqtt/bridge/event");
-  client.subscribe("zigbee2mqtt/bridge/devices");
+  client.subscribe("zigbee2mqtt/#");
 });
 client.on("message", (topic, message) => {
   const data = message.toString();
