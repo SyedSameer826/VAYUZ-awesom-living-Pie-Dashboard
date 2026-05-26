@@ -7,62 +7,74 @@ const __dirname = path.dirname(__filename);
 
 const DEVICES_PATH = path.join(__dirname, "../data/devices.json");
 
-export const getDevices = () => {
-  try {
-    if (!fs.existsSync(DEVICES_PATH)) {
-      fs.writeFileSync(DEVICES_PATH, "[]");
-    }
+// ========================================
+// LOAD ONCE INTO MEMORY
+// ========================================
 
-    return JSON.parse(fs.readFileSync(DEVICES_PATH, "utf8"));
-  } catch {
-    return [];
+let devices = [];
+
+try {
+  if (!fs.existsSync(DEVICES_PATH)) {
+    fs.writeFileSync(DEVICES_PATH, "[]");
   }
+
+  devices = JSON.parse(fs.readFileSync(DEVICES_PATH, "utf8"));
+} catch {
+  devices = [];
+}
+
+// ========================================
+// GET DEVICES
+// ========================================
+
+export const getDevices = () => {
+  return devices;
 };
 
-export const saveDevices = (devices) => {
+// ========================================
+// SAVE DEVICES
+// ========================================
+
+export const saveDevices = () => {
   fs.writeFileSync(DEVICES_PATH, JSON.stringify(devices, null, 2));
 };
 
-export const upsertDevice = (device) => {
-  const devices = getDevices();
+// ========================================
+// UPSERT DEVICE
+// ========================================
 
+export const upsertDevice = (device) => {
   const index = devices.findIndex(
     (d) => d.ieee_address === device.ieee_address,
   );
 
-  // =========================================
-  // DEVICE MAPPING LOGIC
-  // =========================================
-
-  const isMapped = device.name !== device.ieee_address;
-
-  const deviceData = {
-    ...device,
-
-    status: isMapped ? "mapped" : "unmapped",
-
-    is_unassigned: !isMapped,
-  };
-
-  // =========================================
+  // ========================================
   // UPDATE EXISTING
-  // =========================================
+  // ========================================
 
   if (index !== -1) {
     devices[index] = {
       ...devices[index],
-      ...deviceData,
+
+      // only live fields
+      name: device.name,
+      type: device.type,
     };
   }
 
-  // =========================================
+  // ========================================
   // CREATE NEW
-  // =========================================
+  // ========================================
   else {
-    devices.push(deviceData);
+    devices.push({
+      ...device,
+
+      status: "unmapped",
+      is_unassigned: true,
+    });
   }
 
-  saveDevices(devices);
+  saveDevices();
 
   return devices;
 };
