@@ -12,6 +12,7 @@ import { Server } from "socket.io";
 import { initSocket } from "./socket/socket.js";
 import zigbeeRoutes from "./routes/zigbee.routes.js";
 import { getDevices, upsertDevice } from "./services/deviceStore.js";
+import "./mqtt/mqttClient.js";
 const app = express();
 
 /* =========================
