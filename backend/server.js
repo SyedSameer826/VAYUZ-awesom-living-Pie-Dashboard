@@ -11,8 +11,13 @@ import { Server } from "socket.io";
 
 import { initSocket } from "./socket/socket.js";
 import zigbeeRoutes from "./routes/zigbee.routes.js";
-import { getDevices, upsertDevice } from "./services/deviceStore.js";
+import {
+  getDevices,
+  upsertDevice,
+  deleteDevice,
+} from "./services/deviceStore.js";
 import "./mqtt/mqttClient.js";
+
 const app = express();
 
 /* =========================
@@ -124,7 +129,33 @@ app.post("/api/assign-name", async (req, res) => {
     });
   }
 });
+app.delete("/api/devices/:ieee", (req, res) => {
+  try {
+    const ieee = req.params.ieee;
 
+    // remove from devices.json
+    deleteDevice(ieee);
+
+    // remove from zigbee2mqtt yaml
+    const file = fs.readFileSync(CONFIG_PATH, "utf8");
+    const config = yaml.load(file);
+
+    if (config.devices && config.devices[ieee]) {
+      delete config.devices[ieee];
+
+      fs.writeFileSync(CONFIG_PATH, yaml.dump(config));
+    }
+
+    res.json({
+      success: true,
+      message: "Device deleted",
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
+    });
+  }
+});
 /* =========================
    SOCKET SERVER
 ========================= */

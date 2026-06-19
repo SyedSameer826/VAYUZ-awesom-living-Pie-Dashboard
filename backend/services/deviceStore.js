@@ -74,3 +74,29 @@ export const upsertDevice = (device) => {
 
   return devices;
 };
+export const deleteDevice = async (ieee_address) => {
+  try {
+    devices = JSON.parse(fs.readFileSync(DEVICES_PATH, "utf8"));
+  } catch {
+    devices = [];
+  }
+
+  const device = devices.find((d) => d.ieee_address === ieee_address);
+
+  if (!device) {
+    throw new Error("Device not found");
+  }
+
+  // Only delete from main backend if mapped
+  if (device.status === "mapped" && device.is_unassigned === false) {
+    await axios.delete(
+      `https://backend-awesomliving.onrender.com/api/user/devices/${device.name}`,
+    );
+  }
+
+  devices = devices.filter((d) => d.ieee_address !== ieee_address);
+
+  saveDevices();
+
+  return devices;
+};
