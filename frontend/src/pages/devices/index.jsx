@@ -148,7 +148,25 @@ function Devices() {
       setIsSaving(false);
     }
   };
+  const handleDelete = async (ieee_address) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this device?",
+    );
 
+    if (!confirmed) return;
+
+    try {
+      await deleteDevice(ieee_address);
+
+      setDevices((current) =>
+        current.filter((device) => device.ieee_address !== ieee_address),
+      );
+    } catch {
+      alert(
+        "Something went wrong while deleting the device. Please try again later or contact support.",
+      );
+    }
+  };
   return (
     <main className="crud-page">
       <header className="crud-header">
@@ -217,6 +235,7 @@ function Devices() {
           headers={deviceHeaders}
           loading={isLoading}
           onEdit={openEditForm}
+          onDelete={handleDelete}
         />
       </section>
 

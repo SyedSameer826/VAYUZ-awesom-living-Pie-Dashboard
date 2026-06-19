@@ -74,3 +74,15 @@ export const assignDeviceName = async ({
 
   return response.json();
 };
+export const deleteDevice = async (ieee_address) => {
+  const response = await fetch(`${API_BASE_URL}devices/${ieee_address}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to delete device");
+  }
+
+  return response.json();
+};

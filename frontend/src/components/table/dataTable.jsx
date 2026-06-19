@@ -3,6 +3,7 @@ export const DataTable = ({
   headers = [],
   loading = false,
   onEdit,
+  onDelete,
 }) => {
   const formatIeeeAddress = (address) => {
     if (!address || address.length <= 10) {
@@ -68,6 +69,13 @@ export const DataTable = ({
                       </button>
                     </div>
                   )}
+                </td>
+                <td>
+                  <div className="row-actions">
+                    <button onClick={() => onDelete(device.ieee_address)}>
+                      Delete
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))
