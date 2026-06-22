@@ -1,3 +1,4 @@
+import { useState } from "react";
 export const DataTable = ({
   data = [],
   headers = [],
@@ -5,6 +6,7 @@ export const DataTable = ({
   onEdit,
   onDelete,
 }) => {
+  const [openMenu, setOpenMenu] = useState(null);
   const formatIeeeAddress = (address) => {
     if (!address || address.length <= 10) {
       return address || "-";
@@ -58,23 +60,31 @@ export const DataTable = ({
                   </span>
                 </td>
                 <td>
-                  {device.status === "unmapped" && (
-                    <div className="row-actions">
-                      <button
-                        className="table-link"
-                        type="button"
-                        onClick={() => onEdit(device)}
-                      >
-                        {device.status === "unmapped" ? "Map" : "View"}
-                      </button>
-                    </div>
-                  )}
-                </td>
-                <td>
-                  <div className="row-actions">
-                    <button onClick={() => onDelete(device.ieee_address)}>
-                      Delete
+                  <div className="action-menu">
+                    <button
+                      className="action-trigger"
+                      onClick={() =>
+                        setOpenMenu(
+                          openMenu === device.ieee_address
+                            ? null
+                            : device.ieee_address,
+                        )
+                      }
+                    >
+                      ⋮
                     </button>
+
+                    {openMenu === device.ieee_address && (
+                      <div className="action-dropdown">
+                        {device.status === "unmapped" && (
+                          <button onClick={() => onEdit(device)}>Map</button>
+                        )}
+
+                        <button onClick={() => onDelete(device.ieee_address)}>
+                          Delete
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </td>
               </tr>
