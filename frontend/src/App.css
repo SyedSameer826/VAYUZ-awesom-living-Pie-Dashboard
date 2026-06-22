@@ -450,6 +450,7 @@ img {
   flex-direction: column;
   gap: 10px;
   transition: all 0.3s ease;
+  overflow-y: hidden;
 }
 .page-body {
   flex: 1;
