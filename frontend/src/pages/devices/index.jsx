@@ -56,12 +56,10 @@ function Devices() {
         getResidents(),
       ]);
 
-      const updatedDevices = deviceData.length > 0 ? deviceData : sampleDevices;
-
-      setDevices(updatedDevices);
+      setDevices(deviceData);
       setResidents(residentData);
     } catch {
-      setDevices(sampleDevices);
+      setDevices([]);
       setResidents([]);
       setError("");
     } finally {
