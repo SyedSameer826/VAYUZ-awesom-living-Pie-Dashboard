@@ -1285,3 +1285,11 @@ table th:last-child {
 .action-dropdown .delete-btn:hover {
   background: #fef2f2;
 }
+.action-menu > button {
+  border: none !important;
+  background: transparent !important;
+  padding: 0;
+  width: auto;
+  height: auto;
+  box-shadow: none;
+}
