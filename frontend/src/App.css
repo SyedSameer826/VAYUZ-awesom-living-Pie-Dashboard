@@ -637,7 +637,7 @@ img {
 
 .table-wrap {
   width: 100%;
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: visible;
 }
 
@@ -649,7 +649,6 @@ img {
 
 table {
   width: 100%;
-  min-width: 1040px;
   border-collapse: collapse;
   background: #ffffff;
 }
@@ -1234,7 +1233,7 @@ table th:last-child {
 .action-dropdown {
   position: absolute;
   top: 0;
-  right: 28px;
+  right: 0;
 
   display: flex;
   flex-direction: column;
