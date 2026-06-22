@@ -1,1 +1,37 @@
-[]
+[
+  {
+    "ieee_address": "0x983268fffe9056b5",
+    "name": "motion_sensor_1",
+    "type": "unknown",
+    "status": "mapped",
+    "is_unassigned": false
+  },
+  {
+    "ieee_address": "0x20a716fffef6e829",
+    "name": "switch_1",
+    "type": "unknown",
+    "status": "mapped",
+    "is_unassigned": false
+  },
+  {
+    "ieee_address": "0xb0e8e8fffea391eb",
+    "name": "main_door_sensor",
+    "type": "unknown",
+    "status": "mapped",
+    "is_unassigned": false
+  },
+  {
+    "status": "unmapped",
+    "is_unassigned": true,
+    "ieee_address": "0xb0e8e8fffeaa9dd3",
+    "name": "window",
+    "type": "unknown"
+  },
+  {
+    "status": "unmapped",
+    "is_unassigned": true,
+    "ieee_address": "0x8c73dafffeda64b9",
+    "name": "0x8c73dafffeda64b9",
+    "type": "motion"
+  }
+]

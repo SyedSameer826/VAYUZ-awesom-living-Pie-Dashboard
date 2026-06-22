@@ -28,7 +28,11 @@ try {
 // ========================================
 
 export const getDevices = () => {
-  return devices;
+  try {
+    return JSON.parse(fs.readFileSync(DEVICES_PATH, "utf8"));
+  } catch {
+    return [];
+  }
 };
 
 // ========================================
