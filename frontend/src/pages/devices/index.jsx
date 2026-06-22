@@ -3,7 +3,7 @@ import DataTable from "../../components/table/dataTable";
 import {
   deviceHeaders,
   emptyDeviceForm,
-  sampleDevices,
+  // sampleDevices,
 } from "../../constants/device";
 import {
   assignDeviceName,
