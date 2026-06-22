@@ -9,6 +9,7 @@ import {
   assignDeviceName,
   getDeviceDetails,
   getResidents,
+  deleteDevice,
 } from "../../services/deviceService";
 import { getDeviceId, mapDeviceRows } from "../../utils/devices";
 import DeviceForm from "./DeviceForm";
