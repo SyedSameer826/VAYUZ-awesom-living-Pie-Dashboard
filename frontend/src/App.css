@@ -1217,40 +1217,6 @@ button {
   font-size: 24px;
   cursor: pointer;
 }
-.action-menu {
-  position: relative;
-  display: inline-block;
-}
-
-.action-dropdown {
-  position: absolute;
-  right: 0;
-  top: 0;
-
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-
-  min-width: 120px;
-  z-index: 9999;
-}
-.action-dropdown {
-  right: 24px;
-  top: 0;
-}
-.action-dropdown button {
-  width: 100%;
-  text-align: left;
-  padding: 10px 12px;
-  border: none;
-  background: white;
-  cursor: pointer;
-}
-
-.action-dropdown button:hover {
-  background: #f5f5f5;
-}
 table td:last-child,
 table th:last-child {
   width: 40px;
@@ -1258,19 +1224,64 @@ table th:last-child {
   padding-left: 4px;
   padding-right: 4px;
 }
-.action-trigger {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  background: transparent !important;
-  cursor: pointer;
-  font-size: 18px;
-  padding: 0;
-  min-height: auto;
-}
 .action-menu {
   position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.action-dropdown {
+  position: absolute;
+  top: 0;
+  right: 28px;
+
+  display: flex;
+  flex-direction: column;
+
+  min-width: 140px;
+  padding: 6px;
+
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.action-dropdown button {
+  width: 100%;
+  min-height: 38px;
+
+  display: flex;
+  align-items: center;
+
+  padding: 10px 12px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: #111827;
+  font-size: 13px;
+  font-weight: 500;
+
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-dropdown button:hover {
+  background: #f3f4f6;
+}
+
+.action-dropdown .delete-btn {
+  color: #dc2626;
+}
+
+.action-dropdown .delete-btn:hover {
+  background: #fef2f2;
 }

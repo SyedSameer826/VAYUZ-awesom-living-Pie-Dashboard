@@ -80,7 +80,10 @@ export const DataTable = ({
                           <button onClick={() => onEdit(device)}>Map</button>
                         )}
 
-                        <button onClick={() => onDelete(device.ieee_address)}>
+                        <button
+                          className="delete-btn"
+                          onClick={() => onDelete(device.ieee_address)}
+                        >
                           Delete
                         </button>
                       </div>
