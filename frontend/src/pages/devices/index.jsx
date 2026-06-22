@@ -162,9 +162,9 @@ function Devices() {
         current.filter((device) => device.ieee_address !== ieee_address),
       );
     } catch (deleteError) {
+      console.log("Delete error:", deleteError);
       alert(
         "Something went wrong while deleting the device. Please try again later or contact support.",
-        deleteError,
       );
     }
   };
