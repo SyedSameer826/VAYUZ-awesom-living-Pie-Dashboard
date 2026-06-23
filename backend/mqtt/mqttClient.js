@@ -9,7 +9,9 @@ client.on("connect", () => {
 });
 client.on("message", (topic, message) => {
   const data = message.toString();
-
+  if (topic === "zigbee2mqtt/bridge/response/device/remove") {
+    console.log("DEVICE REMOVE RESPONSE:", data);
+  }
   console.log(topic, data);
 
   const io = getIO();

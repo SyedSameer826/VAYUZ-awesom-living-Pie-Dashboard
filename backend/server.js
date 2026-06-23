@@ -16,7 +16,7 @@ import {
   upsertDevice,
   deleteDevice,
 } from "./services/deviceStore.js";
-import "./mqtt/mqttClient.js";
+import mqttClient from "./mqtt/mqttClient.js";
 
 const app = express();
 
@@ -129,29 +129,33 @@ app.post("/api/assign-name", async (req, res) => {
     });
   }
 });
-app.delete("/api/devices/:ieee", (req, res) => {
+app.delete("/api/devices/:ieee", async (req, res) => {
   try {
-    const ieee = req.params.ieee;
+    const { ieee } = req.params;
 
-    // remove from devices.json
+    console.log("Removing device:", ieee);
+
+    // remove from Zigbee2MQTT network
+    mqttClient.publish(
+      "zigbee2mqtt/bridge/request/device/remove",
+      JSON.stringify({
+        id: ieee,
+        force: true,
+      }),
+    );
+
+    // remove from local devices.json
     deleteDevice(ieee);
 
-    // remove from zigbee2mqtt yaml
-    const file = fs.readFileSync(CONFIG_PATH, "utf8");
-    const config = yaml.load(file);
-
-    if (config.devices && config.devices[ieee]) {
-      delete config.devices[ieee];
-
-      fs.writeFileSync(CONFIG_PATH, yaml.dump(config));
-    }
-
-    res.json({
+    return res.json({
       success: true,
       message: "Device deleted",
     });
   } catch (err) {
-    res.status(500).json({
+    console.error(err);
+
+    return res.status(500).json({
+      success: false,
       error: err.message,
     });
   }
