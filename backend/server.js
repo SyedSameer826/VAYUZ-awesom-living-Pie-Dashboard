@@ -133,21 +133,23 @@ app.delete("/api/devices/:ieee", async (req, res) => {
   try {
     const { ieee } = req.params;
 
-    pendingDeletes.add(ieee);
+    // Step 1: Remove from devices.json (and remote backend if applicable)
+    await deleteDevice(ieee);
 
+    // Step 2: Tell Zigbee2MQTT to remove the device from its network
     mqttClient.publish(
       "zigbee2mqtt/bridge/request/device/remove",
-      JSON.stringify({
-        id: ieee,
-        force: true,
-      }),
+      JSON.stringify({ id: ieee, force: true }),
     );
+
+    console.log("✅ Delete complete for:", ieee);
 
     return res.json({
       success: true,
-      message: "Delete request sent",
+      message: "Device deleted",
     });
   } catch (err) {
+    console.log("❌ Delete failed:", err.message);
     return res.status(500).json({
       success: false,
       error: err.message,
