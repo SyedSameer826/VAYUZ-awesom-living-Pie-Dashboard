@@ -17,7 +17,7 @@ import {
   deleteDevice,
 } from "./services/deviceStore.js";
 import mqttClient from "./mqtt/mqttClient.js";
-
+import { pendingDeletes } from "./utils/deleteState.js";
 const app = express();
 
 /* =========================
@@ -133,9 +133,8 @@ app.delete("/api/devices/:ieee", async (req, res) => {
   try {
     const { ieee } = req.params;
 
-    console.log("Removing device:", ieee);
+    pendingDeletes.add(ieee);
 
-    // 1. Ask Zigbee2MQTT to remove device
     mqttClient.publish(
       "zigbee2mqtt/bridge/request/device/remove",
       JSON.stringify({
@@ -144,31 +143,11 @@ app.delete("/api/devices/:ieee", async (req, res) => {
       }),
     );
 
-    // wait for zigbee2mqtt
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-
-    // 2. Remove from devices.json
-    deleteDevice(ieee);
-
-    // 3. Remove from configuration.yaml
-    const configFile = fs.readFileSync(CONFIG_PATH, "utf8");
-    const config = yaml.load(configFile);
-
-    if (config.devices && config.devices[ieee]) {
-      delete config.devices[ieee];
-
-      fs.writeFileSync(CONFIG_PATH, yaml.dump(config));
-
-      console.log("Removed from configuration.yaml");
-    }
-
     return res.json({
       success: true,
-      message: "Device deleted successfully",
+      message: "Delete request sent",
     });
   } catch (err) {
-    console.error(err);
-
     return res.status(500).json({
       success: false,
       error: err.message,
