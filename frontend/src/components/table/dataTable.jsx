@@ -56,7 +56,7 @@ export const DataTable = ({
                       device.is_unassigned ? "status unassigned" : "status"
                     }
                   >
-                    {device.is_unassigned ? "Mapped" : "Unmapped"}
+                    {!device.is_unassigned ? "Mapped" : "Unmapped"}
                   </span>
                 </td>
                 <td>
