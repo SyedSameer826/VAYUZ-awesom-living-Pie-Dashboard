@@ -17,7 +17,7 @@ import {
   deleteDevice,
 } from "./services/deviceStore.js";
 import mqttClient from "./mqtt/mqttClient.js";
-import axios from "axios";
+
 const app = express();
 
 /* =========================
