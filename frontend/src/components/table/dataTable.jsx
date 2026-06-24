@@ -53,7 +53,9 @@ export const DataTable = ({
                 <td>
                   <span
                     className={
-                      device.is_unassigned ? "status unassigned" : "status"
+                      device.status != "unmapped"
+                        ? "status unassigned"
+                        : "status"
                     }
                   >
                     {device.status != "unmapped" ? "Mapped" : "Unmapped"}
