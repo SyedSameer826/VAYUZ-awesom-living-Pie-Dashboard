@@ -112,9 +112,9 @@ app.post("/api/assign-name", async (req, res) => {
         type: "Zigbee",
         resident,
         name: zigbee_name,
-        zigbee_id: zigbee_name,
-        zigbee_ieee,
-        zigbee_type,
+        id: zigbee_name,
+        ieee: zigbee_ieee,
+        sensor_type: zigbee_type,
         room: room || "bathroom",
       },
     );
