@@ -13,6 +13,6 @@ export const mapDeviceRows = (devices) => {
       device.client_id ||
       "-",
     type: device.type || "unknown",
-    status: device.is_unassigned ? "unmapped" : device.status || "mapped",
+    status: device.status === "mapped" ? "mapped" : "unmapped",
   }));
 };

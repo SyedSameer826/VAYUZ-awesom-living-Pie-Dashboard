@@ -156,10 +156,7 @@ function Devices() {
 
     try {
       await deleteDevice(ieee_address);
-
-      setDevices((current) =>
-        current.filter((device) => device.ieee_address !== ieee_address),
-      );
+      await loadData(); // refresh from server after delete
     } catch (deleteError) {
       console.log("Delete error:", deleteError);
       alert(
