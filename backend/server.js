@@ -129,31 +129,40 @@ app.post("/api/assign-name", async (req, res) => {
     });
   }
 });
+// In server.js DELETE route, after deleteDevice(ieee):
+
 app.delete("/api/devices/:ieee", async (req, res) => {
   try {
     const { ieee } = req.params;
 
-    // Step 1: Remove from devices.json (and remote backend if applicable)
+    // Step 1: Remove from devices.json (and remote backend if mapped)
     await deleteDevice(ieee);
 
-    // Step 2: Tell Zigbee2MQTT to remove the device from its network
+    // Step 2: Tell Z2M to remove from network
     mqttClient.publish(
       "zigbee2mqtt/bridge/request/device/remove",
       JSON.stringify({ id: ieee, force: true }),
     );
 
-    console.log("✅ Delete complete for:", ieee);
+    // Step 3: Also clean yaml config as fallback
+    // (mqttClient handles this too on Z2M response, but this covers
+    //  cases where Z2M is down or device was already gone from network)
+    try {
+      const file = fs.readFileSync(CONFIG_PATH, "utf8");
+      const config = yaml.load(file);
+      if (config.devices?.[ieee]) {
+        delete config.devices[ieee];
+        fs.writeFileSync(CONFIG_PATH, yaml.dump(config));
+      }
+    } catch (yamlErr) {
+      console.error("⚠️ yaml cleanup failed:", yamlErr.message);
+    }
 
-    return res.json({
-      success: true,
-      message: "Device deleted",
-    });
+    console.log("✅ Delete complete for:", ieee);
+    return res.json({ success: true, message: "Device deleted" });
   } catch (err) {
     console.log("❌ Delete failed:", err.message);
-    return res.status(500).json({
-      success: false,
-      error: err.message,
-    });
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 /* =========================
