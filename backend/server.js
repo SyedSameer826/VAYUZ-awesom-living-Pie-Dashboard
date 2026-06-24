@@ -135,7 +135,7 @@ app.delete("/api/devices/:ieee", async (req, res) => {
 
     console.log("Removing device:", ieee);
 
-    // Request Zigbee2MQTT removal
+    // 1. Ask Zigbee2MQTT to remove device
     mqttClient.publish(
       "zigbee2mqtt/bridge/request/device/remove",
       JSON.stringify({
@@ -144,24 +144,27 @@ app.delete("/api/devices/:ieee", async (req, res) => {
       }),
     );
 
-    // wait a little
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    // wait for zigbee2mqtt
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    // remove from devices.json
-    await deleteDevice(ieee);
+    // 2. Remove from devices.json
+    deleteDevice(ieee);
 
-    // remove from configuration.yaml
-    const config = yaml.load(fs.readFileSync(CONFIG_PATH, "utf8"));
+    // 3. Remove from configuration.yaml
+    const configFile = fs.readFileSync(CONFIG_PATH, "utf8");
+    const config = yaml.load(configFile);
 
-    if (config.devices?.[ieee]) {
+    if (config.devices && config.devices[ieee]) {
       delete config.devices[ieee];
 
       fs.writeFileSync(CONFIG_PATH, yaml.dump(config));
+
+      console.log("Removed from configuration.yaml");
     }
 
     return res.json({
       success: true,
-      message: "Device deleted",
+      message: "Device deleted successfully",
     });
   } catch (err) {
     console.error(err);
