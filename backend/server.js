@@ -17,7 +17,7 @@ import {
   deleteDevice,
 } from "./services/deviceStore.js";
 import mqttClient from "./mqtt/mqttClient.js";
-
+import axios from "axios";
 const app = express();
 
 /* =========================
@@ -135,7 +135,7 @@ app.delete("/api/devices/:ieee", async (req, res) => {
 
     console.log("Removing device:", ieee);
 
-    // remove from Zigbee2MQTT network
+    // Request Zigbee2MQTT removal
     mqttClient.publish(
       "zigbee2mqtt/bridge/request/device/remove",
       JSON.stringify({
@@ -144,8 +144,20 @@ app.delete("/api/devices/:ieee", async (req, res) => {
       }),
     );
 
-    // remove from local devices.json
-    deleteDevice(ieee);
+    // wait a little
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    // remove from devices.json
+    await deleteDevice(ieee);
+
+    // remove from configuration.yaml
+    const config = yaml.load(fs.readFileSync(CONFIG_PATH, "utf8"));
+
+    if (config.devices?.[ieee]) {
+      delete config.devices[ieee];
+
+      fs.writeFileSync(CONFIG_PATH, yaml.dump(config));
+    }
 
     return res.json({
       success: true,
