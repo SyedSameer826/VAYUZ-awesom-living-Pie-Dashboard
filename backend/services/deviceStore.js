@@ -37,7 +37,17 @@ export const upsertDevice = (device) => {
   );
 
   if (index !== -1) {
-    devices[index] = { ...devices[index], ...device };
+    const existing = devices[index];
+
+    // If already mapped through the form, never let sensor events overwrite it
+    if (existing.status === "mapped" && existing.is_unassigned === false) {
+      devices[index] = {
+        ...existing,
+        type: device.type || existing.type,
+      };
+    } else {
+      devices[index] = { ...existing, ...device };
+    }
   } else {
     devices.push({
       status: "unmapped",
