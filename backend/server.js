@@ -130,14 +130,14 @@ app.post("/api/assign-name", async (req, res) => {
   }
 });
 // In server.js DELETE route, after deleteDevice(ieee):
-
 app.delete("/api/devices/:ieee", async (req, res) => {
   try {
     const { ieee } = req.params;
 
-    // Step 1: Remove from devices.json (and remote backend if mapped)
+    // Step 1: Remove from devices.json and remote backend
     await deleteDevice(ieee);
-    // Add to deleted devices blocklist on Pi
+
+    // Step 2: Add to deleted_devices.json blocklist
     try {
       const DELETED_PATH = "/home/pi/deleted_devices.json";
       const existing = JSON.parse(
@@ -150,25 +150,31 @@ app.delete("/api/devices/:ieee", async (req, res) => {
     } catch (err) {
       console.log("⚠️ Could not update deleted_devices.json:", err.message);
     }
-    // Step 2: Tell Z2M to remove from network
+
+    // Step 3: Add to Z2M blocklist in configuration.yaml
+    // This permanently prevents Z2M from accepting this device during pairing
+    try {
+      const file = fs.readFileSync(CONFIG_PATH, "utf8");
+      const config = yaml.load(file);
+      if (!config.blocklist) config.blocklist = [];
+      if (!config.blocklist.includes(ieee)) {
+        config.blocklist.push(ieee);
+      }
+      // Also remove from devices section
+      if (config.devices?.[ieee]) {
+        delete config.devices[ieee];
+      }
+      fs.writeFileSync(CONFIG_PATH, yaml.dump(config));
+      console.log("✅ Added to Z2M blocklist:", ieee);
+    } catch (yamlErr) {
+      console.error("⚠️ yaml update failed:", yamlErr.message);
+    }
+
+    // Step 4: Tell Z2M to remove from network
     mqttClient.publish(
       "zigbee2mqtt/bridge/request/device/remove",
       JSON.stringify({ id: ieee, force: true }),
     );
-
-    // Step 3: Also clean yaml config as fallback
-    // (mqttClient handles this too on Z2M response, but this covers
-    //  cases where Z2M is down or device was already gone from network)
-    try {
-      const file = fs.readFileSync(CONFIG_PATH, "utf8");
-      const config = yaml.load(file);
-      if (config.devices?.[ieee]) {
-        delete config.devices[ieee];
-        fs.writeFileSync(CONFIG_PATH, yaml.dump(config));
-      }
-    } catch (yamlErr) {
-      console.error("⚠️ yaml cleanup failed:", yamlErr.message);
-    }
 
     console.log("✅ Delete complete for:", ieee);
     return res.json({ success: true, message: "Device deleted" });
