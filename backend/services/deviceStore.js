@@ -5,21 +5,13 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 const DEVICES_PATH = path.join(__dirname, "../data/devices.json");
 
-let devices = [];
-
-try {
-  if (!fs.existsSync(DEVICES_PATH)) {
-    fs.writeFileSync(DEVICES_PATH, "[]");
-  }
-  devices = JSON.parse(fs.readFileSync(DEVICES_PATH, "utf8"));
-} catch {
-  devices = [];
+if (!fs.existsSync(DEVICES_PATH)) {
+  fs.writeFileSync(DEVICES_PATH, "[]");
 }
 
-export const getDevices = () => {
+const readDevices = () => {
   try {
     return JSON.parse(fs.readFileSync(DEVICES_PATH, "utf8"));
   } catch {
@@ -27,24 +19,22 @@ export const getDevices = () => {
   }
 };
 
-export const saveDevices = () => {
+const writeDevices = (devices) => {
   fs.writeFileSync(DEVICES_PATH, JSON.stringify(devices, null, 2));
 };
 
+export const getDevices = () => readDevices();
+
 export const upsertDevice = (device) => {
+  const devices = readDevices();
   const index = devices.findIndex(
     (d) => d.ieee_address === device.ieee_address,
   );
 
   if (index !== -1) {
     const existing = devices[index];
-
-    // If already mapped through the form, never let sensor events overwrite it
     if (existing.status === "mapped" && existing.is_unassigned === false) {
-      devices[index] = {
-        ...existing,
-        type: device.type || existing.type,
-      };
+      devices[index] = { ...existing, type: device.type || existing.type };
     } else {
       devices[index] = { ...existing, ...device };
     }
@@ -56,24 +46,18 @@ export const upsertDevice = (device) => {
     });
   }
 
-  saveDevices();
+  writeDevices(devices);
   return devices;
 };
 
 export const deleteDevice = async (ieee_address) => {
-  try {
-    devices = JSON.parse(fs.readFileSync(DEVICES_PATH, "utf8"));
-  } catch {
-    devices = [];
-  }
+  const devices = readDevices();
 
   const device = devices.find((d) => d.ieee_address === ieee_address);
-
   if (!device) {
     throw new Error("Device not found in devices.json");
   }
 
-  // Only call remote backend if device has a real friendly name (not IEEE address)
   if (
     device.status === "mapped" &&
     device.is_unassigned === false &&
@@ -87,20 +71,17 @@ export const deleteDevice = async (ieee_address) => {
       console.log("✅ Deleted from remote backend:", device.name);
     } catch (err) {
       console.log(
-        "⚠️ Remote backend delete failed (continuing locally):",
+        "⚠️ Remote backend delete failed:",
         err.response?.status,
         err.message,
       );
     }
   } else {
-    console.log(
-      "ℹ️ Skipping remote backend delete — device uses IEEE as name or is unmapped",
-    );
+    console.log("ℹ️ Skipping remote backend delete — unmapped or IEEE name");
   }
 
-  devices = devices.filter((d) => d.ieee_address !== ieee_address);
-  saveDevices();
-
+  const updated = devices.filter((d) => d.ieee_address !== ieee_address);
+  writeDevices(updated);
   console.log("✅ Deleted from devices.json:", ieee_address);
-  return devices;
+  return updated;
 };
