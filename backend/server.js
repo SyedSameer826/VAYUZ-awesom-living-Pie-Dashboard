@@ -72,16 +72,14 @@ app.post("/api/assign-name", async (req, res) => {
     const { zigbee_ieee, zigbee_name, resident, zigbee_type, room } = req.body;
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
-        error: "Authorization token missing",
-      });
+      return res.status(401).json({ error: "Authorization token missing" });
     }
-
     const token = authHeader.split(" ")[1];
-    const file = fs.readFileSync(CONFIG_PATH, "utf8");
+
     const detectedType =
       zigbee_type === "door & window" ? "contact" : zigbee_type;
 
+    // Step 1: Update devices.json
     upsertDevice({
       ieee_address: zigbee_ieee,
       name: zigbee_name,
@@ -90,22 +88,23 @@ app.post("/api/assign-name", async (req, res) => {
       status: "mapped",
       is_unassigned: false,
     });
-    const config = yaml.load(file);
 
+    // Step 2: Check device exists in Z2M and get its current friendly name
+    const config = yaml.load(fs.readFileSync(CONFIG_PATH, "utf8"));
     if (!config.devices[zigbee_ieee]) {
-      return res.status(404).json({
-        error: "Device not found",
-      });
+      return res.status(404).json({ error: "Device not found in Z2M" });
     }
+    const currentFriendlyName =
+      config.devices[zigbee_ieee].friendly_name || zigbee_ieee;
 
-    // Update friendly name locally
-    config.devices[zigbee_ieee].friendly_name = zigbee_name;
+    // Step 3: Rename via Z2M MQTT API — updates Z2M in-memory + YAML instantly, no restart needed
+    mqttClient.publish(
+      "zigbee2mqtt/bridge/request/device/rename",
+      JSON.stringify({ from: currentFriendlyName, to: zigbee_name }),
+    );
 
-    fs.writeFileSync(CONFIG_PATH, yaml.dump(config));
-
-    // Send to main backend
+    // Step 4: Send to remote backend
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
     const response = await axios.post(
       "https://backend-awesomliving.onrender.com/api/user/devices",
       {
@@ -119,14 +118,9 @@ app.post("/api/assign-name", async (req, res) => {
       },
     );
 
-    res.json({
-      success: true,
-      backend_response: response.data,
-    });
+    res.json({ success: true, backend_response: response.data });
   } catch (err) {
-    res.status(500).json({
-      error: err.message,
-    });
+    res.status(500).json({ error: err.message });
   }
 });
 // In server.js DELETE route, after deleteDevice(ieee):
