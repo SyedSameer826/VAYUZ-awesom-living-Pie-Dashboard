@@ -137,7 +137,19 @@ app.delete("/api/devices/:ieee", async (req, res) => {
 
     // Step 1: Remove from devices.json (and remote backend if mapped)
     await deleteDevice(ieee);
-
+    // Add to deleted devices blocklist on Pi
+    try {
+      const DELETED_PATH = "/home/pi/deleted_devices.json";
+      const existing = JSON.parse(
+        fs.readFileSync(DELETED_PATH, "utf8") || "[]",
+      );
+      if (!existing.includes(ieee)) {
+        existing.push(ieee);
+        fs.writeFileSync(DELETED_PATH, JSON.stringify(existing));
+      }
+    } catch (err) {
+      console.log("⚠️ Could not update deleted_devices.json:", err.message);
+    }
     // Step 2: Tell Z2M to remove from network
     mqttClient.publish(
       "zigbee2mqtt/bridge/request/device/remove",
