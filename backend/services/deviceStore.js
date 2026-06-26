@@ -66,7 +66,8 @@ export const deleteDevice = async (ieee_address) => {
   ) {
     try {
       await axios.delete(
-        `https://backend-awesomliving.onrender.com/api/user/devices/${device.name}`,
+        // `https://backend-awesomliving.onrender.com
+        `https://localhost:3001/api/user/devices/${device.name}`,
       );
       console.log("✅ Deleted from remote backend:", device.name);
     } catch (err) {
