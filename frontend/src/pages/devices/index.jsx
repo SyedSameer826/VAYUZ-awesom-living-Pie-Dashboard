@@ -46,10 +46,14 @@ function Devices() {
   const inactiveCount = tableRows.length - activeCount;
 
   const loadData = async (showLoader = false) => {
-    if (showLoader) setIsLoading(true);
+    if (showLoader) {
+      setIsLoading(true);
+    }
 
-    // Devices and residents are fetched independently.
-    // A Render.com cold-start or DNS blip must NOT wipe the device list.
+    // Devices come from the Pi backend — this is the source of truth for the
+    // listing. Load it INDEPENDENTLY so a failure of the remote resident API
+    // (Render free tier cold-starts / DNS hiccups) can never wipe the device
+    // list. Only an explicit delete should ever remove a device from the UI.
     try {
       const deviceData = await getDeviceDetails();
       setDevices(deviceData);
@@ -58,16 +62,19 @@ function Devices() {
       setError(
         "Could not load devices — backend may be restarting. Click Refresh to retry.",
       );
-      // Keep existing device list visible; do NOT call setDevices([])
-    } finally {
-      if (showLoader) setIsLoading(false);
     }
 
+    // Residents come from the remote backend (Render.com). They only populate
+    // the assignment dropdown, so a failure here must NOT touch the devices.
     try {
       const residentData = await getResidents();
       setResidents(residentData);
     } catch {
-      // Residents unavailable — keep existing list, assignment dropdown may be stale
+      // Keep whatever residents we already have — the dropdown may be stale.
+    }
+
+    if (showLoader) {
+      setIsLoading(false);
     }
   };
 
