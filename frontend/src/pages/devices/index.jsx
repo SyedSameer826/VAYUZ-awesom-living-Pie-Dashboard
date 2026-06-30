@@ -46,26 +46,28 @@ function Devices() {
   const inactiveCount = tableRows.length - activeCount;
 
   const loadData = async (showLoader = false) => {
+    if (showLoader) setIsLoading(true);
+
+    // Devices and residents are fetched independently.
+    // A Render.com cold-start or DNS blip must NOT wipe the device list.
     try {
-      if (showLoader) {
-        setIsLoading(true);
-      }
-
-      const [deviceData, residentData] = await Promise.all([
-        getDeviceDetails(),
-        getResidents(),
-      ]);
-
+      const deviceData = await getDeviceDetails();
       setDevices(deviceData);
+      setError("");
+    } catch {
+      setError(
+        "Could not load devices — backend may be restarting. Click Refresh to retry.",
+      );
+      // Keep existing device list visible; do NOT call setDevices([])
+    } finally {
+      if (showLoader) setIsLoading(false);
+    }
+
+    try {
+      const residentData = await getResidents();
       setResidents(residentData);
     } catch {
-      setDevices([]);
-      setResidents([]);
-      setError("");
-    } finally {
-      if (showLoader) {
-        setIsLoading(false);
-      }
+      // Residents unavailable — keep existing list, assignment dropdown may be stale
     }
   };
 

@@ -4,7 +4,6 @@ import fs from "fs";
 import yaml from "js-yaml";
 
 import { pendingDeletes } from "../utils/deleteState.js";
-import { deleteDevice } from "../services/deviceStore.js";
 const CONFIG_PATH = "/home/pi/zigbee2mqtt/data/configuration.yaml";
 const client = mqtt.connect("mqtt://localhost");
 
@@ -23,21 +22,29 @@ client.on("message", (topic, message) => {
     if (payload.status === "ok") {
       const ieee = payload.data.id;
 
-      // devices.json already cleaned up in the DELETE route
-      // Just clean up the zigbee2mqtt yaml config here
-      try {
-        const config = yaml.load(fs.readFileSync(CONFIG_PATH, "utf8"));
-        if (config.devices?.[ieee]) {
-          delete config.devices[ieee];
-          fs.writeFileSync(CONFIG_PATH, yaml.dump(config));
-          console.log("✅ Removed from Z2M yaml config:", ieee);
+      // Guard: only act if WE triggered this delete in the current session.
+      // Z2M retains bridge/response/device/remove, so without this check
+      // every pm2 restart re-fires old confirmations and wipes devices from
+      // devices.json, causing them to reappear as unmapped.
+      if (!pendingDeletes.has(ieee)) {
+        console.log("⚠️ Ignoring stale remove confirmation for:", ieee);
+      } else {
+        // devices.json already cleaned in the DELETE route.
+        // Just clean up the Z2M yaml config here.
+        try {
+          const config = yaml.load(fs.readFileSync(CONFIG_PATH, "utf8"));
+          if (config.devices?.[ieee]) {
+            delete config.devices[ieee];
+            fs.writeFileSync(CONFIG_PATH, yaml.dump(config));
+            console.log("✅ Removed from Z2M yaml config:", ieee);
+          }
+        } catch (err) {
+          console.error("⚠️ Failed to clean yaml config:", err.message);
         }
-      } catch (err) {
-        console.error("⚠️ Failed to clean yaml config:", err.message);
-      }
 
-      pendingDeletes.delete(ieee);
-      console.log("✅ Z2M removal confirmed for:", ieee);
+        pendingDeletes.delete(ieee);
+        console.log("✅ Z2M removal confirmed for:", ieee);
+      }
     }
   }
   console.log(topic, data);

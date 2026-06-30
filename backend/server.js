@@ -72,14 +72,16 @@ app.post("/api/assign-name", async (req, res) => {
     const { zigbee_ieee, zigbee_name, resident, zigbee_type, room } = req.body;
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "Authorization token missing" });
+      return res.status(401).json({
+        error: "Authorization token missing",
+      });
     }
-    const token = authHeader.split(" ")[1];
 
+    const token = authHeader.split(" ")[1];
+    const file = fs.readFileSync(CONFIG_PATH, "utf8");
     const detectedType =
       zigbee_type === "door & window" ? "contact" : zigbee_type;
 
-    // Step 1: Update devices.json
     upsertDevice({
       ieee_address: zigbee_ieee,
       name: zigbee_name,
@@ -88,23 +90,27 @@ app.post("/api/assign-name", async (req, res) => {
       status: "mapped",
       is_unassigned: false,
     });
+    const config = yaml.load(file);
 
-    // Step 2: Check device exists in Z2M and get its current friendly name
-    const config = yaml.load(fs.readFileSync(CONFIG_PATH, "utf8"));
     if (!config.devices[zigbee_ieee]) {
-      return res.status(404).json({ error: "Device not found in Z2M" });
+      return res.status(404).json({
+        error: "Device not found",
+      });
     }
+
+    // Rename via Z2M MQTT API — takes effect immediately without Z2M restart
+    // (direct yaml write triggers Z2M reload which causes all retained MQTT
+    // messages to re-fire, causing the mqttClient delete handler to fire)
     const currentFriendlyName =
       config.devices[zigbee_ieee].friendly_name || zigbee_ieee;
-
-    // Step 3: Rename via Z2M MQTT API — updates Z2M in-memory + YAML instantly, no restart needed
     mqttClient.publish(
       "zigbee2mqtt/bridge/request/device/rename",
       JSON.stringify({ from: currentFriendlyName, to: zigbee_name }),
     );
 
-    // Step 4: Send to remote backend
+    // Send to main backend
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
     const response = await axios.post(
       "https://backend-awesomliving.onrender.com/api/user/devices",
       {
@@ -118,20 +124,33 @@ app.post("/api/assign-name", async (req, res) => {
       },
     );
 
-    res.json({ success: true, backend_response: response.data });
+    res.json({
+      success: true,
+      backend_response: response.data,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message,
+    });
   }
 });
-// In server.js DELETE route, after deleteDevice(ieee):
 app.delete("/api/devices/:ieee", async (req, res) => {
   try {
     const { ieee } = req.params;
+
+    // Step 1: Remove from devices.json + remote backend
     await deleteDevice(ieee);
+
+    // Step 2: Track this delete so mqttClient ignores stale retained confirmations
+    pendingDeletes.add(ieee);
+
+    // Step 3: Tell Z2M to remove from network (no force — force adds to Z2M blocklist
+    // which prevents the device from ever re-pairing)
     mqttClient.publish(
       "zigbee2mqtt/bridge/request/device/remove",
-      JSON.stringify({ id: ieee, force: true }),
+      JSON.stringify({ id: ieee }),
     );
+
     console.log("✅ Delete complete for:", ieee);
     return res.json({ success: true, message: "Device deleted" });
   } catch (err) {
