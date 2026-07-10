@@ -39,6 +39,7 @@ const DeviceForm = ({
               <option value="contact">Contact</option>
               <option value="motion">Motion</option>
               <option value="switch">Switch</option>
+              <option value="presence">Presence</option>
             </select>
           </label>
           <label className="form-field">
