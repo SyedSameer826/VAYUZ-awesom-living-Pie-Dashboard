@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Button } from "../../components/buttons";
 
-// Modal for mapping a CP Plus camera to a resident. Mirrors DeviceForm, but
-// with camera fields (stream name, IP, optional RTSP url, room).
+// Modal for mapping a CP Plus camera to a resident, with a guided password-setup
+// step. The camera's own setup page is embedded here (inside the Pie platform)
+// so the user can set the admin password without leaving to a browser.
 const CameraForm = ({
   form,
   residents,
@@ -10,11 +12,89 @@ const CameraForm = ({
   onClose,
   onSubmit,
 }) => {
+  const [showEmbed, setShowEmbed] = useState(false);
+  const cameraUrl = form.local_ip ? `http://${form.local_ip}` : "";
+
   return (
     <div className="device-form-modal">
       <div className="modal-backdrop">
-        <form className="crud-form" onSubmit={onSubmit}>
+        <form
+          className="crud-form"
+          onSubmit={onSubmit}
+          style={showEmbed ? { width: "90vw", maxWidth: 900 } : undefined}
+        >
           <h2>Map Camera</h2>
+
+          {/* Guided setup instructions */}
+          <div
+            style={{
+              background: "#fff7ed",
+              border: "1px solid #fed7aa",
+              borderRadius: 8,
+              padding: "10px 12px",
+              marginBottom: 14,
+              fontSize: 13,
+              color: "#7c2d12",
+              lineHeight: 1.5,
+            }}
+          >
+            <strong>New camera? Set its password first:</strong>
+            <ol style={{ margin: "6px 0 8px", paddingLeft: 18 }}>
+              <li>
+                Click <b>Open Camera Page</b> below — the camera's own setup page
+                opens right here. If it's a brand-new camera, it will ask you to
+                create an admin password; use your standard camera password so
+                it's the same on every camera.
+              </li>
+              <li>
+                Enter that same password in the <b>Camera Password</b> field.
+              </li>
+              <li>
+                Choose the resident, then click <b>Map Camera</b>.
+              </li>
+            </ol>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                type="button"
+                className="outline-button"
+                onClick={() => setShowEmbed((v) => !v)}
+                disabled={!form.local_ip}
+              >
+                {showEmbed ? "Hide Camera Page" : "Open Camera Page"}
+              </button>
+              <button
+                type="button"
+                className="outline-button"
+                onClick={() => window.open(cameraUrl, "_blank", "noopener")}
+                disabled={!form.local_ip}
+              >
+                Open in new tab
+              </button>
+            </div>
+          </div>
+
+          {/* Embedded camera setup page (inside the Pie platform window) */}
+          {showEmbed && form.local_ip && (
+            <div style={{ marginBottom: 14 }}>
+              <iframe
+                title="Camera setup"
+                src={cameraUrl}
+                style={{
+                  width: "100%",
+                  height: 380,
+                  border: "1px solid #ddd",
+                  borderRadius: 8,
+                }}
+              />
+              <p style={{ fontSize: 12, color: "#9a3412", margin: "6px 0 0" }}>
+                Nothing showing above? Some cameras block being embedded — use{" "}
+                <b>Open in new tab</b>. If the page never loads at all, this
+                device may not be a camera, or your computer isn't on the same
+                network as it.
+              </p>
+            </div>
+          )}
+
           <label className="form-field">
             <span>Stream Name</span>
             <input
@@ -34,12 +114,13 @@ const CameraForm = ({
             />
           </label>
           <label className="form-field">
-            <span>RTSP URL (optional)</span>
+            <span>Camera Password</span>
             <input
-              name="rtsp_url"
-              value={form.rtsp_url}
+              name="camera_password"
+              type="password"
+              value={form.camera_password}
               onChange={onChange}
-              placeholder="rtsp://admin:pass@ip:554/..."
+              placeholder="admin password you set on the camera"
             />
           </label>
           <label className="form-field">
@@ -62,6 +143,7 @@ const CameraForm = ({
               ))}
             </select>
           </label>
+
           <div className="form-actions">
             <Button variant="outline" onClick={onClose}>
               Cancel

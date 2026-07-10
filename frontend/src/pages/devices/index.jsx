@@ -21,7 +21,7 @@ import CameraPairModal from "./CameraPairModal";
 const emptyCameraForm = {
   stream_name: "",
   local_ip: "",
-  rtsp_url: "",
+  camera_password: "",
   room: "living_room",
   resident: "",
 };
@@ -141,11 +141,21 @@ function Devices() {
     setIsSaving(true);
     setError("");
 
+    // Build the RTSP URL from the IP + admin password the user entered. Only
+    // needed to (re)register a new camera's stream in go2rtc; if left blank the
+    // stream is assumed to already exist.
+    const ip = cameraForm.local_ip.trim();
+    const password = (cameraForm.camera_password || "").trim();
+    const rtsp_url =
+      password && ip
+        ? `rtsp://admin:${encodeURIComponent(password)}@${ip}:554/video/live?channel=1&subtype=0&unicast=true&proto=Onvif`
+        : "";
+
     try {
       await assignCamera({
         stream_name: cameraForm.stream_name.trim(),
-        local_ip: cameraForm.local_ip.trim(),
-        rtsp_url: cameraForm.rtsp_url.trim(),
+        local_ip: ip,
+        rtsp_url,
         resident: cameraForm.resident,
         room: cameraForm.room.trim() || "living_room",
       });
@@ -186,9 +196,7 @@ function Devices() {
     setCameraForm({
       stream_name: cam.stream_name || "",
       local_ip: cam.ip || "",
-      rtsp_url: cam.ip
-        ? `rtsp://admin:<password>@${cam.ip}:554/video/live?channel=1&subtype=0&unicast=true&proto=Onvif`
-        : "",
+      camera_password: "",
       room: "living_room",
       resident: "",
     });
