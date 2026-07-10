@@ -5,6 +5,9 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+// Main backend this Pi maps devices to. Overridable via env; defaults to the EC2.
+const REMOTE_BACKEND =
+  process.env.REMOTE_BACKEND_URL || "http://51.20.102.125";
 const DEVICES_PATH = path.join(__dirname, "../data/devices.json");
 // Per-process temp file so two processes never write the same temp at once.
 const TMP_PATH = `${DEVICES_PATH}.tmp.${process.pid}`;
@@ -164,7 +167,7 @@ export const deleteDevice = async (ieee_address) => {
   ) {
     try {
       await axios.delete(
-        `https://backend-awesomliving.onrender.com/api/user/devices/${ieee_address}`,
+        `${REMOTE_BACKEND}/api/user/devices/${ieee_address}`,
       );
       console.log("✅ Deleted from remote backend:", device.name);
     } catch (err) {

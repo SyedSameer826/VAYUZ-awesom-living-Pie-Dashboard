@@ -7,12 +7,22 @@ import {
 } from "../../constants/device";
 import {
   assignDeviceName,
+  assignCamera,
   getDeviceDetails,
   getResidents,
   deleteDevice,
 } from "../../services/deviceService";
 import { getDeviceId, mapDeviceRows } from "../../utils/devices";
 import DeviceForm from "./DeviceForm";
+import CameraForm from "./CameraForm";
+
+const emptyCameraForm = {
+  stream_name: "",
+  local_ip: "",
+  rtsp_url: "",
+  room: "living_room",
+  resident: "",
+};
 
 function Devices() {
   const [devices, setDevices] = useState([]);
@@ -24,6 +34,8 @@ function Devices() {
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
   const [residents, setResidents] = useState([]);
+  const [cameraForm, setCameraForm] = useState(emptyCameraForm);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const tableRows = useMemo(() => mapDeviceRows(devices), [devices]);
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -95,6 +107,50 @@ function Devices() {
     setForm(emptyDeviceForm);
     setEditingId("");
     setIsFormOpen(false);
+  };
+
+  const openCameraForm = () => {
+    setCameraForm(emptyCameraForm);
+    setError("");
+    setIsCameraOpen(true);
+  };
+
+  const closeCameraForm = () => {
+    setCameraForm(emptyCameraForm);
+    setIsCameraOpen(false);
+  };
+
+  const handleCameraChange = (event) => {
+    const { name, value } = event.target;
+    setCameraForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleSaveCamera = async (event) => {
+    event.preventDefault();
+
+    if (!cameraForm.stream_name.trim() || !cameraForm.resident) {
+      setError("Stream name and resident are required");
+      return;
+    }
+
+    setIsSaving(true);
+    setError("");
+
+    try {
+      await assignCamera({
+        stream_name: cameraForm.stream_name.trim(),
+        local_ip: cameraForm.local_ip.trim(),
+        rtsp_url: cameraForm.rtsp_url.trim(),
+        resident: cameraForm.resident,
+        room: cameraForm.room.trim() || "living_room",
+      });
+      closeCameraForm();
+      await loadData();
+    } catch (cameraError) {
+      setError(cameraError.message || "Unable to map camera");
+    } finally {
+      setIsSaving(false);
+    }
   };
   useEffect(() => {
     loadData(true);
@@ -222,6 +278,9 @@ function Devices() {
             >
               {isLoading ? "Refreshing..." : "Refresh"}
             </button>
+            <button className="submit-button" onClick={openCameraForm}>
+              Map Camera
+            </button>
           </div>
           <label className="table-search">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -254,6 +313,17 @@ function Devices() {
           onChange={handleFormChange}
           onClose={closeForm}
           onSubmit={handleSave}
+        />
+      )}
+
+      {isCameraOpen && (
+        <CameraForm
+          form={cameraForm}
+          residents={residents}
+          isSaving={isSaving}
+          onChange={handleCameraChange}
+          onClose={closeCameraForm}
+          onSubmit={handleSaveCamera}
         />
       )}
     </main>

@@ -49,6 +49,17 @@ app.use("/api/zigbee", zigbeeRoutes);
 const CONFIG_PATH = "/home/pi/zigbee2mqtt/data/configuration.yaml";
 
 /* =========================
+   REMOTE BACKEND + GO2RTC
+========================= */
+
+// Main backend this Pi maps devices to. Overridable via env; defaults to the EC2.
+const REMOTE_BACKEND =
+  process.env.REMOTE_BACKEND_URL || "http://51.20.102.125";
+
+// Local go2rtc instance on the Pi (used to register camera streams).
+const GO2RTC_URL = process.env.GO2RTC_URL || "http://localhost:1984";
+
+/* =========================
    GET DEVICES
 ========================= */
 
@@ -107,7 +118,7 @@ app.post("/api/assign-name", async (req, res) => {
     // Step 4: Send to remote backend
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     const response = await axios.post(
-      "https://backend-awesomliving.onrender.com/api/user/devices",
+      `${REMOTE_BACKEND}/api/user/devices`,
       {
         type: "Zigbee",
         resident,
@@ -124,6 +135,77 @@ app.post("/api/assign-name", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+/* =========================
+   ASSIGN CAMERA (CP Plus)
+   Mirrors /api/assign-name, but for a CP Plus camera:
+   registers the RTSP stream in go2rtc, records it locally, then
+   maps it to a resident on the remote backend as a CpPlus device.
+========================= */
+
+app.post("/api/assign-camera", async (req, res) => {
+  try {
+    const { stream_name, local_ip, rtsp_url, resident, room } = req.body;
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Authorization token missing" });
+    }
+    const token = authHeader.split(" ")[1];
+
+    if (!stream_name || !resident) {
+      return res
+        .status(400)
+        .json({ error: "stream_name and resident are required" });
+    }
+
+    // Step 1: Register the stream in go2rtc (only if an RTSP url is provided
+    // and the stream isn't already configured). Safe to call repeatedly.
+    if (rtsp_url) {
+      try {
+        await axios.put(`${GO2RTC_URL}/api/streams`, null, {
+          params: { name: stream_name, src: rtsp_url },
+        });
+      } catch (streamErr) {
+        console.log(
+          "⚠️ go2rtc stream register failed:",
+          streamErr.response?.status,
+          streamErr.message,
+        );
+      }
+    }
+
+    // Step 2: Record locally so the camera shows as mapped in the device list.
+    // Cameras have no IEEE address — use the (unique) stream_name as the key.
+    upsertDevice({
+      ieee_address: stream_name,
+      name: stream_name,
+      type: "camera",
+      resident,
+      status: "mapped",
+      is_unassigned: false,
+      local_ip,
+      stream_name,
+    });
+
+    // Step 3: Map to the remote backend as a CpPlus device.
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    const response = await axios.post(
+      `${REMOTE_BACKEND}/api/user/devices`,
+      {
+        type: "CpPlus",
+        resident,
+        stream_name,
+        local_ip,
+        room: room || "living_room",
+      },
+    );
+
+    res.json({ success: true, backend_response: response.data });
+  } catch (err) {
+    res.status(500).json({ error: err.response?.data || err.message });
+  }
+});
+
 app.delete("/api/devices/:ieee", async (req, res) => {
   try {
     const { ieee } = req.params;

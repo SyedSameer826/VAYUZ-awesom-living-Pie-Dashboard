@@ -1,4 +1,7 @@
 const API_BASE_URL = "/api/";
+// Main backend (EC2). Overridable at build time via VITE_BACKEND_URL.
+const REMOTE_BACKEND =
+  import.meta.env.VITE_BACKEND_URL || "http://51.20.102.125";
 
 const getAuthHeaders = () => {
   const token = JSON.parse(window.localStorage.getItem("token"));
@@ -32,7 +35,7 @@ export const getResidents = async ({ last_id = "", limit = 100 } = {}) => {
   query.append("limit", limit);
 
   const response = await fetch(
-    `https://backend-awesomliving.onrender.com/api/user/resident/get_all_residents?${query.toString()}`,
+    `${REMOTE_BACKEND}/api/user/resident/get_all_residents?${query.toString()}`,
     {
       method: "GET",
       headers: getAuthHeaders(),
@@ -74,6 +77,32 @@ export const assignDeviceName = async ({
 
   return response.json();
 };
+export const assignCamera = async ({
+  stream_name,
+  local_ip,
+  rtsp_url,
+  resident,
+  room,
+}) => {
+  const response = await fetch(`${API_BASE_URL}assign-camera`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({
+      stream_name,
+      local_ip,
+      rtsp_url,
+      resident,
+      room,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to map camera");
+  }
+
+  return response.json();
+};
+
 export const deleteDevice = async (ieee_address) => {
   const response = await fetch(`${API_BASE_URL}devices/${ieee_address}`, {
     method: "DELETE",
