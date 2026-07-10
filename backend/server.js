@@ -233,6 +233,7 @@ app.post("/api/camera/pair/scan", async (req, res) => {
           ip: cam.ip,
           stream_name: known.stream_name,
           status: known.status,
+          state: cam.state,
           already_known: true,
         };
       }
@@ -241,21 +242,26 @@ app.post("/api/camera/pair/scan", async (req, res) => {
       const parts = cam.ip.split(".");
       const suggested = `cam_${parts[2]}_${parts[3]}`;
 
-      // Auto-add as unmapped so it appears in the device listing.
-      upsertDevice({
-        ieee_address: suggested,
-        name: suggested,
-        type: "camera",
-        status: "unmapped",
-        is_unassigned: true,
-        local_ip: cam.ip,
-        stream_name: suggested,
-      });
+      // Only add a ready (streamable) camera to the device listing. A camera
+      // still needing activation is shown in the pair dialog with a "Set Up"
+      // action, but not added to the list until it can actually stream.
+      if (cam.state === "ready") {
+        upsertDevice({
+          ieee_address: suggested,
+          name: suggested,
+          type: "camera",
+          status: "unmapped",
+          is_unassigned: true,
+          local_ip: cam.ip,
+          stream_name: suggested,
+        });
+      }
 
       return {
         ip: cam.ip,
         stream_name: suggested,
-        status: "unmapped",
+        status: cam.state === "ready" ? "unmapped" : "needs_setup",
+        state: cam.state,
         already_known: false,
       };
     });

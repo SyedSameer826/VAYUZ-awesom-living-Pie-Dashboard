@@ -1310,21 +1310,31 @@ tbody tr:nth-last-child(2) .action-dropdown {
    Logout button stays pinned at the bottom and there's no page-level scrollbar
    drifting under the sidebar. */
 @media (min-width: 769px) {
+  /* Shell fills exactly the viewport as a flex column: header takes its natural
+     height, the body fills the rest. Nothing scrolls at the page level. */
+  .admin-shell {
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
   .admin-body {
-    height: calc(100vh - 58px);
+    flex: 1;
+    min-height: 0;
     overflow: hidden;
   }
 
   .admin-sidebar {
     position: relative;
     top: 0;
-    height: 100%;
+    height: auto;
     overflow-x: hidden;
     overflow-y: auto;
   }
 
+  /* Only the content area scrolls -> a single scrollbar. */
   .page-body {
-    height: 100%;
     min-height: 0;
     overflow-y: auto;
   }

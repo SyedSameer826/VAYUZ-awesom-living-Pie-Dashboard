@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import os from "os";
 import axios from "axios";
 import { fileURLToPath } from "url";
 
@@ -8,11 +9,18 @@ const __dirname = path.dirname(__filename);
 // Main backend this Pi maps devices to. Overridable via env; defaults to the EC2.
 const REMOTE_BACKEND =
   process.env.REMOTE_BACKEND_URL || "http://51.20.102.125";
-const DEVICES_PATH = path.join(__dirname, "../data/devices.json");
+// Store device data OUTSIDE the code folder so code updates / git pulls can
+// never overwrite it (a committed empty devices.json was wiping mapped devices
+// on every deploy). Overridable via env; defaults to ~/awesomliving-data/.
+const DATA_DIR =
+  process.env.DEVICES_DIR || path.join(os.homedir(), "awesomliving-data");
+const DEVICES_PATH = process.env.DEVICES_FILE || path.join(DATA_DIR, "devices.json");
 // Per-process temp file so two processes never write the same temp at once.
 const TMP_PATH = `${DEVICES_PATH}.tmp.${process.pid}`;
 const LOCK_PATH = `${DEVICES_PATH}.lock`;
 
+// Make sure the data directory + file exist on first run.
+fs.mkdirSync(path.dirname(DEVICES_PATH), { recursive: true });
 if (!fs.existsSync(DEVICES_PATH)) {
   fs.writeFileSync(DEVICES_PATH, "[]");
 }

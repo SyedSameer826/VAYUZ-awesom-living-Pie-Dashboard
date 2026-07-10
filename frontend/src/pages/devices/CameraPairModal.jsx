@@ -39,12 +39,35 @@ const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
                     <span style={{ color: "#2e7d32", fontSize: 13 }}>
                       Already mapped
                     </span>
+                  ) : cam.state === "needs_setup" ? (
+                    <div
+                      style={{ display: "flex", gap: 8, alignItems: "center" }}
+                    >
+                      <span style={{ color: "#b45309", fontSize: 13 }}>
+                        Needs setup
+                      </span>
+                      <Button
+                        onClick={() =>
+                          window.open(`http://${cam.ip}`, "_blank", "noopener")
+                        }
+                      >
+                        Set Up
+                      </Button>
+                    </div>
                   ) : (
                     <Button onClick={() => onMap(cam)}>Map</Button>
                   )}
                 </div>
               ))}
             </div>
+          )}
+
+          {!isScanning && cameras.some((c) => c.state === "needs_setup") && (
+            <p style={{ fontSize: 12, color: "#b45309", margin: "10px 0 0" }}>
+              A camera marked <b>Needs setup</b> is new — click <b>Set Up</b> to
+              open its page and create an admin password, then <b>Rescan</b>. It
+              will then show a <b>Map</b> button.
+            </p>
           )}
 
           <div className="form-actions">
