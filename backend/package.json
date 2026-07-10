@@ -11,6 +11,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.2.1",
     "express": "^5.2.1",
+    "http-proxy-middleware": "^2.0.6",
     "js-yaml": "^4.1.1",
     "mqtt": "^5.15.1",
     "socket.io": "^4.8.3"
