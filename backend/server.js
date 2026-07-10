@@ -325,11 +325,21 @@ app.use(
     changeOrigin: true,
     secure: false, // accept the camera's self-signed certificate
     ws: true,
+    followRedirects: true, // chase the camera's login redirects server-side
+    logLevel: "debug", // logs the forwarded target + status -> `pm2 logs`
     router: (req) => `https://${req.params.ip}`,
+    pathRewrite: (path, req) => {
+      // Defensively strip our mount prefix if it's still on the path.
+      const prefix = `/camera-proxy/${req.params.ip}`;
+      const stripped = path.startsWith(prefix)
+        ? path.slice(prefix.length)
+        : path;
+      return stripped || "/";
+    },
     onProxyReq: (proxyReq, req) => {
-      const origin = `https://${req.params.ip}`;
-      proxyReq.setHeader("Referer", `${origin}/`);
-      proxyReq.setHeader("Origin", origin);
+      // Spoof only the Referer to pass the camera's anti-framing check.
+      // (We intentionally do NOT set Origin — it can trip CSRF checks.)
+      proxyReq.setHeader("Referer", `https://${req.params.ip}/`);
     },
     onProxyRes: responseInterceptor(async (buffer, proxyRes, req) => {
       const type = proxyRes.headers["content-type"] || "";

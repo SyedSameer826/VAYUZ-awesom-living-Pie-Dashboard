@@ -79,12 +79,22 @@ export const DataTable = ({
                     {openMenu === device.ieee_address && (
                       <div className="action-dropdown">
                         {device.status === "unmapped" && (
-                          <button onClick={() => onEdit(device)}>Map</button>
+                          <button
+                            onClick={() => {
+                              setOpenMenu(null);
+                              onEdit(device);
+                            }}
+                          >
+                            Map
+                          </button>
                         )}
 
                         <button
                           className="delete-btn"
-                          onClick={() => onDelete(device.ieee_address)}
+                          onClick={() => {
+                            setOpenMenu(null);
+                            onDelete(device.ieee_address);
+                          }}
                         >
                           Delete
                         </button>
@@ -97,6 +107,14 @@ export const DataTable = ({
           )}
         </tbody>
       </table>
+
+      {/* Click-away layer: closes an open action menu when clicking elsewhere. */}
+      {openMenu && (
+        <div
+          onClick={() => setOpenMenu(null)}
+          style={{ position: "fixed", inset: 0, zIndex: 9998 }}
+        />
+      )}
     </div>
   );
 };
