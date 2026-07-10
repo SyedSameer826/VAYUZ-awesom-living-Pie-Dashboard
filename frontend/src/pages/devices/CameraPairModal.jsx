@@ -63,11 +63,38 @@ const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
           )}
 
           {!isScanning && cameras.some((c) => c.state === "needs_setup") && (
-            <p style={{ fontSize: 12, color: "#b45309", margin: "10px 0 0" }}>
-              A camera marked <b>Needs setup</b> is new — click <b>Set Up</b> to
-              open its page and create an admin password, then <b>Rescan</b>. It
-              will then show a <b>Map</b> button.
-            </p>
+            <div
+              style={{
+                marginTop: 12,
+                padding: "10px 12px",
+                background: "#fffbeb",
+                border: "1px solid #fde68a",
+                borderRadius: 8,
+                fontSize: 12.5,
+                color: "#92400e",
+                lineHeight: 1.5,
+              }}
+            >
+              <b>Setting up a new camera:</b>
+              <ol style={{ margin: "6px 0 0", paddingLeft: 18 }}>
+                <li>
+                  Click <b>Set Up</b> — the camera's own page opens in a new tab.
+                </li>
+                <li>
+                  If the browser warns "Your connection is not private," click{" "}
+                  <b>Advanced → Proceed</b> (it's your own camera on your network,
+                  so it's safe).
+                </li>
+                <li>
+                  Choose <b>Region</b>, then create the <b>admin password</b> —
+                  use your standard camera password so every camera matches.
+                </li>
+                <li>
+                  Come back here and click <b>Rescan</b>. The camera then shows a{" "}
+                  <b>Map</b> button — map it to a resident.
+                </li>
+              </ol>
+            </div>
           )}
 
           <div className="form-actions">
