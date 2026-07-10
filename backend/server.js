@@ -18,6 +18,7 @@ import {
 } from "./services/deviceStore.js";
 import mqttClient from "./mqtt/mqttClient.js";
 import { pendingDeletes } from "./utils/deleteState.js";
+import { discoverCameras } from "./services/cameraDiscovery.js";
 
 const app = express();
 
@@ -203,6 +204,61 @@ app.post("/api/assign-camera", async (req, res) => {
     res.json({ success: true, backend_response: response.data });
   } catch (err) {
     res.status(500).json({ error: err.response?.data || err.message });
+  }
+});
+
+/* =========================
+   CAMERA PAIRING (discovery)
+   Sweeps the network for cameras (RTSP port open) — the same approach used to
+   find the first camera by hand. Any newly found camera is recorded locally as
+   an UNMAPPED camera so it shows up in the device listing, ready to be mapped.
+========================= */
+
+app.post("/api/camera/pair/scan", async (req, res) => {
+  try {
+    const found = await discoverCameras(); // [{ ip }]
+    const existing = getDevices();
+
+    const cameras = found.map((cam) => {
+      const known = existing.find(
+        (d) => d.type === "camera" && d.local_ip === cam.ip,
+      );
+
+      if (known) {
+        return {
+          ip: cam.ip,
+          stream_name: known.stream_name,
+          status: known.status,
+          already_known: true,
+        };
+      }
+
+      // Suggest a unique, stable stream name derived from the IP.
+      const parts = cam.ip.split(".");
+      const suggested = `cam_${parts[2]}_${parts[3]}`;
+
+      // Auto-add as unmapped so it appears in the device listing.
+      upsertDevice({
+        ieee_address: suggested,
+        name: suggested,
+        type: "camera",
+        status: "unmapped",
+        is_unassigned: true,
+        local_ip: cam.ip,
+        stream_name: suggested,
+      });
+
+      return {
+        ip: cam.ip,
+        stream_name: suggested,
+        status: "unmapped",
+        already_known: false,
+      };
+    });
+
+    res.json({ success: true, cameras });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

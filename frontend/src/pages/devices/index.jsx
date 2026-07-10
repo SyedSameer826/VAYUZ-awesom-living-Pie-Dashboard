@@ -8,6 +8,7 @@ import {
 import {
   assignDeviceName,
   assignCamera,
+  scanCameras,
   getDeviceDetails,
   getResidents,
   deleteDevice,
@@ -15,6 +16,7 @@ import {
 import { getDeviceId, mapDeviceRows } from "../../utils/devices";
 import DeviceForm from "./DeviceForm";
 import CameraForm from "./CameraForm";
+import CameraPairModal from "./CameraPairModal";
 
 const emptyCameraForm = {
   stream_name: "",
@@ -36,6 +38,9 @@ function Devices() {
   const [residents, setResidents] = useState([]);
   const [cameraForm, setCameraForm] = useState(emptyCameraForm);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isPairOpen, setIsPairOpen] = useState(false);
+  const [discoveredCameras, setDiscoveredCameras] = useState([]);
+  const [isScanning, setIsScanning] = useState(false);
   const tableRows = useMemo(() => mapDeviceRows(devices), [devices]);
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -151,6 +156,44 @@ function Devices() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Sweep the network for cameras (same approach used to find the first one).
+  const runCameraScan = async () => {
+    setIsScanning(true);
+    setError("");
+    try {
+      const result = await scanCameras();
+      setDiscoveredCameras(result.cameras || []);
+      await loadData(); // newly discovered cameras now appear as unmapped
+    } catch (scanError) {
+      setError(scanError.message || "Camera scan failed");
+      setDiscoveredCameras([]);
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const openPairModal = () => {
+    setDiscoveredCameras([]);
+    setIsPairOpen(true);
+    runCameraScan();
+  };
+
+  // From a discovered camera, jump straight into the Map Camera form, pre-filled.
+  const mapDiscoveredCamera = (cam) => {
+    setIsPairOpen(false);
+    setCameraForm({
+      stream_name: cam.stream_name || "",
+      local_ip: cam.ip || "",
+      rtsp_url: cam.ip
+        ? `rtsp://admin:<password>@${cam.ip}:554/video/live?channel=1&subtype=0&unicast=true&proto=Onvif`
+        : "",
+      room: "living_room",
+      resident: "",
+    });
+    setError("");
+    setIsCameraOpen(true);
   };
   useEffect(() => {
     loadData(true);
@@ -278,6 +321,9 @@ function Devices() {
             >
               {isLoading ? "Refreshing..." : "Refresh"}
             </button>
+            <button className="submit-button" onClick={openPairModal}>
+              Pair Camera
+            </button>
             <button className="submit-button" onClick={openCameraForm}>
               Map Camera
             </button>
@@ -324,6 +370,16 @@ function Devices() {
           onChange={handleCameraChange}
           onClose={closeCameraForm}
           onSubmit={handleSaveCamera}
+        />
+      )}
+
+      {isPairOpen && (
+        <CameraPairModal
+          cameras={discoveredCameras}
+          isScanning={isScanning}
+          onMap={mapDiscoveredCamera}
+          onRescan={runCameraScan}
+          onClose={() => setIsPairOpen(false)}
         />
       )}
     </main>

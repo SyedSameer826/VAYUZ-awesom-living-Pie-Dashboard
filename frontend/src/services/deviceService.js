@@ -103,6 +103,18 @@ export const assignCamera = async ({
   return response.json();
 };
 
+export const scanCameras = async () => {
+  const response = await fetch(`${API_BASE_URL}camera/pair/scan`, {
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    throw new Error("Camera scan failed");
+  }
+
+  return response.json();
+};
+
 export const deleteDevice = async (ieee_address) => {
   const response = await fetch(`${API_BASE_URL}devices/${ieee_address}`, {
     method: "DELETE",
