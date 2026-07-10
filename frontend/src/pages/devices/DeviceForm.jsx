@@ -10,8 +10,8 @@ const DeviceForm = ({
 }) => {
   return (
     <div className="device-form-modal">
-      <div className="modal-backdrop">
-        <form className="crud-form" onSubmit={onSubmit}>
+      <div className="modal-backdrop" onClick={onClose}>
+        <form className="crud-form" onClick={(e) => e.stopPropagation()} onSubmit={onSubmit}>
           <h2>Edit Device</h2>
           <label className="form-field">
             <span>Device</span>

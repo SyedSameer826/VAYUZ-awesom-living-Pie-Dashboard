@@ -96,6 +96,20 @@ function Devices() {
   };
 
   const openEditForm = (device) => {
+    // Camera rows go to the camera mapping flow, pre-filled — not the Zigbee form.
+    if (device.type === "camera") {
+      setCameraForm({
+        stream_name: device.stream_name || device.ieee_address || "",
+        local_ip: device.local_ip || "",
+        camera_password: "",
+        room: "living_room",
+        resident: "",
+      });
+      setError("");
+      setIsCameraOpen(true);
+      return;
+    }
+
     setForm({
       device: device.device === "Unnamed Device" ? "" : device.device,
       ieee_address: device.ieee_address === "-" ? "" : device.ieee_address,

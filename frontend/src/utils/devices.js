@@ -14,5 +14,7 @@ export const mapDeviceRows = (devices) => {
       "-",
     type: device.type || "unknown",
     status: device.status === "mapped" ? "mapped" : "unmapped",
+    local_ip: device.local_ip || "",
+    stream_name: device.stream_name || "",
   }));
 };

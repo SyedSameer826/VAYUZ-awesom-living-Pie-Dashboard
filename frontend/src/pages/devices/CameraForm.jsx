@@ -13,13 +13,17 @@ const CameraForm = ({
   onSubmit,
 }) => {
   const [showEmbed, setShowEmbed] = useState(false);
+  // Direct URL for the "new tab" fallback.
   const cameraUrl = form.local_ip ? `http://${form.local_ip}` : "";
+  // Same-origin proxy URL for embedding inside the Pie platform.
+  const embedUrl = form.local_ip ? `/camera-proxy/${form.local_ip}/` : "";
 
   return (
     <div className="device-form-modal">
-      <div className="modal-backdrop">
+      <div className="modal-backdrop" onClick={onClose}>
         <form
           className="crud-form"
+          onClick={(e) => e.stopPropagation()}
           onSubmit={onSubmit}
           style={showEmbed ? { width: "90vw", maxWidth: 900 } : undefined}
         >
@@ -28,6 +32,7 @@ const CameraForm = ({
           {/* Guided setup instructions */}
           <div
             style={{
+              gridColumn: "1 / -1",
               background: "#fff7ed",
               border: "1px solid #fed7aa",
               borderRadius: 8,
@@ -75,10 +80,11 @@ const CameraForm = ({
 
           {/* Embedded camera setup page (inside the Pie platform window) */}
           {showEmbed && form.local_ip && (
-            <div style={{ marginBottom: 14 }}>
+            <div style={{ marginBottom: 14, gridColumn: "1 / -1" }}>
               <iframe
                 title="Camera setup"
-                src={cameraUrl}
+                src={embedUrl}
+                sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-modals"
                 style={{
                   width: "100%",
                   height: 380,

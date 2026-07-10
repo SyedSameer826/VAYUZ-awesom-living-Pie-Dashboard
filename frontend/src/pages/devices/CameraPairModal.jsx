@@ -5,8 +5,8 @@ import { Button } from "../../components/buttons";
 const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
   return (
     <div className="device-form-modal">
-      <div className="modal-backdrop">
-        <div className="crud-form">
+      <div className="modal-backdrop" onClick={onClose}>
+        <div className="crud-form" onClick={(e) => e.stopPropagation()}>
           <h2>Pair Camera</h2>
 
           <p style={{ margin: "0 0 12px", color: "#555" }}>

@@ -596,6 +596,7 @@ img {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .crud-alert {
@@ -638,8 +639,8 @@ img {
 
 .table-wrap {
   width: 100%;
-  overflow-x: hidden;
-  overflow-y: visible;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .page-body {
@@ -650,6 +651,7 @@ img {
 
 table {
   width: 100%;
+  min-width: 640px;
   border-collapse: collapse;
   background: #ffffff;
 }
@@ -785,6 +787,7 @@ tbody tr:hover {
 
 .table-toolbar {
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .table-search {
@@ -829,6 +832,8 @@ tbody tr:hover {
 
 .crud-form {
   width: min(100%, 620px);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
   border: 1px solid #eeeeee;
   border-radius: 8px;
   background: #ffffff;
@@ -1229,6 +1234,13 @@ table th:last-child {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+/* Bottom rows: open the menu upward so it isn't cut off at the table's edge. */
+tbody tr:last-child .action-dropdown,
+tbody tr:nth-last-child(2) .action-dropdown {
+  top: auto;
+  bottom: 100%;
 }
 
 .action-dropdown {

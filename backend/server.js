@@ -19,6 +19,10 @@ import {
 import mqttClient from "./mqtt/mqttClient.js";
 import { pendingDeletes } from "./utils/deleteState.js";
 import { discoverCameras } from "./services/cameraDiscovery.js";
+import {
+  createProxyMiddleware,
+  responseInterceptor,
+} from "http-proxy-middleware";
 
 const app = express();
 
@@ -304,6 +308,49 @@ const io = new Server(server, {
 });
 
 initSocket(io);
+
+/* =========================
+   CAMERA PAGE PROXY
+   Serves a camera's own web UI under our origin (/camera-proxy/<ip>/...) so it
+   can be embedded inside the Pie platform. We fetch it over HTTPS (cameras use
+   self-signed certs) and spoof the Referer so the camera's anti-framing check
+   passes. HTML asset paths are rewritten to keep loading through the proxy.
+   NOTE: best-effort — some CP Plus UI requests are built dynamically in JS and
+   can't be rewritten, so parts of the page may still not work.
+========================= */
+
+app.use(
+  "/camera-proxy/:ip",
+  createProxyMiddleware({
+    changeOrigin: true,
+    secure: false, // accept the camera's self-signed certificate
+    ws: true,
+    router: (req) => `https://${req.params.ip}`,
+    onProxyReq: (proxyReq, req) => {
+      const origin = `https://${req.params.ip}`;
+      proxyReq.setHeader("Referer", `${origin}/`);
+      proxyReq.setHeader("Origin", origin);
+    },
+    onProxyRes: responseInterceptor(async (buffer, proxyRes, req) => {
+      const type = proxyRes.headers["content-type"] || "";
+      if (!type.includes("text/html")) return buffer;
+
+      const ip = req.params.ip;
+      let html = buffer.toString("utf8");
+      // Make relative + root-absolute URLs resolve back through the proxy.
+      html = html.replace(
+        /<head([^>]*)>/i,
+        `<head$1><base href="/camera-proxy/${ip}/">`,
+      );
+      html = html.replace(
+        /(src|href|action)=("|')\//g,
+        `$1=$2/camera-proxy/${ip}/`,
+      );
+      return html;
+    }),
+    selfHandleResponse: true,
+  }),
+);
 
 /* =========================
    SERVE REACT BUILD
