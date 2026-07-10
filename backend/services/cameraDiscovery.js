@@ -2,36 +2,35 @@ import { exec } from "child_process";
 import net from "net";
 
 // Subnets to sweep for cameras. The Pi sits on 192.168.50.x, but CP Plus cameras
-// often ship on 192.168.1.x, so we scan both (the Pi has an address on each).
+// can ship on 192.168.1.x, so we scan both (the Pi has an address on each).
 const SCAN_SUBNETS =
   process.env.CAMERA_SCAN_SUBNETS || "192.168.1.0/24 192.168.50.0/24";
+const SCAN_IFACE = process.env.CAMERA_SCAN_IFACE || "eth0";
 
-// Ports we probe:
-//  - 554   : RTSP (video). Open only AFTER a camera is activated.
-//  - 37777 : CP Plus / Dahua service port. Open even BEFORE activation, so it
-//            lets us spot a brand-new camera that hasn't been set up yet.
-const SCAN_PORTS = "554,37777";
+// MAC vendor prefixes (OUI) that identify our cameras. `f8:20:97` is the CP Plus
+// vendor seen on these units. Add other makes via env (comma-separated) if needed.
+const CAMERA_OUIS = (process.env.CAMERA_OUIS || "f8:20:97")
+  .toLowerCase()
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
-// Step 1: sweep the network; for each host, note which of our ports are open.
-const findCameraHosts = () =>
-  new Promise((resolve, reject) => {
+// ARP-scan a range -> [{ ip, mac }] for everything that answers. This finds a
+// camera by its hardware address even when it's brand-new / unactivated (no
+// RTSP or service port open yet) — which a port scan can't do.
+const arpScan = (range) =>
+  new Promise((resolve) => {
     exec(
-      `nmap -sT -p ${SCAN_PORTS} --open -T4 -oG - ${SCAN_SUBNETS}`,
-      { timeout: 120000, maxBuffer: 2 * 1024 * 1024 },
+      `sudo arp-scan --interface=${SCAN_IFACE} ${range}`,
+      { timeout: 30000, maxBuffer: 1024 * 1024 },
       (error, stdout) => {
-        if (error && !stdout) return reject(error);
-
-        const hosts = [];
-        for (const line of stdout.split("\n")) {
-          if (!line.startsWith("Host:") || !line.includes("Ports:")) continue;
-          const ip = line.split(/\s+/)[1];
-          const has554 = /\b554\/open\b/.test(line);
-          const has37777 = /\b37777\/open\b/.test(line);
-          if (ip && (has554 || has37777)) {
-            hosts.push({ ip, has554, has37777 });
-          }
+        const rows = [];
+        for (const line of (stdout || "").split("\n")) {
+          // Lines look like:  192.168.50.100  f8:20:97:37:b5:11  (Unknown)
+          const m = line.match(/^(\d+\.\d+\.\d+\.\d+)\s+([0-9a-f:]{17})/i);
+          if (m) rows.push({ ip: m[1], mac: m[2].toLowerCase() });
         }
-        resolve(hosts);
+        resolve(rows);
       },
     );
   });
@@ -58,25 +57,23 @@ const speaksRtsp = (ip, timeout = 3000) =>
     });
   });
 
-// Find cameras and classify each:
+// Find cameras by MAC vendor, then classify each:
 //   "ready"       -> RTSP is up; it can be mapped now.
-//   "needs_setup" -> a CP Plus camera (service port open) that isn't activated.
+//   "needs_setup" -> a CP Plus camera that isn't activated yet.
 export const discoverCameras = async () => {
-  const hosts = await findCameraHosts();
+  const seen = new Map(); // ip -> mac
+  for (const range of SCAN_SUBNETS.split(/\s+/).filter(Boolean)) {
+    const rows = await arpScan(range);
+    for (const r of rows) seen.set(r.ip, r.mac);
+  }
 
   const cameras = [];
-  for (const host of hosts) {
-    let state = "needs_setup";
+  for (const [ip, mac] of seen) {
+    const oui = mac.slice(0, 8); // e.g. "f8:20:97"
+    if (!CAMERA_OUIS.includes(oui)) continue; // not a known camera vendor
 
-    if (host.has554 && (await speaksRtsp(host.ip))) {
-      state = "ready";
-    } else if (!host.has37777) {
-      // 554 was open but it didn't speak RTSP, and it's not a CP Plus service
-      // port either -> not a camera, skip it.
-      continue;
-    }
-
-    cameras.push({ ip: host.ip, state });
+    const ready = await speaksRtsp(ip);
+    cameras.push({ ip, state: ready ? "ready" : "needs_setup" });
   }
   return cameras;
 };
