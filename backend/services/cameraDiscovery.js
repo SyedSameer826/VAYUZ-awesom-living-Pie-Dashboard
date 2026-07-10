@@ -35,26 +35,22 @@ const arpScan = (range) =>
     );
   });
 
-// Confirm a host actually speaks RTSP (an activated, streamable camera).
-const speaksRtsp = (ip, timeout = 3000) =>
+// A camera is "ready" once its RTSP port (554) is open and accepting
+// connections. Different models answer the RTSP handshake differently (some
+// reset an unauthenticated probe), so a plain TCP connect is the reliable
+// signal that video is being served. An unactivated camera has 554 closed.
+const rtspPortOpen = (ip, timeout = 3000) =>
   new Promise((resolve) => {
     const socket = new net.Socket();
-    let settled = false;
     const finish = (result) => {
-      if (settled) return;
-      settled = true;
       socket.destroy();
       resolve(result);
     };
     socket.setTimeout(timeout);
-    socket.on("timeout", () => finish(false));
-    socket.on("error", () => finish(false));
-    socket.on("data", (data) => finish(data.toString().includes("RTSP/")));
-    socket.connect(554, ip, () => {
-      socket.write(
-        `OPTIONS rtsp://${ip}:554 RTSP/1.0\r\nCSeq: 1\r\nUser-Agent: awesomliving-pair\r\n\r\n`,
-      );
-    });
+    socket.once("connect", () => finish(true));
+    socket.once("timeout", () => finish(false));
+    socket.once("error", () => finish(false));
+    socket.connect(554, ip);
   });
 
 // Find cameras by MAC vendor, then classify each:
@@ -72,7 +68,7 @@ export const discoverCameras = async () => {
     const oui = mac.slice(0, 8); // e.g. "f8:20:97"
     if (!CAMERA_OUIS.includes(oui)) continue; // not a known camera vendor
 
-    const ready = await speaksRtsp(ip);
+    const ready = await rtspPortOpen(ip);
     cameras.push({ ip, state: ready ? "ready" : "needs_setup" });
   }
   return cameras;
