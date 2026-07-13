@@ -6,12 +6,53 @@ import { Button } from "../../components/buttons";
 const openCameraPage = (ip) =>
   window.open(`https://${ip}`, "_blank", "noopener,noreferrer");
 
-// Shows the result of a network scan for cameras. Un-mapped cameras get both a
-// "Set Up" (open the camera page) and a "Map" action; mapped ones are labelled.
+// We can't reliably tell from the network whether a camera has been configured,
+// so we remember (in the browser) which cameras the user has clicked "Set Up"
+// on. Those then show "Map" instead. Mapping clears the flag, so a later
+// factory-reset of the same camera correctly shows "Set Up" again.
+const SETUP_KEY = "camera_setup_started";
+
+const getSetupStarted = () => {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(SETUP_KEY) || "[]"));
+  } catch {
+    return new Set();
+  }
+};
+
+const saveSetupStarted = (set) =>
+  localStorage.setItem(SETUP_KEY, JSON.stringify([...set]));
+
+const markSetupStarted = (ip) => {
+  const set = getSetupStarted();
+  set.add(ip);
+  saveSetupStarted(set);
+};
+
+const clearSetupStarted = (ip) => {
+  const set = getSetupStarted();
+  set.delete(ip);
+  saveSetupStarted(set);
+};
+
 const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
+  const setupStarted = getSetupStarted();
   const hasUnmapped = cameras.some(
     (c) => !(c.already_known && c.status === "mapped"),
   );
+
+  // Set Up: remember it, open the camera page, and close this dialog.
+  const handleSetUp = (ip) => {
+    markSetupStarted(ip);
+    openCameraPage(ip);
+    onClose();
+  };
+
+  // Map: clear the "setup started" flag, then hand off to the map form.
+  const handleMap = (cam) => {
+    clearSetupStarted(cam.ip);
+    onMap(cam);
+  };
 
   return (
     <div className="device-form-modal">
@@ -44,33 +85,33 @@ const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
                 lineHeight: 1.5,
               }}
             >
-              <b>New camera?</b> Click <b>Set Up</b> and follow the steps below.
-              If the camera is <b>already configured</b>, just click <b>Map</b>.
+              <b>New camera?</b> Click <b>Set Up</b> — the camera's page opens and
+              this dialog closes. After configuring it, reopen Pair Camera and the
+              camera will show a <b>Map</b> button.
               <div style={{ marginTop: 6 }}>
-                <b>Setting up a new camera:</b>
+                <b>On the camera's page, do these:</b>
               </div>
               <ol style={{ margin: "6px 0 0", paddingLeft: 18 }}>
                 <li>
-                  Click <b>Set Up</b> — the camera's page opens in a new tab. If
-                  the browser warns "not private," click <b>Advanced → Proceed</b>{" "}
-                  (it's your own camera).
+                  If the browser warns "not private," click{" "}
+                  <b>Advanced → Proceed</b> (it's your own camera).
                 </li>
                 <li>
                   Choose <b>Region</b> and create the <b>admin password</b> (use
                   your standard camera password so every camera matches).
                 </li>
                 <li>
-                  In the camera go to <b>System → Safety → System Service</b> and
-                  set <b>Native Integration Authentication Mode</b> to{" "}
+                  <b>System → Safety → System Service</b> → set{" "}
+                  <b>Native Integration Authentication Mode</b> to{" "}
                   <b>Compatible Mode</b> → Save.
                 </li>
                 <li>
-                  Go to <b>Camera → Video</b> and set both <b>Encode Mode</b>{" "}
-                  dropdowns (Main + Sub) to <b>H.264</b> → Save.
+                  <b>Camera → Video</b> → set both <b>Encode Mode</b> dropdowns
+                  (Main + Sub) to <b>H.264</b> → Save.
                 </li>
                 <li>
-                  Come back here, click <b>Rescan</b>, then <b>Map</b> the camera
-                  to a resident.
+                  Reopen Pair Camera here, then click <b>Map</b> to assign it to a
+                  resident.
                 </li>
               </ol>
             </div>
@@ -83,48 +124,46 @@ const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
                 Cameras found on the network:
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {cameras.map((cam) => (
-                  <div
-                    key={cam.ip}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "10px 12px",
-                      border: "1px solid #eee",
-                      borderRadius: 8,
-                    }}
-                  >
-                    <div>
-                      <strong>{cam.ip}</strong>
-                      <span style={{ color: "#888" }}>
-                        {" "}
-                        · {cam.stream_name}
-                      </span>
-                    </div>
-                    {cam.already_known && cam.status === "mapped" ? (
-                      <span style={{ color: "#2e7d32", fontSize: 13 }}>
-                        Already mapped
-                      </span>
-                    ) : (
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 8,
-                          alignItems: "center",
-                        }}
-                      >
+                {cameras.map((cam) => {
+                  const isMapped =
+                    cam.already_known && cam.status === "mapped";
+                  const readyToMap = setupStarted.has(cam.ip);
+                  return (
+                    <div
+                      key={cam.ip}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "10px 12px",
+                        border: "1px solid #eee",
+                        borderRadius: 8,
+                      }}
+                    >
+                      <div>
+                        <strong>{cam.ip}</strong>
+                        <span style={{ color: "#888" }}>
+                          {" "}
+                          · {cam.stream_name}
+                        </span>
+                      </div>
+                      {isMapped ? (
+                        <span style={{ color: "#2e7d32", fontSize: 13 }}>
+                          Already mapped
+                        </span>
+                      ) : readyToMap ? (
+                        <Button onClick={() => handleMap(cam)}>Map</Button>
+                      ) : (
                         <Button
                           variant="outline"
-                          onClick={() => openCameraPage(cam.ip)}
+                          onClick={() => handleSetUp(cam.ip)}
                         >
                           Set Up
                         </Button>
-                        <Button onClick={() => onMap(cam)}>Map</Button>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </>
           )}
