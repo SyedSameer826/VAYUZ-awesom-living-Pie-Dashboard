@@ -97,18 +97,39 @@ const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
                   <b>Advanced → Proceed</b> (it's your own camera).
                 </li>
                 <li>
-                  Choose <b>Region</b> and create the <b>admin password</b> (use
-                  your standard camera password so every camera matches).
+                  <b>Country/Region</b> screen: choose <b>Region</b> (India),
+                  Language English → <b>Next</b>.
                 </li>
                 <li>
-                  <b>System → Safety → System Service</b> → set{" "}
+                  <b>Time Zone</b> screen: pick your zone (e.g. UTC+05:30
+                  Chennai/Kolkata/Mumbai/New Delhi), click <b>Sync PC</b> for the
+                  current time → <b>Next</b>.
+                </li>
+                <li>
+                  <b>Device Initialization</b> screen: set the <b>admin password</b>{" "}
+                  (use your standard camera password) and confirm it, add the
+                  recovery email + security questions → <b>Next</b>.
+                </li>
+                <li>
+                  <b>InstaOn</b> and <b>Online Upgrade</b> screens: leave as-is →{" "}
+                  <b>Next / Save</b>. The camera then shows its login page.
+                </li>
+                <li>
+                  <b>Log in</b> with <b>admin</b> and the password you just set.
+                </li>
+                <li>
+                  <b>System → Safety → System Service</b>: set{" "}
                   <b>Native Integration Authentication Mode</b> to{" "}
                   <b>Compatible Mode</b>, and <b>uncheck "RTSP over TLS"</b> →
                   Save.
                 </li>
                 <li>
-                  <b>Camera → Video</b> → set both <b>Encode Mode</b> dropdowns
+                  <b>Camera → Video</b>: set both <b>Encode Mode</b> dropdowns
                   (Main + Sub) to <b>H.264</b> → Save.
+                </li>
+                <li>
+                  <b>Camera → Conditions</b>: if the image is upside-down, set{" "}
+                  <b>Flip</b> to <b>180°</b> → Save.
                 </li>
                 <li>
                   Reopen Pair Camera here, then click <b>Map</b> to assign it to a
