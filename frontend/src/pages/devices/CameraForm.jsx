@@ -13,8 +13,9 @@ const CameraForm = ({
   onSubmit,
 }) => {
   const [showEmbed, setShowEmbed] = useState(false);
-  // Direct URL for the "new tab" fallback.
-  const cameraUrl = form.local_ip ? `http://${form.local_ip}` : "";
+  // Direct URL for the "new tab" fallback. Camera UIs are served over HTTPS
+  // (plain http returns "invalid referer"), so open https directly.
+  const cameraUrl = form.local_ip ? `https://${form.local_ip}` : "";
   // Same-origin proxy URL for embedding inside the Pie platform.
   const embedUrl = form.local_ip ? `/camera-proxy/${form.local_ip}/` : "";
 
