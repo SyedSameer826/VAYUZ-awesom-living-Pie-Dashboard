@@ -1,5 +1,4 @@
 import { exec } from "child_process";
-import net from "net";
 
 // Subnets to sweep for cameras. The Pi sits on 192.168.50.x, but CP Plus cameras
 // can ship on 192.168.1.x, so we scan both (the Pi has an address on each).
@@ -16,8 +15,10 @@ const CAMERA_OUIS = (process.env.CAMERA_OUIS || "f8:20:97")
   .filter(Boolean);
 
 // ARP-scan a range -> [{ ip, mac }] for everything that answers. This finds a
-// camera by its hardware address even when it's brand-new / unactivated (no
-// RTSP or service port open yet) — which a port scan can't do.
+// camera by its hardware address even when it's brand-new / unactivated — which
+// a port scan can't do. (We deliberately do NOT try to guess "activated vs not"
+// from the network: a camera's RTSP port can be open in either state, so that
+// guess is unreliable. The UI offers both Set Up and Map and lets the user pick.)
 const arpScan = (range) =>
   new Promise((resolve) => {
     exec(
@@ -35,27 +36,7 @@ const arpScan = (range) =>
     );
   });
 
-// A camera is "ready" once its RTSP port (554) is open and accepting
-// connections. Different models answer the RTSP handshake differently (some
-// reset an unauthenticated probe), so a plain TCP connect is the reliable
-// signal that video is being served. An unactivated camera has 554 closed.
-const rtspPortOpen = (ip, timeout = 3000) =>
-  new Promise((resolve) => {
-    const socket = new net.Socket();
-    const finish = (result) => {
-      socket.destroy();
-      resolve(result);
-    };
-    socket.setTimeout(timeout);
-    socket.once("connect", () => finish(true));
-    socket.once("timeout", () => finish(false));
-    socket.once("error", () => finish(false));
-    socket.connect(554, ip);
-  });
-
-// Find cameras by MAC vendor, then classify each:
-//   "ready"       -> RTSP is up; it can be mapped now.
-//   "needs_setup" -> a CP Plus camera that isn't activated yet.
+// Find cameras by MAC vendor across the scanned subnets.
 export const discoverCameras = async () => {
   const seen = new Map(); // ip -> mac
   for (const range of SCAN_SUBNETS.split(/\s+/).filter(Boolean)) {
@@ -66,10 +47,7 @@ export const discoverCameras = async () => {
   const cameras = [];
   for (const [ip, mac] of seen) {
     const oui = mac.slice(0, 8); // e.g. "f8:20:97"
-    if (!CAMERA_OUIS.includes(oui)) continue; // not a known camera vendor
-
-    const ready = await rtspPortOpen(ip);
-    cameras.push({ ip, state: ready ? "ready" : "needs_setup" });
+    if (CAMERA_OUIS.includes(oui)) cameras.push({ ip });
   }
   return cameras;
 };

@@ -39,30 +39,28 @@ const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
                     <span style={{ color: "#2e7d32", fontSize: 13 }}>
                       Already mapped
                     </span>
-                  ) : cam.state === "needs_setup" ? (
+                  ) : (
                     <div
                       style={{ display: "flex", gap: 8, alignItems: "center" }}
                     >
-                      <span style={{ color: "#b45309", fontSize: 13 }}>
-                        Needs setup
-                      </span>
                       <Button
+                        variant="outline"
                         onClick={() =>
                           window.open(`http://${cam.ip}`, "_blank", "noopener")
                         }
                       >
                         Set Up
                       </Button>
+                      <Button onClick={() => onMap(cam)}>Map</Button>
                     </div>
-                  ) : (
-                    <Button onClick={() => onMap(cam)}>Map</Button>
                   )}
                 </div>
               ))}
             </div>
           )}
 
-          {!isScanning && cameras.some((c) => c.state === "needs_setup") && (
+          {!isScanning &&
+            cameras.some((c) => !(c.already_known && c.status === "mapped")) && (
             <div
               style={{
                 marginTop: 12,
@@ -75,7 +73,11 @@ const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
                 lineHeight: 1.5,
               }}
             >
-              <b>Setting up a new camera:</b>
+              <b>New camera?</b> Click <b>Set Up</b> and follow the steps below.
+              If the camera is <b>already configured</b>, just click <b>Map</b>.
+              <div style={{ marginTop: 6 }}>
+                <b>Setting up a new camera:</b>
+              </div>
               <ol style={{ margin: "6px 0 0", paddingLeft: 18 }}>
                 <li>
                   Click <b>Set Up</b> — the camera's page opens in a new tab. If
