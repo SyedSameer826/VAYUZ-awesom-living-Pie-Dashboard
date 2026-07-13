@@ -71,7 +71,9 @@ const CameraForm = ({
               <button
                 type="button"
                 className="outline-button"
-                onClick={() => window.open(cameraUrl, "_blank", "noopener")}
+                onClick={() =>
+                  window.open(cameraUrl, "_blank", "noopener,noreferrer")
+                }
                 disabled={!form.local_ip}
               >
                 Open in new tab

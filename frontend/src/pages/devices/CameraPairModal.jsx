@@ -1,10 +1,10 @@
 import { Button } from "../../components/buttons";
 
-// Camera UIs are served over HTTPS (plain http returns "invalid referer"), so
-// open the https page directly — the one-time "not private" cert prompt aside,
-// the camera page loads without needing a manual reload.
+// Camera UIs are served over HTTPS and reject any Referer that isn't the camera
+// itself ("invalid referer"). Opening with "noreferrer" sends no Referer at all
+// — the same as typing the URL directly — so the page loads without a reload.
 const openCameraPage = (ip) =>
-  window.open(`https://${ip}`, "_blank", "noopener");
+  window.open(`https://${ip}`, "_blank", "noopener,noreferrer");
 
 // Shows the result of a network scan for cameras. Un-mapped cameras get both a
 // "Set Up" (open the camera page) and a "Map" action; mapped ones are labelled.
@@ -16,18 +16,21 @@ const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
   return (
     <div className="device-form-modal">
       <div className="modal-backdrop" onClick={onClose}>
-        <div className="crud-form" onClick={(e) => e.stopPropagation()}>
+        {/* Force a single column so the instructions stack above the list. */}
+        <div
+          className="crud-form"
+          style={{ display: "block" }}
+          onClick={(e) => e.stopPropagation()}
+        >
           <h2>Pair Camera</h2>
 
-          <p style={{ margin: "0 0 12px", color: "#555" }}>
-            {isScanning
-              ? "Scanning the network for cameras..."
-              : cameras.length
-                ? "Cameras found on the network:"
-                : "No cameras found. Make sure the camera is powered and connected, then rescan."}
-          </p>
+          {isScanning && (
+            <p style={{ margin: "0 0 12px", color: "#555" }}>
+              Scanning the network for cameras...
+            </p>
+          )}
 
-          {/* Instructions ABOVE the list so the steps are seen first. */}
+          {/* 1) Instructions first */}
           {!isScanning && hasUnmapped && (
             <div
               style={{
@@ -73,47 +76,67 @@ const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
             </div>
           )}
 
+          {/* 2) Then the found-cameras list */}
           {!isScanning && cameras.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {cameras.map((cam) => (
-                <div
-                  key={cam.ip}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "10px 12px",
-                    border: "1px solid #eee",
-                    borderRadius: 8,
-                  }}
-                >
-                  <div>
-                    <strong>{cam.ip}</strong>
-                    <span style={{ color: "#888" }}> · {cam.stream_name}</span>
-                  </div>
-                  {cam.already_known && cam.status === "mapped" ? (
-                    <span style={{ color: "#2e7d32", fontSize: 13 }}>
-                      Already mapped
-                    </span>
-                  ) : (
-                    <div
-                      style={{ display: "flex", gap: 8, alignItems: "center" }}
-                    >
-                      <Button
-                        variant="outline"
-                        onClick={() => openCameraPage(cam.ip)}
-                      >
-                        Set Up
-                      </Button>
-                      <Button onClick={() => onMap(cam)}>Map</Button>
+            <>
+              <p style={{ margin: "0 0 8px", color: "#555" }}>
+                Cameras found on the network:
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {cameras.map((cam) => (
+                  <div
+                    key={cam.ip}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "10px 12px",
+                      border: "1px solid #eee",
+                      borderRadius: 8,
+                    }}
+                  >
+                    <div>
+                      <strong>{cam.ip}</strong>
+                      <span style={{ color: "#888" }}>
+                        {" "}
+                        · {cam.stream_name}
+                      </span>
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                    {cam.already_known && cam.status === "mapped" ? (
+                      <span style={{ color: "#2e7d32", fontSize: 13 }}>
+                        Already mapped
+                      </span>
+                    ) : (
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 8,
+                          alignItems: "center",
+                        }}
+                      >
+                        <Button
+                          variant="outline"
+                          onClick={() => openCameraPage(cam.ip)}
+                        >
+                          Set Up
+                        </Button>
+                        <Button onClick={() => onMap(cam)}>Map</Button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
           )}
 
-          <div className="form-actions">
+          {!isScanning && cameras.length === 0 && (
+            <p style={{ margin: "0 0 12px", color: "#555" }}>
+              No cameras found. Make sure the camera is powered and connected,
+              then rescan.
+            </p>
+          )}
+
+          <div className="form-actions" style={{ marginTop: 14 }}>
             <Button variant="outline" onClick={onClose}>
               Close
             </Button>
