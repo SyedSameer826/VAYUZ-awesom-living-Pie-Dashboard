@@ -270,6 +270,29 @@ app.delete("/api/devices/:ieee", async (req, res) => {
   try {
     const { ieee } = req.params;
 
+    // Cameras are handled differently from Zigbee devices: drop their go2rtc
+    // stream (so it stops), then delete locally + on the remote backend. No
+    // Zigbee "remove" is sent (a camera isn't a Zigbee device).
+    const device = getDevices().find((d) => d.ieee_address === ieee);
+    if (device?.type === "camera") {
+      const streamName = device.stream_name || ieee;
+      try {
+        await axios.delete(`${GO2RTC_URL}/api/streams`, {
+          params: { src: streamName },
+        });
+      } catch (streamErr) {
+        console.log(
+          "⚠️ go2rtc stream delete failed:",
+          streamErr.response?.status,
+          streamErr.message,
+        );
+      }
+      await deleteDevice(ieee); // removes from devices.json + remote backend
+      console.log("✅ Camera delete complete for:", ieee);
+      return res.json({ success: true, message: "Camera deleted" });
+    }
+
+    // ---- Zigbee device delete ----
     // Mark this as a current-session (intentional) delete BEFORE publishing
     // the Z2M remove. mqttClient.js only acts on remove confirmations whose
     // ieee is in pendingDeletes, so stale retained confirmations that re-fire
