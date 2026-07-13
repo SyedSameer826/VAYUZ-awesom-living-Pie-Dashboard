@@ -103,7 +103,8 @@ const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
                 <li>
                   <b>System → Safety → System Service</b> → set{" "}
                   <b>Native Integration Authentication Mode</b> to{" "}
-                  <b>Compatible Mode</b> → Save.
+                  <b>Compatible Mode</b>, and <b>uncheck "RTSP over TLS"</b> →
+                  Save.
                 </li>
                 <li>
                   <b>Camera → Video</b> → set both <b>Encode Mode</b> dropdowns

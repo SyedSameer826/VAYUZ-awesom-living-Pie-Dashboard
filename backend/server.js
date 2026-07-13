@@ -163,9 +163,18 @@ app.post("/api/assign-camera", async (req, res) => {
         .json({ error: "stream_name and resident are required" });
     }
 
-    // Step 1: Register the stream in go2rtc (only if an RTSP url is provided
-    // and the stream isn't already configured). Safe to call repeatedly.
+    // Step 1: (Re)register the stream in go2rtc. Delete any existing stream with
+    // this name first so go2rtc drops a stale/failed connection and reconnects
+    // cleanly — this removes the need to run `pm2 restart go2rtc` by hand, and
+    // only affects this one camera (other streams keep running). Then add fresh.
     if (rtsp_url) {
+      try {
+        await axios.delete(`${GO2RTC_URL}/api/streams`, {
+          params: { src: stream_name },
+        });
+      } catch (delErr) {
+        // Stream may not exist yet — that's fine, we're about to create it.
+      }
       try {
         await axios.put(`${GO2RTC_URL}/api/streams`, null, {
           params: { name: stream_name, src: rtsp_url },
