@@ -78,20 +78,26 @@ const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
               <b>Setting up a new camera:</b>
               <ol style={{ margin: "6px 0 0", paddingLeft: 18 }}>
                 <li>
-                  Click <b>Set Up</b> — the camera's own page opens in a new tab.
+                  Click <b>Set Up</b> — the camera's page opens in a new tab. If
+                  the browser warns "not private," click <b>Advanced → Proceed</b>{" "}
+                  (it's your own camera).
                 </li>
                 <li>
-                  If the browser warns "Your connection is not private," click{" "}
-                  <b>Advanced → Proceed</b> (it's your own camera on your network,
-                  so it's safe).
+                  Choose <b>Region</b> and create the <b>admin password</b> (use
+                  your standard camera password so every camera matches).
                 </li>
                 <li>
-                  Choose <b>Region</b>, then create the <b>admin password</b> —
-                  use your standard camera password so every camera matches.
+                  In the camera go to <b>System → Safety → System Service</b> and
+                  set <b>Native Integration Authentication Mode</b> to{" "}
+                  <b>Compatible Mode</b> → Save.
                 </li>
                 <li>
-                  Come back here and click <b>Rescan</b>. The camera then shows a{" "}
-                  <b>Map</b> button — map it to a resident.
+                  Go to <b>Camera → Video</b> and set both <b>Encode Mode</b>{" "}
+                  dropdowns (Main + Sub) to <b>H.264</b> → Save.
+                </li>
+                <li>
+                  Come back here, click <b>Rescan</b>, then <b>Map</b> the camera
+                  to a resident.
                 </li>
               </ol>
             </div>
