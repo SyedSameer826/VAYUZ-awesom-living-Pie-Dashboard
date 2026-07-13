@@ -162,7 +162,7 @@ function Devices() {
     const password = (cameraForm.camera_password || "").trim();
     const rtsp_url =
       password && ip
-        ? `rtsp://admin:${encodeURIComponent(password)}@${ip}:554/cam/realmonitor?channel=1&subtype=0`
+        ? `rtsp://admin:${encodeURIComponent(password)}@${ip}:554/video/live?channel=1&subtype=0`
         : "";
 
     try {
