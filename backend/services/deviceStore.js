@@ -149,7 +149,7 @@ export const upsertDevice = (device) => {
   }
 };
 
-export const deleteDevice = async (ieee_address) => {
+export const deleteDevice = async (ieee_address, token) => {
   // 1) Snapshot the device under the lock (fast, synchronous).
   let device = null;
   withLock(() => {
@@ -174,8 +174,15 @@ export const deleteDevice = async (ieee_address) => {
     !device.name.startsWith("0x")
   ) {
     try {
+      // The remote backend's delete endpoint is authenticated. Forward the
+      // caller's Bearer token — without it the request returns 401 and the DB
+      // record is left behind while devices.json is still cleared (which is
+      // exactly the "deleted on Pie but not in DB" bug).
       await axios.delete(
         `${REMOTE_BACKEND}/api/user/devices/${ieee_address}`,
+        token
+          ? { headers: { Authorization: `Bearer ${token}` } }
+          : undefined,
       );
       console.log("✅ Deleted from remote backend:", device.name);
     } catch (err) {

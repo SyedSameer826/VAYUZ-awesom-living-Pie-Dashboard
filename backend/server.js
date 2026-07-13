@@ -270,6 +270,13 @@ app.delete("/api/devices/:ieee", async (req, res) => {
   try {
     const { ieee } = req.params;
 
+    // The remote backend delete is authenticated — pull the caller's Bearer
+    // token off this request and pass it down so deviceStore can forward it.
+    const authHeader = req.headers.authorization || "";
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : undefined;
+
     // Cameras are handled differently from Zigbee devices: drop their go2rtc
     // stream (so it stops), then delete locally + on the remote backend. No
     // Zigbee "remove" is sent (a camera isn't a Zigbee device).
@@ -287,7 +294,7 @@ app.delete("/api/devices/:ieee", async (req, res) => {
           streamErr.message,
         );
       }
-      await deleteDevice(ieee); // removes from devices.json + remote backend
+      await deleteDevice(ieee, token); // removes from devices.json + remote backend
       console.log("✅ Camera delete complete for:", ieee);
       return res.json({ success: true, message: "Camera deleted" });
     }
@@ -300,7 +307,7 @@ app.delete("/api/devices/:ieee", async (req, res) => {
     pendingDeletes.add(ieee);
 
     // Remove from devices.json AND from the remote backend (incl. its logs).
-    await deleteDevice(ieee);
+    await deleteDevice(ieee, token);
 
     // Ask Z2M to remove the device. NOTE: no `force: true` — force adds the
     // device to the Z2M blocklist and permanently prevents re-pairing it.

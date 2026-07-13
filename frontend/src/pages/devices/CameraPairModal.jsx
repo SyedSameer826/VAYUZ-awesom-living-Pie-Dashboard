@@ -6,51 +6,26 @@ import { Button } from "../../components/buttons";
 const openCameraPage = (ip) =>
   window.open(`https://${ip}`, "_blank", "noopener,noreferrer");
 
-// We can't reliably tell from the network whether a camera has been configured,
-// so we remember (in the browser) which cameras the user has clicked "Set Up"
-// on. Those then show "Map" instead. Mapping clears the flag, so a later
-// factory-reset of the same camera correctly shows "Set Up" again.
-const SETUP_KEY = "camera_setup_started";
-
-const getSetupStarted = () => {
-  try {
-    return new Set(JSON.parse(localStorage.getItem(SETUP_KEY) || "[]"));
-  } catch {
-    return new Set();
-  }
-};
-
-const saveSetupStarted = (set) =>
-  localStorage.setItem(SETUP_KEY, JSON.stringify([...set]));
-
-const markSetupStarted = (ip) => {
-  const set = getSetupStarted();
-  set.add(ip);
-  saveSetupStarted(set);
-};
-
-const clearSetupStarted = (ip) => {
-  const set = getSetupStarted();
-  set.delete(ip);
-  saveSetupStarted(set);
-};
-
+// We can't reliably tell from the network whether a camera has been configured:
+// its RTSP port is open before AND after setup, and a fresh/reset camera can sit
+// on a subnet the browser can't even reach. So we DON'T guess. Every not-yet-
+// mapped camera simply offers BOTH actions — "Set Up" (open its page to
+// configure) and "Map" (assign to a resident) — and the user runs them in order.
+// (A previous version remembered "setup started" in localStorage the moment you
+// clicked Set Up, which wrongly showed "Map" even when setup never happened.)
 const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
-  const setupStarted = getSetupStarted();
   const hasUnmapped = cameras.some(
     (c) => !(c.already_known && c.status === "mapped"),
   );
 
-  // Set Up: remember it, open the camera page, and close this dialog.
+  // Set Up: open the camera's own page (to configure it), then close this dialog.
   const handleSetUp = (ip) => {
-    markSetupStarted(ip);
     openCameraPage(ip);
     onClose();
   };
 
-  // Map: clear the "setup started" flag, then hand off to the map form.
+  // Map: hand off to the map form.
   const handleMap = (cam) => {
-    clearSetupStarted(cam.ip);
     onMap(cam);
   };
 
@@ -86,8 +61,8 @@ const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
               }}
             >
               <b>New camera?</b> Click <b>Set Up</b> — the camera's page opens and
-              this dialog closes. After configuring it, reopen Pair Camera and the
-              camera will show a <b>Map</b> button.
+              this dialog closes. Configure it (steps below), then reopen Pair
+              Camera and click <b>Map</b> to assign it to a resident.
               <div style={{ marginTop: 6 }}>
                 <b>On the camera's page, do these:</b>
               </div>
@@ -97,39 +72,17 @@ const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
                   <b>Advanced → Proceed</b> (it's your own camera).
                 </li>
                 <li>
-                  <b>Country/Region</b> screen: choose <b>Region</b> (India),
-                  Language English → <b>Next</b>.
+                  Choose <b>Region</b> and create the <b>admin password</b> (use
+                  your standard camera password so every camera matches).
                 </li>
                 <li>
-                  <b>Time Zone</b> screen: pick your zone (e.g. UTC+05:30
-                  Chennai/Kolkata/Mumbai/New Delhi), click <b>Sync PC</b> for the
-                  current time → <b>Next</b>.
-                </li>
-                <li>
-                  <b>Device Initialization</b> screen: set the <b>admin password</b>{" "}
-                  (use your standard camera password) and confirm it, add the
-                  recovery email + security questions → <b>Next</b>.
-                </li>
-                <li>
-                  <b>InstaOn</b> and <b>Online Upgrade</b> screens: leave as-is →{" "}
-                  <b>Next / Save</b>. The camera then shows its login page.
-                </li>
-                <li>
-                  <b>Log in</b> with <b>admin</b> and the password you just set.
-                </li>
-                <li>
-                  <b>System → Safety → System Service</b>: set{" "}
+                  <b>Setting → System → Safety → System Service</b>: set{" "}
                   <b>Native Integration Authentication Mode</b> to{" "}
-                  <b>Compatible Mode</b>, and <b>uncheck "RTSP over TLS"</b> →
-                  Save.
+                  <b>Compatible Mode</b> → <b>uncheck "RTSP over TLS"</b> → Save.
                 </li>
                 <li>
-                  <b>Camera → Video</b>: set both <b>Encode Mode</b> dropdowns
-                  (Main + Sub) to <b>H.264</b> → Save.
-                </li>
-                <li>
-                  <b>Camera → Conditions</b>: if the image is upside-down, set{" "}
-                  <b>Flip</b> to <b>180°</b> → Save.
+                  <b>Setting → Camera → Video</b>: set both <b>Encode Mode</b>{" "}
+                  dropdowns (Main + Sub) to <b>H.264</b> → Save.
                 </li>
                 <li>
                   Reopen Pair Camera here, then click <b>Map</b> to assign it to a
@@ -149,7 +102,6 @@ const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
                 {cameras.map((cam) => {
                   const isMapped =
                     cam.already_known && cam.status === "mapped";
-                  const readyToMap = setupStarted.has(cam.ip);
                   return (
                     <div
                       key={cam.ip}
@@ -173,15 +125,16 @@ const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
                         <span style={{ color: "#2e7d32", fontSize: 13 }}>
                           Already mapped
                         </span>
-                      ) : readyToMap ? (
-                        <Button onClick={() => handleMap(cam)}>Map</Button>
                       ) : (
-                        <Button
-                          variant="outline"
-                          onClick={() => handleSetUp(cam.ip)}
-                        >
-                          Set Up
-                        </Button>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <Button
+                            variant="outline"
+                            onClick={() => handleSetUp(cam.ip)}
+                          >
+                            Set Up
+                          </Button>
+                          <Button onClick={() => handleMap(cam)}>Map</Button>
+                        </div>
                       )}
                     </div>
                   );
