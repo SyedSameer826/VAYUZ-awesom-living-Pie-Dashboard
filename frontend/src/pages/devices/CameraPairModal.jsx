@@ -13,7 +13,19 @@ const openCameraPage = (ip) =>
 // configure) and "Map" (assign to a resident) — and the user runs them in order.
 // (A previous version remembered "setup started" in localStorage the moment you
 // clicked Set Up, which wrongly showed "Map" even when setup never happened.)
-const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
+// A camera sitting on the camera-default subnet (192.168.1.x) with DHCP off is
+// unreachable from the laptop. We offer an "Enable DHCP" action for those — the
+// Pi flips DHCP on so the camera reboots onto the main network.
+const isOnDefaultSubnet = (ip) => (ip || "").startsWith("192.168.1.");
+
+const CameraPairModal = ({
+  cameras,
+  isScanning,
+  onMap,
+  onEnableDhcp,
+  onRescan,
+  onClose,
+}) => {
   const hasUnmapped = cameras.some(
     (c) => !(c.already_known && c.status === "mapped"),
   );
@@ -98,6 +110,20 @@ const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
               <p style={{ margin: "0 0 8px", color: "#555" }}>
                 Cameras found on the network:
               </p>
+              {cameras.some((c) => isOnDefaultSubnet(c.ip)) && (
+                <p
+                  style={{
+                    margin: "0 0 8px",
+                    fontSize: 12.5,
+                    color: "#92400e",
+                  }}
+                >
+                  A camera on <b>192.168.1.x</b> is on its default network and
+                  can't be reached directly. Click <b>Enable DHCP</b> (you'll need
+                  its admin password); it reboots onto the main network, then{" "}
+                  <b>Rescan</b> and Set Up / Map it normally.
+                </p>
+              )}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {cameras.map((cam) => {
                   const isMapped =
@@ -125,6 +151,12 @@ const CameraPairModal = ({ cameras, isScanning, onMap, onRescan, onClose }) => {
                         <span style={{ color: "#2e7d32", fontSize: 13 }}>
                           Already mapped
                         </span>
+                      ) : isOnDefaultSubnet(cam.ip) ? (
+                        // Stuck on 192.168.1.x — can't reach it from the laptop.
+                        // Flip DHCP on via the Pi so it hops onto the network.
+                        <Button onClick={() => onEnableDhcp(cam)}>
+                          Enable DHCP
+                        </Button>
                       ) : (
                         <div style={{ display: "flex", gap: 8 }}>
                           <Button

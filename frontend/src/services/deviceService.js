@@ -115,6 +115,24 @@ export const scanCameras = async () => {
   return response.json();
 };
 
+// Turn on DHCP for a camera stuck on a static 192.168.1.x address (the Pi can
+// reach it even when the laptop can't). After this, the camera reboots onto the
+// main network and a Rescan will pick it up with a normal IP.
+export const enableCameraDhcp = async ({ ip, password }) => {
+  const response = await fetch(`${API_BASE_URL}camera/enable-dhcp`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ ip, password }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "Unable to enable DHCP on the camera");
+  }
+
+  return data;
+};
+
 export const deleteDevice = async (ieee_address) => {
   const response = await fetch(`${API_BASE_URL}devices/${ieee_address}`, {
     method: "DELETE",

@@ -9,6 +9,7 @@ import {
   assignDeviceName,
   assignCamera,
   scanCameras,
+  enableCameraDhcp,
   getDeviceDetails,
   getResidents,
   deleteDevice,
@@ -202,6 +203,28 @@ function Devices() {
     setDiscoveredCameras([]);
     setIsPairOpen(true);
     runCameraScan();
+  };
+
+  // Turn on DHCP for a camera that's stuck on a static 192.168.1.x address.
+  // The Pi can reach it even though the laptop can't; after this the camera
+  // reboots onto the main network and the next Rescan finds it normally.
+  const handleEnableDhcp = async (cam) => {
+    const password = window.prompt(
+      `Enter the admin password for the camera at ${cam.ip} to turn on DHCP:`,
+    );
+    if (!password) return; // cancelled
+
+    setError("");
+    try {
+      const result = await enableCameraDhcp({ ip: cam.ip, password });
+      alert(
+        result.message ||
+          "DHCP enabled. Wait ~1 minute for the camera to reboot, then Rescan.",
+      );
+    } catch (dhcpError) {
+      setError(dhcpError.message || "Unable to enable DHCP on the camera");
+      alert(dhcpError.message || "Unable to enable DHCP on the camera");
+    }
   };
 
   // From a discovered camera, jump straight into the Map Camera form, pre-filled.
@@ -400,6 +423,7 @@ function Devices() {
           cameras={discoveredCameras}
           isScanning={isScanning}
           onMap={mapDiscoveredCamera}
+          onEnableDhcp={handleEnableDhcp}
           onRescan={runCameraScan}
           onClose={() => setIsPairOpen(false)}
         />

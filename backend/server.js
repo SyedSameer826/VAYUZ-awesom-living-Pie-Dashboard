@@ -4,6 +4,8 @@ import fs from "fs";
 import yaml from "js-yaml";
 import axios from "axios";
 import http from "http";
+import https from "https";
+import crypto from "crypto";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -63,6 +65,69 @@ const REMOTE_BACKEND =
 
 // Local go2rtc instance on the Pi (used to register camera streams).
 const GO2RTC_URL = process.env.GO2RTC_URL || "http://localhost:1984";
+
+/* =========================
+   CP PLUS CAMERA CONFIG API (HTTP Digest)
+   CP Plus cameras (Dahua OEM) expose an HTTP config API but require HTTP Digest
+   auth over their self-signed HTTPS cert. axios has no built-in digest, so we do
+   the standard two-step handshake by hand: fire an unauthenticated request to
+   read the WWW-Authenticate challenge, compute the digest response, then retry.
+========================= */
+
+// Accept the camera's self-signed certificate.
+const cameraTlsAgent = new https.Agent({ rejectUnauthorized: false });
+
+const md5 = (s) => crypto.createHash("md5").update(s).digest("hex");
+
+// Perform a single GET against a camera's config API using HTTP Digest auth.
+// `pathWithQuery` must start with "/" (e.g. "/cgi-bin/configManager.cgi?...").
+const cameraDigestGet = async (ip, pathWithQuery, user, pass) => {
+  const url = `https://${ip}${pathWithQuery}`;
+
+  // Step 1: unauthenticated request to obtain the digest challenge.
+  let challenge = null;
+  try {
+    await axios.get(url, { httpsAgent: cameraTlsAgent, timeout: 8000 });
+  } catch (err) {
+    if (err.response?.status === 401) {
+      challenge = err.response.headers["www-authenticate"];
+    } else {
+      throw err; // network error / unreachable — surface it
+    }
+  }
+  if (!challenge) {
+    throw new Error("Camera did not return a digest auth challenge");
+  }
+
+  // Step 2: parse the challenge and compute the digest response.
+  const field = (k) =>
+    (challenge.match(new RegExp(`${k}="?([^",]+)"?`)) || [])[1];
+  const realm = field("realm");
+  const nonce = field("nonce");
+  const qop = field("qop");
+  const opaque = field("opaque");
+  const nc = "00000001";
+  const cnonce = crypto.randomBytes(8).toString("hex");
+  const ha1 = md5(`${user}:${realm}:${pass}`);
+  const ha2 = md5(`GET:${pathWithQuery}`);
+  const response = qop
+    ? md5(`${ha1}:${nonce}:${nc}:${cnonce}:${qop}:${ha2}`)
+    : md5(`${ha1}:${nonce}:${ha2}`);
+
+  let auth =
+    `Digest username="${user}", realm="${realm}", nonce="${nonce}", ` +
+    `uri="${pathWithQuery}", response="${response}"`;
+  if (qop) auth += `, qop=${qop}, nc=${nc}, cnonce="${cnonce}"`;
+  if (opaque) auth += `, opaque="${opaque}"`;
+
+  // Step 3: retry with the Authorization header.
+  const res = await axios.get(url, {
+    httpsAgent: cameraTlsAgent,
+    headers: { Authorization: auth },
+    timeout: 8000,
+  });
+  return res.data;
+};
 
 /* =========================
    GET DEVICES
@@ -263,6 +328,65 @@ app.post("/api/camera/pair/scan", async (req, res) => {
     res.json({ success: true, cameras });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+/* =========================
+   ENABLE DHCP ON A CAMERA
+   For a camera that shipped / was set with a STATIC IP on the camera-default
+   subnet (192.168.1.x, DHCP off), the user's laptop can't reach it — but the Pi
+   can (it has an address on that subnet too). This turns the camera's DHCP on
+   via its config API and reboots it, so it comes back on the main network with a
+   normal address, ready for the usual Set Up + Map flow.
+========================= */
+
+app.post("/api/camera/enable-dhcp", async (req, res) => {
+  try {
+    const { ip, password } = req.body;
+    if (!ip || !password) {
+      return res
+        .status(400)
+        .json({ error: "Camera IP and admin password are required" });
+    }
+
+    // 1) Turn DHCP on for the wired interface. Dahua/CP Plus uses the config key
+    //    Network.eth0.DhcpEnable; setting it true persists to the camera's flash.
+    await cameraDigestGet(
+      ip,
+      "/cgi-bin/configManager.cgi?action=setConfig&Network.eth0.DhcpEnable=true",
+      "admin",
+      password,
+    );
+
+    // 2) Reboot so it drops the static IP and pulls a fresh DHCP lease cleanly.
+    //    The reboot usually kills the connection before it can answer — that's
+    //    expected, so we ignore an error here.
+    try {
+      await cameraDigestGet(
+        ip,
+        "/cgi-bin/magicBox.cgi?action=reboot",
+        "admin",
+        password,
+      );
+    } catch (rebootErr) {
+      // Connection dropped as the camera rebooted — normal.
+    }
+
+    res.json({
+      success: true,
+      message:
+        "DHCP enabled. The camera is rebooting — wait ~1 minute, then Rescan.",
+    });
+  } catch (err) {
+    // A 401 here means the password was wrong or the camera isn't set up yet.
+    const status = err.response?.status;
+    const msg =
+      status === 401
+        ? "Login failed — check the admin password (the camera must already be set up)."
+        : err.response?.data ||
+          err.message ||
+          "Could not reach the camera to enable DHCP";
+    res.status(500).json({ error: msg });
   }
 });
 
