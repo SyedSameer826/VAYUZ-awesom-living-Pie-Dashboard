@@ -161,6 +161,13 @@ const startCameraProxy = (ip) => {
       secure: false, // accept the camera's self-signed cert
       ws: true, // relay websockets (live view, etc.)
       followRedirects: true,
+      onProxyReq: (proxyReq) => {
+        // The camera 400s any request whose Referer/Origin isn't itself (its
+        // anti-framing check). The browser sends our proxy origin, so rewrite
+        // both to the camera's own URL — this is why the JS/CSS were 400ing.
+        proxyReq.setHeader("Referer", `https://${ip}/`);
+        proxyReq.setHeader("Origin", `https://${ip}`);
+      },
       onProxyRes: (proxyRes) => {
         // Let the browser keep the session over plain HTTP: drop the cookie
         // Secure flag and the camera's HSTS header (which would otherwise force
