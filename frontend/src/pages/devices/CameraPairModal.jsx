@@ -22,7 +22,7 @@ const CameraPairModal = ({
   cameras,
   isScanning,
   onMap,
-  onEnableDhcp,
+  onOpenSetup,
   onRescan,
   onClose,
 }) => {
@@ -119,9 +119,10 @@ const CameraPairModal = ({
                   }}
                 >
                   A camera on <b>192.168.1.x</b> is on its default network and
-                  can't be reached directly. Click <b>Enable DHCP</b> (you'll need
-                  its admin password); it reboots onto the main network, then{" "}
-                  <b>Rescan</b> and Set Up / Map it normally.
+                  can't be reached from your laptop. Click <b>Open Camera Setup</b>{" "}
+                  — it opens the camera's page through the Pi in a new tab. There,
+                  go to <b>Setting → Network → TCP/IP</b>, set <b>Mode = DHCP</b>,
+                  Save. After it reboots, <b>Rescan</b> and Set Up / Map it.
                 </p>
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -152,10 +153,11 @@ const CameraPairModal = ({
                           Already mapped
                         </span>
                       ) : isOnDefaultSubnet(cam.ip) ? (
-                        // Stuck on 192.168.1.x — can't reach it from the laptop.
-                        // Flip DHCP on via the Pi so it hops onto the network.
-                        <Button onClick={() => onEnableDhcp(cam)}>
-                          Enable DHCP
+                        // Stuck on 192.168.1.x — the laptop can't reach it, but
+                        // the Pi can. Open its page THROUGH the Pi so the user
+                        // can turn DHCP on, then Rescan to pick it up on 50.x.
+                        <Button onClick={() => onOpenSetup(cam)}>
+                          Open Camera Setup
                         </Button>
                       ) : (
                         <div style={{ display: "flex", gap: 8 }}>

@@ -133,6 +133,24 @@ export const enableCameraDhcp = async ({ ip, password }) => {
   return data;
 };
 
+// Open a camera that's on an unreachable subnet (192.168.1.x) through the Pi.
+// The Pi stands up a reverse proxy and returns a URL the laptop CAN reach; we
+// open it in a new tab so the user can configure the camera (e.g. turn DHCP on).
+export const openCameraSetup = async ({ ip }) => {
+  const response = await fetch(`${API_BASE_URL}camera/open-setup`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ ip }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "Unable to open the camera setup page");
+  }
+
+  return data;
+};
+
 export const deleteDevice = async (ieee_address) => {
   const response = await fetch(`${API_BASE_URL}devices/${ieee_address}`, {
     method: "DELETE",

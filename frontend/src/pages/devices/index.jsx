@@ -10,6 +10,7 @@ import {
   assignCamera,
   scanCameras,
   enableCameraDhcp,
+  openCameraSetup,
   getDeviceDetails,
   getResidents,
   deleteDevice,
@@ -227,6 +228,19 @@ function Devices() {
     }
   };
 
+  // Open a stuck camera's own page THROUGH the Pi (reverse proxy), so the user
+  // can flip DHCP on even though the laptop can't reach the camera's subnet.
+  const handleOpenCameraSetup = async (cam) => {
+    setError("");
+    try {
+      const { url } = await openCameraSetup({ ip: cam.ip });
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (setupError) {
+      setError(setupError.message || "Unable to open the camera setup page");
+      alert(setupError.message || "Unable to open the camera setup page");
+    }
+  };
+
   // From a discovered camera, jump straight into the Map Camera form, pre-filled.
   const mapDiscoveredCamera = (cam) => {
     setIsPairOpen(false);
@@ -424,6 +438,7 @@ function Devices() {
           isScanning={isScanning}
           onMap={mapDiscoveredCamera}
           onEnableDhcp={handleEnableDhcp}
+          onOpenSetup={handleOpenCameraSetup}
           onRescan={runCameraScan}
           onClose={() => setIsPairOpen(false)}
         />

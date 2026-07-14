@@ -130,6 +130,71 @@ const cameraDigestGet = async (ip, pathWithQuery, user, pass) => {
 };
 
 /* =========================
+   PER-CAMERA REVERSE PROXY
+   A camera on the default subnet (192.168.1.x) can't be opened from the user's
+   laptop, but the Pi can reach it. So we stand up a small reverse proxy on the
+   Pi — one dedicated port per camera — that forwards EVERYTHING at its root to
+   the camera over HTTPS. The user opens http://<pi-ip>:<port>/ (which the laptop
+   CAN reach) and gets the camera's real page, relayed by the Pi. Because we
+   proxy at the root (not under a sub-path), the camera's relative asset/API URLs
+   resolve correctly — that's what made the old /camera-proxy/<ip> approach flaky.
+========================= */
+
+const cameraProxies = new Map(); // ip -> { port, server }
+const CAMERA_PROXY_BASE_PORT = 9100;
+
+// Start (or reuse) a reverse proxy for a camera IP; returns its port.
+const startCameraProxy = (ip) => {
+  const existing = cameraProxies.get(ip);
+  if (existing) return existing.port;
+
+  // Stable, unique-ish port derived from the last IP octet.
+  const lastOctet = parseInt(ip.split(".").pop(), 10) || 0;
+  const port = CAMERA_PROXY_BASE_PORT + (lastOctet % 300);
+
+  const proxyApp = express();
+  proxyApp.use(
+    "/",
+    createProxyMiddleware({
+      target: `https://${ip}`,
+      changeOrigin: true, // send Host: <camera-ip> so its host check passes
+      secure: false, // accept the camera's self-signed cert
+      ws: true, // relay websockets (live view, etc.)
+      followRedirects: true,
+      onProxyRes: (proxyRes) => {
+        // Let the browser keep the session over plain HTTP: drop the cookie
+        // Secure flag and the camera's HSTS header (which would otherwise force
+        // the browser back to https on this proxy origin).
+        const setCookie = proxyRes.headers["set-cookie"];
+        if (setCookie) {
+          proxyRes.headers["set-cookie"] = setCookie.map((c) =>
+            c.replace(/;\s*Secure/gi, "").replace(/;\s*SameSite=None/gi, ""),
+          );
+        }
+        delete proxyRes.headers["strict-transport-security"];
+      },
+      onError: (err, req, res) => {
+        if (res && !res.headersSent) {
+          res.writeHead(502, { "Content-Type": "text/plain" });
+        }
+        if (res) res.end(`Camera proxy error: ${err.message}`);
+      },
+    }),
+  );
+
+  const proxyServer = http.createServer(proxyApp);
+  proxyServer.on("error", (e) =>
+    console.log("⚠️ camera proxy server error", ip, e.message),
+  );
+  proxyServer.listen(port, () =>
+    console.log(`🎥 camera setup proxy for ${ip} on :${port}`),
+  );
+
+  cameraProxies.set(ip, { port, server: proxyServer });
+  return port;
+};
+
+/* =========================
    GET DEVICES
 ========================= */
 
@@ -387,6 +452,30 @@ app.post("/api/camera/enable-dhcp", async (req, res) => {
           err.message ||
           "Could not reach the camera to enable DHCP";
     res.status(500).json({ error: msg });
+  }
+});
+
+/* =========================
+   OPEN CAMERA SETUP (via Pi reverse proxy)
+   Opens the camera's own web page through the Pi so a laptop that can't reach
+   the camera's subnet can still configure it (e.g. turn DHCP on). Returns a URL
+   on the Pi that the browser CAN reach; the Pi relays it to the camera.
+========================= */
+
+app.post("/api/camera/open-setup", (req, res) => {
+  try {
+    const { ip } = req.body;
+    if (!ip) {
+      return res.status(400).json({ error: "Camera IP is required" });
+    }
+    const port = startCameraProxy(ip);
+    // Build the URL on the same host the user is already hitting the Pi at
+    // (e.g. 192.168.50.50), just on the camera's dedicated proxy port.
+    const host = req.hostname || "192.168.50.50";
+    const url = `http://${host}:${port}/`;
+    res.json({ success: true, url });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
