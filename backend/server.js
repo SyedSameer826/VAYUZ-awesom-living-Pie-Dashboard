@@ -6,6 +6,8 @@ import axios from "axios";
 import http from "http";
 import https from "https";
 import crypto from "crypto";
+import os from "os";
+import { exec } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -625,9 +627,96 @@ app.use((req, res) => {
 });
 
 /* =========================
+   HUB HEARTBEAT (Pi -> backend, every 30s)
+   Tells the cloud backend the Pi is alive and how good its internet is. The
+   backend infers "offline / no power" when these stop arriving for > 30 min
+   (a dead Pi can't phone home). We also report a graded internet level so the
+   family app can show connection quality live.
+========================= */
+
+const HUB_HEARTBEAT_INTERVAL_MS = 30 * 1000;
+
+// Stable per-Pi id from the CPU serial (falls back to hostname).
+let cachedHubId = null;
+const getHubId = () => {
+  if (cachedHubId) return cachedHubId;
+  try {
+    const cpuinfo = fs.readFileSync("/proc/cpuinfo", "utf8");
+    const m = cpuinfo.match(/Serial\s*:\s*([0-9a-fA-F]+)/);
+    if (m) cachedHubId = `pi-${m[1]}`;
+  } catch {
+    /* not a Pi / no cpuinfo — fall through */
+  }
+  if (!cachedHubId) cachedHubId = `pi-${os.hostname()}`;
+  return cachedHubId;
+};
+
+// A resident this Pi manages, so the backend can bind the hub to the right
+// home/family. Uses the first mapped device's resident from devices.json.
+const getManagedResident = () => {
+  try {
+    const device = getDevices().find((d) => d.resident && d.status === "mapped");
+    return device ? device.resident : null;
+  } catch {
+    return null;
+  }
+};
+
+// Grade internet quality by pinging a nearby anycast host (8.8.8.8). Returns a
+// level + avg latency, or { level: null } if ping is unavailable/blocked (the
+// caller then relies on the heartbeat POST itself to prove connectivity).
+const measureInternet = () =>
+  new Promise((resolve) => {
+    exec("ping -c 3 -w 5 8.8.8.8", (err, stdout = "") => {
+      const lossMatch = stdout.match(/(\d+)% packet loss/);
+      const avgMatch = stdout.match(/=\s*[\d.]+\/([\d.]+)\//);
+      const loss = lossMatch ? parseInt(lossMatch[1], 10) : 100;
+      const avg = avgMatch ? parseFloat(avgMatch[1]) : null;
+
+      if (!err && avg != null && loss < 100) {
+        let level;
+        if (loss > 20 || avg > 150) level = "online-poor";
+        else if (avg > 60) level = "online-good";
+        else level = "online-excellent";
+        return resolve({ level, ms: Math.round(avg) });
+      }
+      resolve({ level: null, ms: null }); // unknown via ping
+    });
+  });
+
+const sendHeartbeat = async () => {
+  try {
+    const { level, ms } = await measureInternet();
+    const payload = {
+      hub_id: getHubId(),
+      resident: getManagedResident(),
+      // If ping couldn't grade it but the POST below succeeds, we're at least
+      // online — report a safe middle tier rather than nothing.
+      internet_level: level || "online-good",
+      latency_ms: ms,
+    };
+    const headers = {};
+    if (process.env.HUB_SECRET_KEY) {
+      headers["x-hub-secret"] = process.env.HUB_SECRET_KEY;
+    }
+    await axios.post(`${REMOTE_BACKEND}/api/hub/heartbeat`, payload, {
+      timeout: 8000,
+      headers,
+    });
+  } catch (err) {
+    // No connectivity to the backend — the backend's 30-min timeout will flip
+    // this hub offline. Nothing to do here but log.
+    console.log("⚠️ hub heartbeat failed:", err.message);
+  }
+};
+
+/* =========================
    START SERVER
 ========================= */
 
 server.listen(4000, () => {
   console.log("Server running on port 4000");
+  // Kick off the heartbeat once the server is up, then every 30s.
+  sendHeartbeat();
+  setInterval(sendHeartbeat, HUB_HEARTBEAT_INTERVAL_MS);
 });
