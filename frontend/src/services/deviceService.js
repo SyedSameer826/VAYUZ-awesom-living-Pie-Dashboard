@@ -151,6 +151,35 @@ export const openCameraSetup = async ({ ip }) => {
   return data;
 };
 
+// Scan (over BLE) for GLK sleep monitors in provisioning mode ("LZ-OTA <serial>").
+export const scanGlk = async () => {
+  const response = await fetch(`${API_BASE_URL}glk/scan`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "GLK scan failed");
+  }
+  return data; // { success, devices: [{ name, serial, address }] }
+};
+
+// Provision a GLK device onto the home WiFi + this Pi, then map it to a resident.
+export const pairGlk = async ({ address, serial, ssid, password, resident, room }) => {
+  const response = await fetch(`${API_BASE_URL}glk/pair`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ address, serial, ssid, password, resident, room }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "GLK pairing failed");
+  }
+  return data;
+};
+
 export const deleteDevice = async (ieee_address) => {
   const response = await fetch(`${API_BASE_URL}devices/${ieee_address}`, {
     method: "DELETE",

@@ -11,6 +11,8 @@ import {
   scanCameras,
   enableCameraDhcp,
   openCameraSetup,
+  scanGlk,
+  pairGlk,
   getDeviceDetails,
   getResidents,
   deleteDevice,
@@ -19,6 +21,7 @@ import { getDeviceId, mapDeviceRows } from "../../utils/devices";
 import DeviceForm from "./DeviceForm";
 import CameraForm from "./CameraForm";
 import CameraPairModal from "./CameraPairModal";
+import GlkPairModal from "./GlkPairModal";
 
 const emptyCameraForm = {
   stream_name: "",
@@ -43,6 +46,10 @@ function Devices() {
   const [isPairOpen, setIsPairOpen] = useState(false);
   const [discoveredCameras, setDiscoveredCameras] = useState([]);
   const [isScanning, setIsScanning] = useState(false);
+  const [isGlkOpen, setIsGlkOpen] = useState(false);
+  const [glkDevices, setGlkDevices] = useState([]);
+  const [isGlkScanning, setIsGlkScanning] = useState(false);
+  const [isGlkPairing, setIsGlkPairing] = useState(false);
   const tableRows = useMemo(() => mapDeviceRows(devices), [devices]);
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -228,6 +235,42 @@ function Devices() {
     }
   };
 
+  // ---- GLK sleep monitor pairing ----
+  const runGlkScan = async () => {
+    setIsGlkScanning(true);
+    setError("");
+    try {
+      const result = await scanGlk();
+      setGlkDevices(result.devices || []);
+    } catch (glkError) {
+      setError(glkError.message || "GLK scan failed");
+      setGlkDevices([]);
+    } finally {
+      setIsGlkScanning(false);
+    }
+  };
+
+  const openGlkModal = () => {
+    setGlkDevices([]);
+    setError("");
+    setIsGlkOpen(true);
+    runGlkScan();
+  };
+
+  const handleGlkPair = async (payload) => {
+    setIsGlkPairing(true);
+    setError("");
+    try {
+      await pairGlk(payload);
+      setIsGlkOpen(false);
+      await loadData();
+    } catch (glkError) {
+      setError(glkError.message || "GLK pairing failed");
+    } finally {
+      setIsGlkPairing(false);
+    }
+  };
+
   // Open a stuck camera's own page THROUGH the Pi (reverse proxy), so the user
   // can flip DHCP on even though the laptop can't reach the camera's subnet.
   const handleOpenCameraSetup = async (cam) => {
@@ -386,6 +429,9 @@ function Devices() {
             <button className="submit-button" onClick={openCameraForm}>
               Map Camera
             </button>
+            <button className="submit-button" onClick={openGlkModal}>
+              Pair GLK
+            </button>
           </div>
           <label className="table-search">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -441,6 +487,19 @@ function Devices() {
           onOpenSetup={handleOpenCameraSetup}
           onRescan={runCameraScan}
           onClose={() => setIsPairOpen(false)}
+        />
+      )}
+
+      {isGlkOpen && (
+        <GlkPairModal
+          devices={glkDevices}
+          isScanning={isGlkScanning}
+          isPairing={isGlkPairing}
+          residents={residents}
+          error={error}
+          onScan={runGlkScan}
+          onPair={handleGlkPair}
+          onClose={() => setIsGlkOpen(false)}
         />
       )}
     </main>

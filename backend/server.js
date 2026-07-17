@@ -7,7 +7,7 @@ import http from "http";
 import https from "https";
 import crypto from "crypto";
 import os from "os";
-import { exec } from "child_process";
+import { exec, execFile } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -406,6 +406,150 @@ app.post("/api/camera/pair/scan", async (req, res) => {
 });
 
 /* =========================
+   GLK SLEEP MONITOR PAIRING (BLE provisioning + mapping)
+   The GLK monitor is set up over BLE ONCE: we write the home WiFi creds (0x1F)
+   and this Pi's server address (0x23 = Pi IP + port 8766). After that it joins
+   WiFi and streams sleep data over TCP to the Pi's glk_bridge on :8766. This
+   backend shells out to a Python provisioner (which reuses the verified
+   glk_protocol.py) for the BLE work, then maps the device to a resident on the
+   remote backend as an Emfit-type device (sr_num = the 12-digit serial).
+========================= */
+
+// Python provisioner command. Override GLK_PROVISION_CMD to point at the GLK
+// team's own glk_ble_config.py if you prefer, as long as it accepts the same
+// `scan` / `provision` subcommands and prints the same JSON.
+const GLK_PYTHON = process.env.GLK_PYTHON || "python3";
+const GLK_SCRIPT =
+  process.env.GLK_PROVISION_CMD || path.join(__dirname, "glk", "glk_provision.py");
+
+// The Pi's LAN IP that the GLK device should connect back to (the 0x23 config).
+// Prefer the main-subnet (192.168.50.x) address; fall back to any non-internal
+// IPv4. Must match the Pi's reserved DHCP IP so the device can always find it.
+const getPiLanIp = () => {
+  const ifaces = os.networkInterfaces();
+  let fallback = null;
+  for (const name of Object.keys(ifaces)) {
+    for (const info of ifaces[name] || []) {
+      if (info.family === "IPv4" && !info.internal) {
+        if (info.address.startsWith("192.168.50.")) return info.address;
+        fallback = fallback || info.address;
+      }
+    }
+  }
+  return fallback || "192.168.50.50";
+};
+
+// Scan for GLK devices in provisioning mode (advertising "LZ-OTA <serial>").
+app.post("/api/glk/scan", (req, res) => {
+  execFile(
+    GLK_PYTHON,
+    [GLK_SCRIPT, "scan", "--timeout", "8"],
+    { timeout: 25000, cwd: path.join(__dirname, "glk") },
+    (err, stdout, stderr) => {
+      if (err && !stdout) {
+        return res
+          .status(500)
+          .json({ error: stderr || err.message || "GLK scan failed" });
+      }
+      try {
+        return res.json(JSON.parse(stdout));
+      } catch {
+        return res
+          .status(500)
+          .json({ error: "Unexpected scan output", raw: stdout, stderr });
+      }
+    },
+  );
+});
+
+// Provision a chosen GLK device onto WiFi + this Pi, then map it to a resident.
+app.post("/api/glk/pair", async (req, res) => {
+  try {
+    const { address, serial, ssid, password, resident, room } = req.body;
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Authorization token missing" });
+    }
+    const token = authHeader.split(" ")[1];
+
+    if (!address || !ssid || !password || !resident) {
+      return res.status(400).json({
+        error: "address, ssid, password and resident are required",
+      });
+    }
+
+    const piIp = getPiLanIp();
+
+    // 1) BLE provision (write WiFi + server config, wait for the fff2 acks).
+    const provision = await new Promise((resolve, reject) => {
+      execFile(
+        GLK_PYTHON,
+        [
+          GLK_SCRIPT,
+          "provision",
+          "--address",
+          address,
+          "--ssid",
+          ssid,
+          "--password",
+          password,
+          "--pi-ip",
+          piIp,
+          "--port",
+          "8766",
+        ],
+        { timeout: 90000, cwd: path.join(__dirname, "glk") },
+        (err, stdout, stderr) => {
+          if (err && !stdout) {
+            return reject(new Error(stderr || err.message));
+          }
+          try {
+            resolve(JSON.parse(stdout));
+          } catch {
+            reject(new Error(`Unexpected provision output: ${stdout}`));
+          }
+        },
+      );
+    });
+
+    if (!provision.success) {
+      return res
+        .status(502)
+        .json({ error: "GLK provisioning failed", detail: provision });
+    }
+
+    // 2) Record locally so the device shows in the Pie device list.
+    upsertDevice({
+      ieee_address: serial || address,
+      name: serial || address,
+      type: "glk",
+      resident,
+      status: "mapped",
+      is_unassigned: false,
+      sr_num: serial,
+    });
+
+    // 3) Map to the remote backend as an Emfit-type device (GLK vitals path).
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    const backend = await axios.post(`${REMOTE_BACKEND}/api/user/devices`, {
+      type: "Emfit",
+      resident,
+      sr_num: serial,
+      room: room || "bedroom",
+    });
+
+    res.json({
+      success: true,
+      pi_ip: piIp,
+      provision,
+      backend_response: backend.data,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.response?.data || err.message });
+  }
+});
+
+/* =========================
    ENABLE DHCP ON A CAMERA
    For a camera that shipped / was set with a STATIC IP on the camera-default
    subnet (192.168.1.x, DHCP off), the user's laptop can't reach it — but the Pi
@@ -634,7 +778,9 @@ app.use((req, res) => {
    family app can show connection quality live.
 ========================= */
 
-const HUB_HEARTBEAT_INTERVAL_MS = 30 * 1000;
+// Ping every 15s. The backend flags the hub offline after >30s of silence
+// (2 missed pings), so a power-off shows offline within ~30s without flapping.
+const HUB_HEARTBEAT_INTERVAL_MS = 15 * 1000;
 
 // Stable per-Pi id from the CPU serial (falls back to hostname).
 let cachedHubId = null;
@@ -667,7 +813,7 @@ const getManagedResident = () => {
 // caller then relies on the heartbeat POST itself to prove connectivity).
 const measureInternet = () =>
   new Promise((resolve) => {
-    exec("ping -c 3 -w 5 8.8.8.8", (err, stdout = "") => {
+    exec("ping -c 2 -w 3 8.8.8.8", (err, stdout = "") => {
       const lossMatch = stdout.match(/(\d+)% packet loss/);
       const avgMatch = stdout.match(/=\s*[\d.]+\/([\d.]+)\//);
       const loss = lossMatch ? parseInt(lossMatch[1], 10) : 100;

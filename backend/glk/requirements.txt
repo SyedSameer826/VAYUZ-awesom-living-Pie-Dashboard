@@ -1,0 +1,4 @@
+# GLK BLE provisioning dependency (install on the Pi):
+#   pip install -r requirements.txt   (or: pip install bleak)
+# Requires BlueZ + a working Bluetooth adapter on the Raspberry Pi.
+bleak>=0.21.0
