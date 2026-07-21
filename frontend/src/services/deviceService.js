@@ -1,8 +1,8 @@
+import { BASE_URL } from "../../../constants/auth";
 const API_BASE_URL = "/api/";
 // Main backend (EC2). Overridable at build time via VITE_BACKEND_URL.
-const REMOTE_BACKEND =
-  import.meta.env.VITE_BACKEND_URL || "http://51.20.102.125";
-
+// const REMOTE_BACKEND =
+//   import.meta.env.VITE_BACKEND_URL || "http://51.20.102.125";
 const getAuthHeaders = () => {
   const token = JSON.parse(window.localStorage.getItem("token"));
 
@@ -35,7 +35,7 @@ export const getResidents = async ({ last_id = "", limit = 100 } = {}) => {
   query.append("limit", limit);
 
   const response = await fetch(
-    `${REMOTE_BACKEND}/api/user/resident/get_all_residents?${query.toString()}`,
+    `${BASE_URL}/api/user/resident/get_all_residents?${query.toString()}`,
     {
       method: "GET",
       headers: getAuthHeaders(),
