@@ -1,7 +1,7 @@
 const API_BASE_URL = "/api/";
 // Main backend (EC2). Overridable at build time via VITE_BACKEND_URL.
 const REMOTE_BACKEND =
-  import.meta.env.VITE_BACKEND_URL || "http://51.20.102.125";
+  "http://51.20.102.125" || import.meta.env.VITE_BACKEND_URL;
 
 const getAuthHeaders = () => {
   const token = JSON.parse(window.localStorage.getItem("token"));
@@ -166,7 +166,14 @@ export const scanGlk = async () => {
 };
 
 // Provision a GLK device onto the home WiFi + this Pi, then map it to a resident.
-export const pairGlk = async ({ address, serial, ssid, password, resident, room }) => {
+export const pairGlk = async ({
+  address,
+  serial,
+  ssid,
+  password,
+  resident,
+  room,
+}) => {
   const response = await fetch(`${API_BASE_URL}glk/pair`, {
     method: "POST",
     headers: getAuthHeaders(),
