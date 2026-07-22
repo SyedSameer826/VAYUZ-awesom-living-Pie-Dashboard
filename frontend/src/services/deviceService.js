@@ -35,7 +35,7 @@ export const getResidents = async ({ last_id = "", limit = 100 } = {}) => {
   query.append("limit", limit);
 
   const response = await fetch(
-    `${BASE_URL}/api/user/resident/get_all_residents?${query.toString()}`,
+    `${BASE_URL}/user/resident/get_all_residents?${query.toString()}`,
     {
       method: "GET",
       headers: getAuthHeaders(),
