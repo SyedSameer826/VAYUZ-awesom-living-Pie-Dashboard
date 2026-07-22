@@ -1,4 +1,4 @@
-import { BASE_URL } from "../../../constants/auth";
+import { BASE_URL } from "../constants/auth";
 const API_BASE_URL = "/api/";
 // Main backend (EC2). Overridable at build time via VITE_BACKEND_URL.
 // const REMOTE_BACKEND =
