@@ -61,9 +61,9 @@ const CONFIG_PATH = "/home/pi/zigbee2mqtt/data/configuration.yaml";
    REMOTE BACKEND + GO2RTC
 ========================= */
 
-// Main backend this Pi maps devices to. Overridable via env; defaults to the EC2.
+// Main backend this Pi maps devices to. Overridable via env; defaults to production.
 const REMOTE_BACKEND =
-  process.env.REMOTE_BACKEND_URL || "http://51.20.102.125";
+  process.env.REMOTE_BACKEND_URL || "https://awesomliving.com";
 
 // Local go2rtc instance on the Pi (used to register camera streams).
 const GO2RTC_URL = process.env.GO2RTC_URL || "http://localhost:1984";
@@ -643,10 +643,45 @@ app.delete("/api/devices/:ieee", async (req, res) => {
       ? authHeader.split(" ")[1]
       : undefined;
 
-    // Cameras are handled differently from Zigbee devices: drop their go2rtc
-    // stream (so it stops), then delete locally + on the remote backend. No
-    // Zigbee "remove" is sent (a camera isn't a Zigbee device).
+    // Non-Zigbee devices (camera, GLK) are handled separately — no Z2M remove.
     const device = getDevices().find((d) => d.ieee_address === ieee);
+
+    // ---- GLK device delete ----
+    // GLK is mapped to the cloud backend as type "Emfit" with sr_num.
+    // Delete locally + from the remote backend by sr_num.
+    if (device?.type === "glk") {
+      // Delete from remote backend (find by sr_num, then delete by _id)
+      if (token && device.sr_num) {
+        try {
+          const headers = { Authorization: `Bearer ${token}` };
+          // Find the device on the remote backend by sr_num
+          const remoteDevices = await axios.get(
+            `${REMOTE_BACKEND}/api/user/devices`,
+            { headers, timeout: 8000 },
+          );
+          const remoteDevice = remoteDevices.data?.data?.find(
+            (d) => d.sr_num === device.sr_num,
+          );
+          if (remoteDevice?._id) {
+            await axios.delete(
+              `${REMOTE_BACKEND}/api/user/devices/${remoteDevice._id}`,
+              { headers, timeout: 8000 },
+            );
+            console.log("✅ GLK device deleted from cloud backend:", device.sr_num);
+          }
+        } catch (remoteErr) {
+          console.log(
+            "⚠️ GLK cloud delete failed (local delete continues):",
+            remoteErr.response?.data || remoteErr.message,
+          );
+        }
+      }
+      await deleteDevice(ieee, token);
+      console.log("✅ GLK delete complete for:", ieee);
+      return res.json({ success: true, message: "Device deleted" });
+    }
+
+    // ---- Camera delete ----
     if (device?.type === "camera") {
       const streamName = device.stream_name || ieee;
       try {
