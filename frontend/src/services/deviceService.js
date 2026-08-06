@@ -187,6 +187,50 @@ export const pairGlk = async ({
   return data;
 };
 
+// ---- Hub setup (first-time home selection) ----
+
+// Fetch the list of homes belonging to the logged-in user from the cloud backend.
+export const getHomes = async () => {
+  const response = await fetch(`${BASE_URL}/user/home?limit=100`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to load homes");
+  }
+
+  const data = await response.json();
+  // The cloud endpoint returns { success, data: [ { _id, name, ... } ] }
+  return Array.isArray(data?.data) ? data.data : [];
+};
+
+// Check whether this Pi hub has already been mapped to a home.
+export const getHubSetup = async () => {
+  const response = await fetch(`${API_BASE_URL}hub/setup`);
+
+  if (!response.ok) {
+    throw new Error("Unable to check hub setup");
+  }
+
+  return response.json(); // { configured, home_id }
+};
+
+// Map this Pi hub to the selected home (one-time).
+export const saveHubSetup = async (home_id) => {
+  const response = await fetch(`${API_BASE_URL}hub/setup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ home_id }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to save hub setup");
+  }
+
+  return response.json();
+};
+
 export const deleteDevice = async (ieee_address) => {
   const response = await fetch(`${API_BASE_URL}devices/${ieee_address}`, {
     method: "DELETE",
