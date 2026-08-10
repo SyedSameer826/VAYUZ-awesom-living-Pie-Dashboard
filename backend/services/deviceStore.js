@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 // Main backend this Pi maps devices to. Overridable via env; defaults to the EC2.
 const REMOTE_BACKEND =
-  process.env.REMOTE_BACKEND_URL || "http://51.20.102.125";
+  process.env.REMOTE_BACKEND_URL || "https://awesomliving.com";
 // Store device data OUTSIDE the code folder so code updates / git pulls can
 // never overwrite it (a committed empty devices.json was wiping mapped devices
 // on every deploy). Overridable via env; defaults to ~/awesomliving-data/.
