@@ -794,55 +794,6 @@ app.use(
 );
 
 /* =========================
-   HUB CONFIG (first-time home selection)
-   On first login the frontend shows a modal to pick which home this Pi belongs
-   to. The choice is persisted in hub-config.json so it survives reboots and
-   never asks again. The heartbeat reads from this file.
-========================= */
-
-const HUB_CONFIG_PATH = path.join(__dirname, "hub-config.json");
-
-const readHubConfig = () => {
-  try {
-    return JSON.parse(fs.readFileSync(HUB_CONFIG_PATH, "utf8"));
-  } catch {
-    return {};
-  }
-};
-
-const writeHubConfig = (config) => {
-  fs.writeFileSync(HUB_CONFIG_PATH, JSON.stringify(config, null, 2));
-};
-
-// GET /api/hub/setup — is this Pi already mapped to a home?
-app.get("/api/hub/setup", (_req, res) => {
-  const config = readHubConfig();
-  res.json({
-    configured: !!config.home_id,
-    home_id: config.home_id || null,
-  });
-});
-
-// POST /api/hub/setup — save the selected home_id (one-time)
-app.post("/api/hub/setup", (req, res) => {
-  const { home_id } = req.body;
-  if (!home_id) {
-    return res.status(400).json({ error: "home_id is required" });
-  }
-
-  const config = readHubConfig();
-  config.home_id = home_id;
-  writeHubConfig(config);
-
-  // Fire an immediate heartbeat so the backend binds this hub right away.
-  // sendHeartbeat is defined further down in this file, but that's fine — this
-  // handler only runs at request time, well after the module has initialized.
-  sendHeartbeat();
-
-  res.json({ success: true, home_id });
-});
-
-/* =========================
    SERVE REACT BUILD
 ========================= */
 
@@ -867,27 +818,26 @@ app.use((req, res) => {
 const HUB_HEARTBEAT_INTERVAL_MS = 15 * 1000;
 
 // Stable per-Pi id from the CPU serial (falls back to hostname).
-// Uses the RAW serial (no prefix) to match the existing hub_status records.
 let cachedHubId = null;
 const getHubId = () => {
   if (cachedHubId) return cachedHubId;
   try {
     const cpuinfo = fs.readFileSync("/proc/cpuinfo", "utf8");
     const m = cpuinfo.match(/Serial\s*:\s*([0-9a-fA-F]+)/);
-    if (m) cachedHubId = m[1];
+    if (m) cachedHubId = `pi-${m[1]}`;
   } catch {
     /* not a Pi / no cpuinfo — fall through */
   }
-  if (!cachedHubId) cachedHubId = os.hostname();
+  if (!cachedHubId) cachedHubId = `pi-${os.hostname()}`;
   return cachedHubId;
 };
 
-// Home this Pi is mapped to (set once via the first-login modal, stored in
-// hub-config.json). Returns the MongoDB ObjectId string or null.
-const getMappedHome = () => {
+// A resident this Pi manages, so the backend can bind the hub to the right
+// home/family. Uses the first mapped device's resident from devices.json.
+const getManagedResident = () => {
   try {
-    const config = readHubConfig();
-    return config.home_id || null;
+    const device = getDevices().find((d) => d.resident && d.status === "mapped");
+    return device ? device.resident : null;
   } catch {
     return null;
   }
@@ -916,18 +866,11 @@ const measureInternet = () =>
   });
 
 const sendHeartbeat = async () => {
-  const home = getMappedHome();
-  if (!home) {
-    // Hub not yet mapped to a home — skip heartbeat until the user picks one
-    // via the first-login modal.
-    return;
-  }
-
   try {
     const { level, ms } = await measureInternet();
     const payload = {
       hub_id: getHubId(),
-      home,
+      resident: getManagedResident(),
       // If ping couldn't grade it but the POST below succeeds, we're at least
       // online — report a safe middle tier rather than nothing.
       internet_level: level || "online-good",
