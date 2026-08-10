@@ -794,6 +794,78 @@ app.use(
 );
 
 /* =========================
+   HUB SETUP (first-time home selection)
+   Persists the home_id this Pi hub is linked to in a local JSON file.
+   The frontend calls GET /api/hub/setup to check, POST to save.
+========================= */
+
+const HUB_CONFIG_DIR =
+  process.env.DEVICES_DIR || path.join(os.homedir(), "awesomliving-data");
+const HUB_CONFIG_PATH = path.join(HUB_CONFIG_DIR, "hub-config.json");
+
+// Ensure data directory exists.
+fs.mkdirSync(HUB_CONFIG_DIR, { recursive: true });
+
+const readHubConfig = () => {
+  try {
+    return JSON.parse(fs.readFileSync(HUB_CONFIG_PATH, "utf8"));
+  } catch {
+    return {};
+  }
+};
+
+const writeHubConfig = (config) => {
+  fs.writeFileSync(HUB_CONFIG_PATH, JSON.stringify(config, null, 2));
+};
+
+app.get("/api/hub/setup", (req, res) => {
+  const config = readHubConfig();
+  res.json({
+    configured: !!config.home_id,
+    home_id: config.home_id || null,
+  });
+});
+
+app.post("/api/hub/setup", (req, res) => {
+  const { home_id } = req.body;
+  if (!home_id) {
+    return res.status(400).json({ error: "home_id is required" });
+  }
+
+  const config = readHubConfig();
+  config.home_id = home_id;
+  config.hub_id = getHubId();
+  config.configured_at = new Date().toISOString();
+  writeHubConfig(config);
+
+  res.json({ success: true, configured: true, home_id });
+});
+
+/* =========================
+   GLK VITALS PROXY
+   glk_bridge.py on the Pi forwards sleep/vitals data to localhost:4000/api/glk/vitals,
+   and this endpoint relays it to the cloud backend's /api/health endpoint.
+========================= */
+
+app.post("/api/glk/vitals", async (req, res) => {
+  try {
+    const response = await axios.post(
+      `${REMOTE_BACKEND}/api/health`,
+      req.body,
+      { timeout: 8000 },
+    );
+    res.json(response.data);
+  } catch (err) {
+    console.log(
+      "⚠️ GLK vitals relay failed:",
+      err.response?.status,
+      err.message,
+    );
+    res.status(502).json({ error: "Failed to relay vitals to cloud backend" });
+  }
+});
+
+/* =========================
    SERVE REACT BUILD
 ========================= */
 
