@@ -4,7 +4,7 @@ import fs from "fs";
 import yaml from "js-yaml";
 
 import { pendingDeletes } from "../utils/deleteState.js";
-import { deleteDevice } from "../services/deviceStore.js";
+import { deleteDevice, upsertDevice } from "../services/deviceStore.js";
 const CONFIG_PATH = "/home/pi/zigbee2mqtt/data/configuration.yaml";
 const client = mqtt.connect("mqtt://localhost");
 
@@ -15,6 +15,44 @@ client.on("connect", () => {
 });
 client.on("message", (topic, message) => {
   const data = message.toString();
+
+  // ── When Z2M publishes its device list (on startup, and every time a
+  //    device joins or leaves), upsert each real device into devices.json
+  //    so it appears in the Devices page as "unmapped" and ready to map.
+  if (topic === "zigbee2mqtt/bridge/devices") {
+    try {
+      const deviceList = JSON.parse(data);
+      for (const dev of deviceList) {
+        // Skip the coordinator itself and any non-end/router devices.
+        if (dev.type === "Coordinator") continue;
+
+        // Determine a sensor type from the Z2M device definition.
+        const defModel = dev.definition?.model || "";
+        const defDesc = (dev.definition?.description || "").toLowerCase();
+        let sensorType = "unknown";
+        if (defDesc.includes("motion")) sensorType = "motion";
+        else if (defDesc.includes("contact") || defDesc.includes("door") || defDesc.includes("window")) sensorType = "contact";
+        else if (defDesc.includes("button") || defDesc.includes("switch") || defDesc.includes("remote")) sensorType = "switch";
+        else if (defDesc.includes("presence") || defDesc.includes("occupancy")) sensorType = "presence";
+        else if (defDesc.includes("temperature") || defDesc.includes("humidity")) sensorType = "temperature";
+        else if (defDesc.includes("leak") || defDesc.includes("water")) sensorType = "leak";
+
+        upsertDevice({
+          ieee_address: dev.ieee_address,
+          friendly_name: dev.friendly_name || dev.ieee_address,
+          type: sensorType,
+          model: defModel,
+          description: dev.definition?.description || "",
+          manufacturer: dev.definition?.vendor || "",
+          power_source: dev.power_source || "",
+        });
+      }
+      console.log(`✅ Devices synced from Z2M: ${deviceList.filter(d => d.type !== "Coordinator").length} device(s)`);
+    } catch (err) {
+      console.log("⚠️ Failed to sync Z2M device list:", err.message);
+    }
+  }
+
   if (topic === "zigbee2mqtt/bridge/response/device/remove") {
     const payload = JSON.parse(data);
 
