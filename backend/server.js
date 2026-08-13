@@ -328,6 +328,9 @@ app.post("/api/assign-camera", async (req, res) => {
       }
     }
 
+    // Persist the RTSP URL in go2rtc.yaml so the stream survives restarts.
+    if (rtsp_url) persistStreamConfig(stream_name, rtsp_url);
+
     // Step 2: Record locally so the camera shows as mapped in the device list.
     // Cameras have no IEEE address — use the (unique) stream_name as the key.
     upsertDevice({
@@ -339,9 +342,12 @@ app.post("/api/assign-camera", async (req, res) => {
       is_unassigned: false,
       local_ip,
       stream_name,
+      rtsp_url: rtsp_url || null,
     });
 
-    // Step 3: Map to the remote backend as a CpPlus device.
+    // Step 3: Map to the remote backend as a CpPlus device. Include this Pi's
+    // hub_id so the backend can resolve the correct go2rtc tunnel URL, and
+    // the full RTSP URL so the stream can be re-provisioned on restart.
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     const response = await axios.post(
       `${REMOTE_BACKEND}/api/user/devices`,
@@ -351,6 +357,8 @@ app.post("/api/assign-camera", async (req, res) => {
         stream_name,
         local_ip,
         room: room || "living_room",
+        hub_id: getHubId(),
+        rtsp_url: rtsp_url || null,
       },
     );
 
@@ -824,11 +832,13 @@ app.get("/api/hub/setup", (req, res) => {
   res.json({
     configured: !!config.home_id,
     home_id: config.home_id || null,
+    hub_id: config.hub_id || getHubId(),
+    tunnel_url: config.tunnel_url || null,
   });
 });
 
 app.post("/api/hub/setup", (req, res) => {
-  const { home_id } = req.body;
+  const { home_id, tunnel_url } = req.body;
   if (!home_id) {
     return res.status(400).json({ error: "home_id is required" });
   }
@@ -837,9 +847,25 @@ app.post("/api/hub/setup", (req, res) => {
   config.home_id = home_id;
   config.hub_id = getHubId();
   config.configured_at = new Date().toISOString();
+  if (tunnel_url) config.tunnel_url = tunnel_url.replace(/\/+$/, "");
   writeHubConfig(config);
 
-  res.json({ success: true, configured: true, home_id });
+  res.json({ success: true, configured: true, home_id, hub_id: config.hub_id });
+});
+
+// Separate endpoint to update tunnel URL (called by the setup script after
+// starting the Cloudflare tunnel, or manually from the dashboard).
+app.post("/api/hub/tunnel", (req, res) => {
+  const { tunnel_url } = req.body;
+  if (!tunnel_url) {
+    return res.status(400).json({ error: "tunnel_url is required" });
+  }
+
+  const config = readHubConfig();
+  config.tunnel_url = tunnel_url.replace(/\/+$/, "");
+  writeHubConfig(config);
+
+  res.json({ success: true, tunnel_url: config.tunnel_url });
 });
 
 /* =========================
@@ -865,6 +891,90 @@ app.post("/api/glk/vitals", async (req, res) => {
     res.status(502).json({ error: "Failed to relay vitals to cloud backend" });
   }
 });
+
+/* =========================
+   GO2RTC STREAM RE-REGISTRATION
+   On Pi startup, re-register all mapped camera RTSP streams in go2rtc so they
+   survive a go2rtc restart (go2rtc doesn't persist runtime-added streams, only
+   those in its YAML config). Called once at server start.
+========================= */
+
+const reRegisterStreams = async () => {
+  try {
+    const devices = getDevices();
+    const cameras = devices.filter(
+      (d) => d.type === "camera" && d.status === "mapped" && d.stream_name,
+    );
+    if (!cameras.length) return;
+
+    for (const cam of cameras) {
+      // We need an RTSP URL to register. Check the device record first
+      // (set during assign-camera), then try the go2rtc YAML as fallback.
+      let rtspUrl = cam.rtsp_url;
+      if (!rtspUrl) {
+        // Try to read from go2rtc config YAML
+        try {
+          const go2rtcConfig = yaml.load(
+            fs.readFileSync("/home/pi/go2rtc/go2rtc.yaml", "utf8"),
+          );
+          const streams = go2rtcConfig?.streams || {};
+          const entry = streams[cam.stream_name];
+          if (Array.isArray(entry)) rtspUrl = entry[0];
+          else if (typeof entry === "string") rtspUrl = entry;
+        } catch {
+          /* YAML not readable — skip */
+        }
+      }
+
+      if (!rtspUrl) {
+        console.log(`⚠️ No RTSP URL for ${cam.stream_name} — skipping re-register`);
+        continue;
+      }
+
+      try {
+        // Delete stale then re-add (same pattern as assign-camera).
+        await axios.delete(`${GO2RTC_URL}/api/streams`, {
+          params: { src: cam.stream_name },
+        });
+      } catch {
+        /* stream may not exist yet */
+      }
+      try {
+        await axios.put(`${GO2RTC_URL}/api/streams`, null, {
+          params: { name: cam.stream_name, src: rtspUrl },
+        });
+        console.log(`🎥 Re-registered stream: ${cam.stream_name}`);
+      } catch (err) {
+        console.log(
+          `⚠️ Failed to re-register ${cam.stream_name}:`,
+          err.message,
+        );
+      }
+    }
+  } catch (err) {
+    console.log("⚠️ Stream re-registration error:", err.message);
+  }
+};
+
+// Also persist the RTSP URL in devices.json when assigning a camera,
+// and update go2rtc.yaml so streams survive even a go2rtc config reload.
+const persistStreamConfig = (streamName, rtspUrl) => {
+  if (!rtspUrl) return;
+  try {
+    const configPath = "/home/pi/go2rtc/go2rtc.yaml";
+    let config = {};
+    try {
+      config = yaml.load(fs.readFileSync(configPath, "utf8")) || {};
+    } catch {
+      /* file may not exist yet */
+    }
+    if (!config.streams) config.streams = {};
+    config.streams[streamName] = [rtspUrl];
+    fs.writeFileSync(configPath, yaml.dump(config));
+  } catch (err) {
+    console.log("⚠️ Could not persist go2rtc config:", err.message);
+  }
+};
 
 /* =========================
    SERVE REACT BUILD
@@ -938,6 +1048,30 @@ const measureInternet = () =>
     });
   });
 
+// Read the Cloudflare tunnel URL from the hub config (set by the setup script
+// or manually). The backend uses this to build per-camera stream URLs for the
+// mobile app. Falls back to env for backward compatibility.
+const getTunnelUrl = () => {
+  try {
+    const config = readHubConfig();
+    if (config.tunnel_url) return config.tunnel_url;
+  } catch {
+    /* no config file yet */
+  }
+  return process.env.TUNNEL_URL || null;
+};
+
+// Count mapped cameras on this hub (for the backend's camera_count field).
+const getMappedCameraCount = () => {
+  try {
+    return getDevices().filter(
+      (d) => d.type === "camera" && d.status === "mapped",
+    ).length;
+  } catch {
+    return 0;
+  }
+};
+
 const sendHeartbeat = async () => {
   try {
     const { level, ms } = await measureInternet();
@@ -948,6 +1082,9 @@ const sendHeartbeat = async () => {
       // online — report a safe middle tier rather than nothing.
       internet_level: level || "online-good",
       latency_ms: ms,
+      // Multi-camera: tell the backend how to reach this Pi's go2rtc.
+      tunnel_url: getTunnelUrl(),
+      camera_count: getMappedCameraCount(),
     };
     const headers = {};
     if (process.env.HUB_SECRET_KEY) {
@@ -965,12 +1102,75 @@ const sendHeartbeat = async () => {
 };
 
 /* =========================
+   PER-CAMERA HEARTBEAT (Pi -> backend, every 30s)
+   Tells the backend each camera's go2rtc stream is alive. The backend's camera
+   health checker fires CAMERA_OFFLINE notifications when camera_last_seen goes
+   stale (>2 min). We use the bulk endpoint to avoid N individual POSTs.
+========================= */
+
+const CAMERA_HEARTBEAT_INTERVAL_MS = 30 * 1000;
+
+const sendCameraHeartbeats = async () => {
+  try {
+    const devices = getDevices();
+    const cameras = devices.filter(
+      (d) => d.type === "camera" && d.status === "mapped" && d.stream_name,
+    );
+    if (!cameras.length) return;
+
+    // Optionally verify each stream is actually alive in go2rtc before reporting.
+    let liveStreams = null;
+    try {
+      const streamsRes = await axios.get(`${GO2RTC_URL}/api/streams`, {
+        timeout: 3000,
+      });
+      if (streamsRes.data) {
+        liveStreams = new Set(Object.keys(streamsRes.data));
+      }
+    } catch {
+      // go2rtc may be briefly unreachable — report all mapped cameras anyway
+      // so the backend doesn't immediately flag them offline.
+    }
+
+    const aliveCameras = cameras
+      .filter((c) => !liveStreams || liveStreams.has(c.stream_name))
+      .map((c) => ({ stream_name: c.stream_name }));
+
+    if (!aliveCameras.length) return;
+
+    const headers = {};
+    if (process.env.HUB_SECRET_KEY) {
+      headers["x-hub-secret"] = process.env.HUB_SECRET_KEY;
+    }
+
+    await axios.post(
+      `${REMOTE_BACKEND}/api/camera/heartbeat/bulk`,
+      { hub_id: getHubId(), cameras: aliveCameras },
+      { timeout: 8000, headers },
+    );
+  } catch (err) {
+    console.log("⚠️ camera heartbeat failed:", err.message);
+  }
+};
+
+/* =========================
    START SERVER
 ========================= */
 
 server.listen(4000, () => {
   console.log("Server running on port 4000");
-  // Kick off the heartbeat once the server is up, then every 30s.
+
+  // Re-register all mapped camera streams in go2rtc (survives go2rtc restart).
+  reRegisterStreams();
+
+  // Kick off the hub heartbeat once the server is up, then every 15s.
   sendHeartbeat();
   setInterval(sendHeartbeat, HUB_HEARTBEAT_INTERVAL_MS);
+
+  // Kick off per-camera heartbeat (bulk) every 30s so the backend's camera
+  // health checker knows each stream is alive.
+  setTimeout(() => {
+    sendCameraHeartbeats();
+    setInterval(sendCameraHeartbeats, CAMERA_HEARTBEAT_INTERVAL_MS);
+  }, 5000); // small delay so streams have time to register first
 });
