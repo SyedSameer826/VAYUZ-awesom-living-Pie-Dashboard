@@ -1077,6 +1077,10 @@ const sendHeartbeat = async () => {
     const { level, ms } = await measureInternet();
     const payload = {
       hub_id: getHubId(),
+      // Send home directly from hub config so the backend can bind the hub even
+      // when no device has a resident mapped yet (belt-and-suspenders alongside
+      // the resident lookup the backend already does).
+      home: readHubConfig().home_id || undefined,
       resident: getManagedResident(),
       // If ping couldn't grade it but the POST below succeeds, we're at least
       // online — report a safe middle tier rather than nothing.
@@ -1090,14 +1094,22 @@ const sendHeartbeat = async () => {
     if (process.env.HUB_SECRET_KEY) {
       headers["x-hub-secret"] = process.env.HUB_SECRET_KEY;
     }
-    await axios.post(`${REMOTE_BACKEND}/api/hub/heartbeat`, payload, {
-      timeout: 8000,
-      headers,
-    });
+    const res = await axios.post(
+      `${REMOTE_BACKEND}/api/hub/heartbeat`,
+      payload,
+      { timeout: 8000, headers },
+    );
+    console.log(
+      `✅ hub heartbeat OK (hub=${payload.hub_id}, level=${payload.internet_level})`,
+    );
   } catch (err) {
-    // No connectivity to the backend — the backend's 30-min timeout will flip
-    // this hub offline. Nothing to do here but log.
-    console.log("⚠️ hub heartbeat failed:", err.message);
+    const status = err.response?.status;
+    const body = err.response?.data;
+    console.log(
+      `⚠️ hub heartbeat failed: ${err.message}`,
+      status ? `[HTTP ${status}]` : "",
+      body ? JSON.stringify(body) : "",
+    );
   }
 };
 
@@ -1143,13 +1155,22 @@ const sendCameraHeartbeats = async () => {
       headers["x-hub-secret"] = process.env.HUB_SECRET_KEY;
     }
 
-    await axios.post(
+    const res = await axios.post(
       `${REMOTE_BACKEND}/api/camera/heartbeat/bulk`,
       { hub_id: getHubId(), cameras: aliveCameras },
       { timeout: 8000, headers },
     );
+    console.log(
+      `✅ camera heartbeat OK (${aliveCameras.length} camera(s))`,
+    );
   } catch (err) {
-    console.log("⚠️ camera heartbeat failed:", err.message);
+    const status = err.response?.status;
+    const body = err.response?.data;
+    console.log(
+      `⚠️ camera heartbeat failed: ${err.message}`,
+      status ? `[HTTP ${status}]` : "",
+      body ? JSON.stringify(body) : "",
+    );
   }
 };
 
