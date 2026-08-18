@@ -272,6 +272,7 @@ app.post("/api/assign-name", async (req, res) => {
         ieee: zigbee_ieee,
         sensor_type: zigbee_type,
         room: room || "bathroom",
+        home: readHubConfig().home_id || undefined,
       },
     );
 
@@ -359,6 +360,7 @@ app.post("/api/assign-camera", async (req, res) => {
         room: room || "living_room",
         hub_id: getHubId(),
         rtsp_url: rtsp_url || null,
+        home: readHubConfig().home_id || undefined,
       },
     );
 
@@ -545,6 +547,7 @@ app.post("/api/glk/pair", async (req, res) => {
       resident,
       sr_num: serial,
       room: room || "bedroom",
+      home: readHubConfig().home_id || undefined,
     });
 
     res.json({
