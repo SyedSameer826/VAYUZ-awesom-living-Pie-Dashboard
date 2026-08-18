@@ -1,0 +1,3 @@
+# Pi Dashboard Frontend — QA Environment (Vite build-time vars)
+# Points to QA backend API instead of production
+VITE_BACKEND_URL=https://qa.awesomliving.com/api

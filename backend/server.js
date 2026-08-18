@@ -1155,14 +1155,21 @@ const sendCameraHeartbeats = async () => {
       headers["x-hub-secret"] = process.env.HUB_SECRET_KEY;
     }
 
+    const streamNames = aliveCameras.map((c) => c.stream_name);
     const res = await axios.post(
       `${REMOTE_BACKEND}/api/camera/heartbeat/bulk`,
       { hub_id: getHubId(), cameras: aliveCameras },
       { timeout: 8000, headers },
     );
+    const backendUpdated = res.data?.data?.updated ?? "?";
     console.log(
-      `✅ camera heartbeat OK (${aliveCameras.length} camera(s))`,
+      `✅ camera heartbeat OK — sent ${aliveCameras.length} stream(s) [${streamNames.join(", ")}], backend updated: ${backendUpdated}`,
     );
+    if (backendUpdated === 0) {
+      console.log(
+        `⚠️ backend matched 0 CpPlus devices! Possible stream_name mismatch — Pi sent: [${streamNames.join(", ")}]`,
+      );
+    }
   } catch (err) {
     const status = err.response?.status;
     const body = err.response?.data;

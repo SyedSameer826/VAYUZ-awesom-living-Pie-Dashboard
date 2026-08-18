@@ -1,0 +1,4 @@
+# Pi Dashboard Backend — QA Environment
+# Points to QA backend on EC2 instead of production
+REMOTE_BACKEND_URL=https://qa.awesomliving.com
+GO2RTC_URL=http://localhost:1984
