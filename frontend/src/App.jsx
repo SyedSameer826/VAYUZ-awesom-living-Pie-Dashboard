@@ -1,6 +1,6 @@
 import "./App.css";
 import { useEffect, useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
 import { PrimaryLayout } from "./components/layout/primary";
 
@@ -13,6 +13,7 @@ import HomeSetupModal from "./pages/HomeSetupModal";
 import { getHubSetup } from "./services/deviceService";
 
 function App() {
+  const navigate = useNavigate();
   const [sessionEmail, setSessionEmail] = useState(() => {
     return window.localStorage.getItem(AUTH_STORAGE_KEY) || "";
   });
@@ -62,7 +63,14 @@ function App() {
 
   // 3) Logged in but hub not configured → show Home Setup modal.
   if (!hubConfigured) {
-    return <HomeSetupModal onComplete={() => setHubConfigured(true)} />;
+    return (
+      <HomeSetupModal
+        onComplete={() => {
+          setHubConfigured(true);
+          navigate("/devices");
+        }}
+      />
+    );
   }
 
   // 4) Logged in + hub configured → show the main dashboard.
