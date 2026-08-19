@@ -6,7 +6,6 @@ import { Button } from "../../components/buttons";
 // so the user can set the admin password without leaving to a browser.
 const CameraForm = ({
   form,
-  residents,
   isSaving,
   onChange,
   onClose,
@@ -56,7 +55,7 @@ const CameraForm = ({
                 Enter that same password in the <b>Camera Password</b> field.
               </li>
               <li>
-                Choose the resident, then click <b>Map Camera</b>.
+                Click <b>Map Camera</b> to save.
               </li>
             </ol>
             <div style={{ display: "flex", gap: 8 }}>
@@ -141,18 +140,6 @@ const CameraForm = ({
               placeholder="e.g. living_room"
             />
           </label>
-          <label className="form-field">
-            <span>Resident</span>
-            <select name="resident" value={form.resident} onChange={onChange}>
-              <option value="">Select Resident</option>
-              {residents.map((resident) => (
-                <option key={resident._id} value={resident._id}>
-                  {resident.name || resident.full_name}
-                </option>
-              ))}
-            </select>
-          </label>
-
           <div className="form-actions">
             <Button variant="outline" onClick={onClose}>
               Cancel

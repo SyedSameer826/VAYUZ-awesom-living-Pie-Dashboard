@@ -25,7 +25,7 @@ export const getDeviceDetails = async () => {
   return Array.isArray(data) ? data : [];
 };
 
-export const getResidents = async ({ last_id = "", limit = 100 } = {}) => {
+export const getResidents = async ({ last_id = "", limit = 100, home_id = "" } = {}) => {
   const query = new URLSearchParams();
 
   if (last_id) {
@@ -33,6 +33,10 @@ export const getResidents = async ({ last_id = "", limit = 100 } = {}) => {
   }
 
   query.append("limit", limit);
+
+  if (home_id) {
+    query.append("home_id", home_id);
+  }
 
   const response = await fetch(
     `${BASE_URL}/user/resident/get_all_residents?${query.toString()}`,
@@ -58,7 +62,7 @@ export const assignDeviceName = async ({
   zigbee_ieee,
   zigbee_name,
   zigbee_type,
-  resident,
+  home_id,
 }) => {
   const response = await fetch(`${API_BASE_URL}assign-name`, {
     method: "POST",
@@ -67,7 +71,7 @@ export const assignDeviceName = async ({
       zigbee_ieee,
       zigbee_name,
       zigbee_type,
-      resident,
+      home_id,
     }),
   });
 
@@ -81,7 +85,7 @@ export const assignCamera = async ({
   stream_name,
   local_ip,
   rtsp_url,
-  resident,
+  home_id,
   room,
 }) => {
   const response = await fetch(`${API_BASE_URL}assign-camera`, {
@@ -91,7 +95,7 @@ export const assignCamera = async ({
       stream_name,
       local_ip,
       rtsp_url,
-      resident,
+      home_id,
       room,
     }),
   });

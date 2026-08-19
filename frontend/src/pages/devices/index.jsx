@@ -15,6 +15,7 @@ import {
   pairGlk,
   getDeviceDetails,
   getResidents,
+  getHubSetup,
   deleteDevice,
 } from "../../services/deviceService";
 import { getDeviceId, mapDeviceRows } from "../../utils/devices";
@@ -50,6 +51,7 @@ function Devices() {
   const [glkDevices, setGlkDevices] = useState([]);
   const [isGlkScanning, setIsGlkScanning] = useState(false);
   const [isGlkPairing, setIsGlkPairing] = useState(false);
+  const [homeId, setHomeId] = useState("");
   const tableRows = useMemo(() => mapDeviceRows(devices), [devices]);
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -90,10 +92,22 @@ function Devices() {
       );
     }
 
-    // Residents come from the remote backend (Render.com). They only populate
-    // the assignment dropdown, so a failure here must NOT touch the devices.
+    // Fetch the home_id mapped to this Pi hub (set during first-time setup).
+    // Used to automatically include home_id in device/camera mapping payloads
+    // and to filter the resident list for GLK pairing.
+    let hid = "";
     try {
-      const residentData = await getResidents();
+      const hubData = await getHubSetup();
+      hid = hubData.home_id || "";
+      if (hid) setHomeId(hid);
+    } catch {
+      // Hub setup endpoint may not be available in dev mode.
+    }
+
+    // Residents come from the remote backend. Only needed for the GLK pairing
+    // dropdown — device and camera forms use home_id automatically.
+    try {
+      const residentData = await getResidents({ home_id: hid });
       setResidents(residentData);
     } catch {
       // Keep whatever residents we already have — the dropdown may be stale.
@@ -156,8 +170,8 @@ function Devices() {
   const handleSaveCamera = async (event) => {
     event.preventDefault();
 
-    if (!cameraForm.stream_name.trim() || !cameraForm.resident) {
-      setError("Stream name and resident are required");
+    if (!cameraForm.stream_name.trim()) {
+      setError("Stream name is required");
       return;
     }
 
@@ -179,7 +193,7 @@ function Devices() {
         stream_name: cameraForm.stream_name.trim(),
         local_ip: ip,
         rtsp_url,
-        resident: cameraForm.resident,
+        home_id: homeId,
         room: cameraForm.room.trim() || "living_room",
       });
       closeCameraForm();
@@ -322,7 +336,6 @@ function Devices() {
       name: form.device.trim(),
       ieee_address: form.ieee_address.trim(),
       type: form.type.trim(),
-      resident: form.resident,
       status: "mapped",
       is_unassigned: false,
     };
@@ -334,7 +347,7 @@ function Devices() {
           zigbee_name: nextDevice.device,
           zigbee_type:
             nextDevice.type == "contact" ? "door & window" : nextDevice.type,
-          resident: nextDevice.resident,
+          home_id: homeId,
         });
         setDevices((current) =>
           current.map((device, index) => {
@@ -459,7 +472,6 @@ function Devices() {
         <DeviceForm
           editingId={editingId}
           form={form}
-          residents={residents}
           isSaving={isSaving}
           onChange={handleFormChange}
           onClose={closeForm}
@@ -470,7 +482,6 @@ function Devices() {
       {isCameraOpen && (
         <CameraForm
           form={cameraForm}
-          residents={residents}
           isSaving={isSaving}
           onChange={handleCameraChange}
           onClose={closeCameraForm}
