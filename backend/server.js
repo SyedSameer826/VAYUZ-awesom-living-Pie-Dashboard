@@ -64,7 +64,7 @@ const CONFIG_PATH = "/home/pi/zigbee2mqtt/data/configuration.yaml";
 
 // Main backend this Pi maps devices to. Overridable via env; defaults to production.
 const REMOTE_BACKEND =
-  process.env.REMOTE_BACKEND_URL || "https://awesomliving.com";
+  process.env.REMOTE_BACKEND_URL || "https://qa.awesomliving.com";
 
 // Local go2rtc instance on the Pi (used to register camera streams).
 const GO2RTC_URL = process.env.GO2RTC_URL || "http://localhost:1984";
@@ -226,7 +226,7 @@ app.get("/api/devices", (req, res) => {
 
 app.post("/api/assign-name", async (req, res) => {
   try {
-    const { zigbee_ieee, zigbee_name, resident, zigbee_type, room } = req.body;
+    const { zigbee_ieee, zigbee_name, home_id, zigbee_type, room } = req.body;
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ error: "Authorization token missing" });
@@ -241,7 +241,7 @@ app.post("/api/assign-name", async (req, res) => {
       ieee_address: zigbee_ieee,
       name: zigbee_name,
       type: detectedType,
-      resident,
+      home_id,
       status: "mapped",
       is_unassigned: false,
     });
@@ -266,13 +266,12 @@ app.post("/api/assign-name", async (req, res) => {
       `${REMOTE_BACKEND}/api/user/devices`,
       {
         type: "Zigbee",
-        resident,
         name: zigbee_name,
         id: zigbee_name,
         ieee: zigbee_ieee,
         sensor_type: zigbee_type,
         room: room || "bathroom",
-        home: readHubConfig().home_id || undefined,
+        home: home_id || readHubConfig().home_id || undefined,
       },
     );
 
@@ -291,17 +290,17 @@ app.post("/api/assign-name", async (req, res) => {
 
 app.post("/api/assign-camera", async (req, res) => {
   try {
-    const { stream_name, local_ip, rtsp_url, resident, room } = req.body;
+    const { stream_name, local_ip, rtsp_url, home_id, room } = req.body;
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ error: "Authorization token missing" });
     }
     const token = authHeader.split(" ")[1];
 
-    if (!stream_name || !resident) {
+    if (!stream_name) {
       return res
         .status(400)
-        .json({ error: "stream_name and resident are required" });
+        .json({ error: "stream_name is required" });
     }
 
     // Step 1: (Re)register the stream in go2rtc. Delete any existing stream with
@@ -338,7 +337,7 @@ app.post("/api/assign-camera", async (req, res) => {
       ieee_address: stream_name,
       name: stream_name,
       type: "camera",
-      resident,
+      home_id,
       status: "mapped",
       is_unassigned: false,
       local_ip,
@@ -354,13 +353,12 @@ app.post("/api/assign-camera", async (req, res) => {
       `${REMOTE_BACKEND}/api/user/devices`,
       {
         type: "CpPlus",
-        resident,
         stream_name,
         local_ip,
         room: room || "living_room",
         hub_id: getHubId(),
         rtsp_url: rtsp_url || null,
-        home: readHubConfig().home_id || undefined,
+        home: home_id || readHubConfig().home_id || undefined,
       },
     );
 
