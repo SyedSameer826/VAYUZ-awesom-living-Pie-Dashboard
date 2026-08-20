@@ -269,7 +269,7 @@ app.post("/api/assign-name", async (req, res) => {
         name: zigbee_name,
         id: zigbee_name,
         ieee: zigbee_ieee,
-        sensor_type: zigbee_type,
+        sensor_type: detectedType,
         room: room || "bathroom",
         home: home_id || readHubConfig().home_id || undefined,
       },
@@ -277,7 +277,9 @@ app.post("/api/assign-name", async (req, res) => {
 
     res.json({ success: true, backend_response: response.data });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    const remoteMsg = err.response?.data?.error_message || err.response?.data?.message || err.message;
+    console.error("assign-name remote error:", remoteMsg, err.response?.data);
+    res.status(err.response?.status || 500).json({ error: remoteMsg });
   }
 });
 
@@ -364,7 +366,9 @@ app.post("/api/assign-camera", async (req, res) => {
 
     res.json({ success: true, backend_response: response.data });
   } catch (err) {
-    res.status(500).json({ error: err.response?.data || err.message });
+    const remoteMsg = err.response?.data?.error_message || err.response?.data?.message || err.message;
+    console.error("assign-camera remote error:", remoteMsg, err.response?.data);
+    res.status(err.response?.status || 500).json({ error: remoteMsg });
   }
 });
 
