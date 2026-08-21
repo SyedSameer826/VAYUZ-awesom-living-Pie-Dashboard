@@ -246,19 +246,28 @@ app.post("/api/assign-name", async (req, res) => {
       is_unassigned: false,
     });
 
-    // Step 2: Check device exists in Z2M and get its current friendly name
-    const config = yaml.load(fs.readFileSync(CONFIG_PATH, "utf8"));
-    if (!config.devices[zigbee_ieee]) {
-      return res.status(404).json({ error: "Device not found in Z2M" });
-    }
-    const currentFriendlyName =
-      config.devices[zigbee_ieee].friendly_name || zigbee_ieee;
+    // Step 2: Read Z2M config and rename if device is known there.
+    // The device may exist in devices.json (discovered via MQTT bridge) but NOT
+    // yet in Z2M's configuration.yaml (e.g. devices section missing on fresh
+    // installs). Handle gracefully — skip the rename, still forward to backend.
+    let currentFriendlyName = zigbee_ieee;
+    try {
+      const config = yaml.load(fs.readFileSync(CONFIG_PATH, "utf8"));
+      if (config.devices && config.devices[zigbee_ieee]) {
+        currentFriendlyName =
+          config.devices[zigbee_ieee].friendly_name || zigbee_ieee;
 
-    // Step 3: Rename via Z2M MQTT API — updates Z2M in-memory + YAML instantly, no restart needed
-    mqttClient.publish(
-      "zigbee2mqtt/bridge/request/device/rename",
-      JSON.stringify({ from: currentFriendlyName, to: zigbee_name }),
-    );
+        // Step 3: Rename via Z2M MQTT API — updates Z2M in-memory + YAML instantly, no restart needed
+        mqttClient.publish(
+          "zigbee2mqtt/bridge/request/device/rename",
+          JSON.stringify({ from: currentFriendlyName, to: zigbee_name }),
+        );
+      } else {
+        console.log("⚠️ Device not in Z2M config — skipping rename, will still map to backend:", zigbee_ieee);
+      }
+    } catch (configErr) {
+      console.log("⚠️ Could not read Z2M config — skipping rename:", configErr.message);
+    }
 
     // Step 4: Send to remote backend
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -494,6 +503,7 @@ app.post("/api/glk/pair", async (req, res) => {
     const piIp = getPiLanIp();
 
     // 1) BLE provision (write WiFi + server config, wait for the fff2 acks).
+    let provisionStderr = "";
     const provision = await new Promise((resolve, reject) => {
       execFile(
         GLK_PYTHON,
@@ -513,6 +523,8 @@ app.post("/api/glk/pair", async (req, res) => {
         ],
         { timeout: 90000, cwd: path.join(__dirname, "glk") },
         (err, stdout, stderr) => {
+          provisionStderr = stderr || "";
+          if (provisionStderr) console.error("[GLK pair] stderr:\n" + provisionStderr);
           if (err && !stdout) {
             return reject(new Error(stderr || err.message));
           }
@@ -528,7 +540,7 @@ app.post("/api/glk/pair", async (req, res) => {
     if (!provision.success) {
       return res
         .status(502)
-        .json({ error: "GLK provisioning failed", detail: provision });
+        .json({ error: "GLK provisioning failed", detail: provision, stderr: provisionStderr });
     }
 
     // 2) Record locally so the device shows in the Pie device list.
