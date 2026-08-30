@@ -365,7 +365,7 @@ app.post("/api/glk/pair", async (req, res) => {
           "--pi-ip",
           pi_ip,
         ],
-        { timeout: 30000 },
+        { timeout: 90000 },
         (err, stdout, stderr) => {
           if (err) {
             return reject(
