@@ -539,7 +539,7 @@ app.post("/api/glk/pair", async (req, res) => {
 
     if (!provision.success) {
       return res
-        .status(502)
+        .status(422)
         .json({ error: "GLK provisioning failed", detail: provision, stderr: provisionStderr });
     }
 

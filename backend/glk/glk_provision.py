@@ -192,7 +192,9 @@ def _reply_is_success(data: bytes, msg_type: int) -> bool:
 # Helper: write chunks and wait for reply
 # ---------------------------------------------------------------------------
 async def _write_chunks_and_wait(client, chunks, msg_type, timeout, label=""):
-    """Write BLE config chunks to fff1, subscribe to fff2 for the reply."""
+    """Write BLE config chunks to fff1, subscribe to fff2 for the reply.
+    Returns (ack: bool, reason: str) — reason is 'ok', 'timeout', or 'rejected'.
+    """
     got = {"data": None}
     ev = asyncio.Event()
 
@@ -203,6 +205,12 @@ async def _write_chunks_and_wait(client, chunks, msg_type, timeout, label=""):
 
     _dbg(f"  [{label}] Subscribing to notifications on {glk.BLE_NOTIFY_CHAR} ...")
     await client.start_notify(glk.BLE_NOTIFY_CHAR, on_notify)
+
+    # Settle delay — give BlueZ time to register the subscription before
+    # writing.  Without this, the device may reply before the adapter is
+    # listening and the notification is silently lost.
+    await asyncio.sleep(0.3)
+
     try:
         for i, chunk in enumerate(chunks):
             _dbg(f"  [{label}] Writing chunk {i+1}/{len(chunks)}: {chunk.hex()}")
@@ -212,9 +220,10 @@ async def _write_chunks_and_wait(client, chunks, msg_type, timeout, label=""):
         try:
             await asyncio.wait_for(ev.wait(), timeout=timeout)
         except asyncio.TimeoutError:
-            _dbg(f"  [{label}] TIMEOUT — no reply from device")
-            return False
-        return _reply_is_success(got["data"], msg_type)
+            _dbg(f"  [{label}] TIMEOUT — no reply from device after {timeout}s")
+            return False, "timeout"
+        ok = _reply_is_success(got["data"], msg_type)
+        return ok, ("ok" if ok else "rejected")
     finally:
         try:
             await client.stop_notify(glk.BLE_NOTIFY_CHAR)
@@ -381,23 +390,35 @@ async def provision_device(
         _dbg(f"Characteristics verified: fff1=[{', '.join(write_char.properties)}] "
              f"fff2=[{', '.join(notify_char.properties)}]")
 
-        # GATT reply timeout — much shorter than connection timeout;
-        # the device responds within a second or two when config is accepted.
-        write_timeout = 10.0
+        # GATT reply timeout — the device normally responds within a second
+        # or two, but WiFi config may trigger an actual connection attempt on
+        # some firmware versions, taking longer.
+        wifi_timeout = 15.0
+        server_timeout = 10.0
 
         # Step 1: Write WiFi config (0x1F) and wait for ack
         _dbg("Step 1: Writing WiFi config ...")
-        wifi_ack = await _write_chunks_and_wait(
-            client, wifi_chunks, glk.BLE_MSG_WIFI, write_timeout, label="WiFi"
+        wifi_ack, wifi_reason = await _write_chunks_and_wait(
+            client, wifi_chunks, glk.BLE_MSG_WIFI, wifi_timeout, label="WiFi"
         )
+
+        # If WiFi config timed out, retry once — the notification subscription
+        # may not have been ready on the first attempt, or the device may need
+        # a second try after its internal state machine settles.
+        if not wifi_ack and wifi_reason == "timeout":
+            _dbg("WiFi config timed out — retrying once after 2s settle ...")
+            await asyncio.sleep(2.0)
+            wifi_ack, wifi_reason = await _write_chunks_and_wait(
+                client, wifi_chunks, glk.BLE_MSG_WIFI, wifi_timeout, label="WiFi-retry"
+            )
 
         # Small settle before the second config
         await asyncio.sleep(0.3)
 
         # Step 2: Write server config (0x23) and wait for ack
         _dbg("Step 2: Writing server config ...")
-        server_ack = await _write_chunks_and_wait(
-            client, server_chunks, glk.BLE_MSG_SERVER, write_timeout, label="Server"
+        server_ack, server_reason = await _write_chunks_and_wait(
+            client, server_chunks, glk.BLE_MSG_SERVER, server_timeout, label="Server"
         )
 
     except Exception as e:
@@ -413,10 +434,12 @@ async def provision_device(
                 pass
 
     success = bool(wifi_ack and server_ack)
-    detail = "provisioned" if success else (
-        "wifi config not acknowledged" if not wifi_ack
-        else "server config not acknowledged"
-    )
+    if success:
+        detail = "provisioned"
+    elif not wifi_ack:
+        detail = f"wifi config not acknowledged ({wifi_reason})"
+    else:
+        detail = f"server config not acknowledged ({server_reason})"
     _dbg(f"Result: success={success}, wifi_ack={wifi_ack}, server_ack={server_ack}, detail={detail}")
     if success:
         _dbg("*** PROVISIONING COMPLETE ***")
