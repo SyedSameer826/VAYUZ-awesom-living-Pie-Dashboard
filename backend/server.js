@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import fs from "fs";
@@ -7,9 +8,9 @@ import http from "http";
 import https from "https";
 import crypto from "crypto";
 import os from "os";
+import { exec, execFile } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
-import { execFile } from "child_process";
 
 import { Server } from "socket.io";
 
@@ -61,9 +62,9 @@ const CONFIG_PATH = "/home/pi/zigbee2mqtt/data/configuration.yaml";
    REMOTE BACKEND + GO2RTC
 ========================= */
 
-// Main backend this Pi maps devices to. Overridable via env; defaults to the EC2.
+// Main backend this Pi maps devices to. Overridable via env; defaults to production.
 const REMOTE_BACKEND =
-  process.env.REMOTE_BACKEND_URL || "http://51.20.102.125";
+  process.env.REMOTE_BACKEND_URL || "https://qa.awesomliving.com";
 
 // Local go2rtc instance on the Pi (used to register camera streams).
 const GO2RTC_URL = process.env.GO2RTC_URL || "http://localhost:1984";
@@ -225,7 +226,7 @@ app.get("/api/devices", (req, res) => {
 
 app.post("/api/assign-name", async (req, res) => {
   try {
-    const { zigbee_ieee, zigbee_name, resident, zigbee_type, room } = req.body;
+    const { zigbee_ieee, zigbee_name, home_id, zigbee_type, room } = req.body;
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ error: "Authorization token missing" });
@@ -240,24 +241,33 @@ app.post("/api/assign-name", async (req, res) => {
       ieee_address: zigbee_ieee,
       name: zigbee_name,
       type: detectedType,
-      resident,
+      home_id,
       status: "mapped",
       is_unassigned: false,
     });
 
-    // Step 2: Check device exists in Z2M and get its current friendly name
-    const config = yaml.load(fs.readFileSync(CONFIG_PATH, "utf8"));
-    if (!config.devices[zigbee_ieee]) {
-      return res.status(404).json({ error: "Device not found in Z2M" });
-    }
-    const currentFriendlyName =
-      config.devices[zigbee_ieee].friendly_name || zigbee_ieee;
+    // Step 2: Read Z2M config and rename if device is known there.
+    // The device may exist in devices.json (discovered via MQTT bridge) but NOT
+    // yet in Z2M's configuration.yaml (e.g. devices section missing on fresh
+    // installs). Handle gracefully — skip the rename, still forward to backend.
+    let currentFriendlyName = zigbee_ieee;
+    try {
+      const config = yaml.load(fs.readFileSync(CONFIG_PATH, "utf8"));
+      if (config.devices && config.devices[zigbee_ieee]) {
+        currentFriendlyName =
+          config.devices[zigbee_ieee].friendly_name || zigbee_ieee;
 
-    // Step 3: Rename via Z2M MQTT API — updates Z2M in-memory + YAML instantly, no restart needed
-    mqttClient.publish(
-      "zigbee2mqtt/bridge/request/device/rename",
-      JSON.stringify({ from: currentFriendlyName, to: zigbee_name }),
-    );
+        // Step 3: Rename via Z2M MQTT API — updates Z2M in-memory + YAML instantly, no restart needed
+        mqttClient.publish(
+          "zigbee2mqtt/bridge/request/device/rename",
+          JSON.stringify({ from: currentFriendlyName, to: zigbee_name }),
+        );
+      } else {
+        console.log("⚠️ Device not in Z2M config — skipping rename, will still map to backend:", zigbee_ieee);
+      }
+    } catch (configErr) {
+      console.log("⚠️ Could not read Z2M config — skipping rename:", configErr.message);
+    }
 
     // Step 4: Send to remote backend
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -265,147 +275,20 @@ app.post("/api/assign-name", async (req, res) => {
       `${REMOTE_BACKEND}/api/user/devices`,
       {
         type: "Zigbee",
-        resident,
         name: zigbee_name,
         id: zigbee_name,
         ieee: zigbee_ieee,
-        sensor_type: zigbee_type,
+        sensor_type: detectedType,
         room: room || "bathroom",
+        home: home_id || readHubConfig().home_id || undefined,
       },
     );
 
     res.json({ success: true, backend_response: response.data });
   } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/* =========================
-   GLK SLEEP MONITOR PAIRING (BLE provisioning + mapping)
-   The GLK Vital Tracker advertises as "LZ-OTA <serial>" over BLE while in
-   provisioning mode. We shell out to glk_provision.py which handles the BLE
-   handshake: write the home WiFi creds + this Pi's LAN IP so the device
-   knows where to stream its vitals data over TCP. After provisioning we
-   record it locally and map it to a resident on the remote backend.
-========================= */
-
-const GLK_PYTHON = process.env.GLK_PYTHON || "python3";
-const GLK_SCRIPT =
-  process.env.GLK_PROVISION_CMD ||
-  path.join(__dirname, "glk", "glk_provision.py");
-
-const getPiLanIp = () => {
-  const ifaces = os.networkInterfaces();
-  let fallback = null;
-  for (const name of Object.keys(ifaces)) {
-    for (const info of ifaces[name] || []) {
-      if (info.family === "IPv4" && !info.internal) {
-        if (info.address.startsWith("192.168.50.")) return info.address;
-        fallback = fallback || info.address;
-      }
-    }
-  }
-  return fallback || "192.168.50.50";
-};
-
-// POST /api/glk/scan — BLE scan for GLK devices in provisioning mode.
-app.post("/api/glk/scan", (req, res) => {
-  execFile(
-    GLK_PYTHON,
-    [GLK_SCRIPT, "scan", "--timeout", "8"],
-    { timeout: 15000 },
-    (err, stdout, stderr) => {
-      if (err) {
-        console.log("GLK scan error:", stderr || err.message);
-        return res
-          .status(500)
-          .json({ error: stderr?.trim() || err.message || "GLK scan failed" });
-      }
-      try {
-        const result = JSON.parse(stdout);
-        res.json({ success: true, devices: result.devices || [] });
-      } catch (parseErr) {
-        res.json({ success: true, devices: [] });
-      }
-    },
-  );
-});
-
-// POST /api/glk/pair — provision a GLK device onto WiFi + map to resident.
-app.post("/api/glk/pair", async (req, res) => {
-  try {
-    const { address, serial, ssid, password, resident, room } = req.body;
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ error: "Authorization token missing" });
-    }
-    const token = authHeader.split(" ")[1];
-
-    if (!address || !ssid || !password || !resident) {
-      return res.status(400).json({
-        error: "address, ssid, password, and resident are required",
-      });
-    }
-
-    const pi_ip = getPiLanIp();
-
-    // Step 1: BLE provision — write WiFi creds + Pi address to the device.
-    await new Promise((resolve, reject) => {
-      execFile(
-        GLK_PYTHON,
-        [
-          GLK_SCRIPT,
-          "provision",
-          "--address",
-          address,
-          "--ssid",
-          ssid,
-          "--password",
-          password,
-          "--pi-ip",
-          pi_ip,
-        ],
-        { timeout: 90000 },
-        (err, stdout, stderr) => {
-          if (err) {
-            return reject(
-              new Error(stderr?.trim() || err.message || "BLE provision failed"),
-            );
-          }
-          resolve(stdout);
-        },
-      );
-    });
-
-    // Step 2: Record locally so the device shows as mapped.
-    const device_id = serial || address.replace(/:/g, "");
-    upsertDevice({
-      ieee_address: device_id,
-      name: `GLK-${serial || device_id}`,
-      type: "glk",
-      resident,
-      status: "mapped",
-      is_unassigned: false,
-    });
-
-    // Step 3: Map to the remote backend as an Emfit-type device (GLK uses the
-    // same vitals schema — sleep stages, heart rate, respiratory rate).
-    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    const response = await axios.post(`${REMOTE_BACKEND}/api/user/devices`, {
-      type: "Emfit",
-      resident,
-      name: `GLK-${serial || device_id}`,
-      id: device_id,
-      sr_num: serial || device_id,
-      room: room || "bedroom",
-    });
-
-    res.json({ success: true, backend_response: response.data });
-  } catch (err) {
-    console.log("GLK pair error:", err.message);
-    res
-      .status(500)
-      .json({ error: err.response?.data || err.message || "GLK pairing failed" });
+    const remoteMsg = err.response?.data?.error_message || err.response?.data?.message || err.message;
+    console.error("assign-name remote error:", remoteMsg, err.response?.data);
+    res.status(err.response?.status || 500).json({ error: remoteMsg });
   }
 });
 
@@ -418,17 +301,17 @@ app.post("/api/glk/pair", async (req, res) => {
 
 app.post("/api/assign-camera", async (req, res) => {
   try {
-    const { stream_name, local_ip, rtsp_url, resident, room } = req.body;
+    const { stream_name, local_ip, rtsp_url, home_id, room } = req.body;
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ error: "Authorization token missing" });
     }
     const token = authHeader.split(" ")[1];
 
-    if (!stream_name || !resident) {
+    if (!stream_name) {
       return res
         .status(400)
-        .json({ error: "stream_name and resident are required" });
+        .json({ error: "stream_name is required" });
     }
 
     // Step 1: (Re)register the stream in go2rtc. Delete any existing stream with
@@ -456,35 +339,45 @@ app.post("/api/assign-camera", async (req, res) => {
       }
     }
 
+    // Persist the RTSP URL in go2rtc.yaml so the stream survives restarts.
+    if (rtsp_url) persistStreamConfig(stream_name, rtsp_url);
+
     // Step 2: Record locally so the camera shows as mapped in the device list.
     // Cameras have no IEEE address — use the (unique) stream_name as the key.
     upsertDevice({
       ieee_address: stream_name,
       name: stream_name,
       type: "camera",
-      resident,
+      home_id,
       status: "mapped",
       is_unassigned: false,
       local_ip,
       stream_name,
+      rtsp_url: rtsp_url || null,
     });
 
-    // Step 3: Map to the remote backend as a CpPlus device.
+    // Step 3: Map to the remote backend as a CpPlus device. Include this Pi's
+    // hub_id so the backend can resolve the correct go2rtc tunnel URL, and
+    // the full RTSP URL so the stream can be re-provisioned on restart.
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     const response = await axios.post(
       `${REMOTE_BACKEND}/api/user/devices`,
       {
         type: "CpPlus",
-        resident,
         stream_name,
         local_ip,
         room: room || "living_room",
+        hub_id: getHubId(),
+        rtsp_url: rtsp_url || null,
+        home: home_id || readHubConfig().home_id || undefined,
       },
     );
 
     res.json({ success: true, backend_response: response.data });
   } catch (err) {
-    res.status(500).json({ error: err.response?.data || err.message });
+    const remoteMsg = err.response?.data?.error_message || err.response?.data?.message || err.message;
+    console.error("assign-camera remote error:", remoteMsg, err.response?.data);
+    res.status(err.response?.status || 500).json({ error: remoteMsg });
   }
 });
 
@@ -531,6 +424,167 @@ app.post("/api/camera/pair/scan", async (req, res) => {
     res.json({ success: true, cameras });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+/* =========================
+   GLK SLEEP MONITOR PAIRING (BLE provisioning + mapping)
+   The GLK monitor is set up over BLE ONCE: we write the home WiFi creds (0x1F)
+   and this Pi's server address (0x23 = Pi IP + port 8766). After that it joins
+   WiFi and streams sleep data over TCP to the Pi's glk_bridge on :8766. This
+   backend shells out to a Python provisioner (which reuses the verified
+   glk_protocol.py) for the BLE work, then maps the device to a resident on the
+   remote backend as an Emfit-type device (sr_num = the 12-digit serial).
+========================= */
+
+// Python provisioner command. Override GLK_PROVISION_CMD to point at the GLK
+// team's own glk_ble_config.py if you prefer, as long as it accepts the same
+// `scan` / `provision` subcommands and prints the same JSON.
+const GLK_PYTHON = process.env.GLK_PYTHON || "python3";
+const GLK_SCRIPT =
+  process.env.GLK_PROVISION_CMD || path.join(__dirname, "glk", "glk_provision.py");
+
+// The Pi's LAN IP that the GLK device should connect back to (the 0x23 config).
+// Prefer the main-subnet (192.168.50.x) address; fall back to any non-internal
+// IPv4. Must match the Pi's reserved DHCP IP so the device can always find it.
+const getPiLanIp = () => {
+  const ifaces = os.networkInterfaces();
+  let fallback = null;
+  for (const name of Object.keys(ifaces)) {
+    for (const info of ifaces[name] || []) {
+      if (info.family === "IPv4" && !info.internal) {
+        if (info.address.startsWith("192.168.50.")) return info.address;
+        fallback = fallback || info.address;
+      }
+    }
+  }
+  return fallback || "192.168.50.50";
+};
+
+// Scan for GLK devices in provisioning mode (advertising "LZ-OTA <serial>").
+app.post("/api/glk/scan", (req, res) => {
+  execFile(
+    GLK_PYTHON,
+    [GLK_SCRIPT, "scan", "--timeout", "8"],
+    { timeout: 25000, cwd: path.join(__dirname, "glk") },
+    (err, stdout, stderr) => {
+      if (err && !stdout) {
+        return res
+          .status(500)
+          .json({ error: stderr || err.message || "GLK scan failed" });
+      }
+      try {
+        return res.json(JSON.parse(stdout));
+      } catch {
+        return res
+          .status(500)
+          .json({ error: "Unexpected scan output", raw: stdout, stderr });
+      }
+    },
+  );
+});
+
+// Provision a chosen GLK device onto WiFi + this Pi, then map it to a resident.
+app.post("/api/glk/pair", async (req, res) => {
+  try {
+    const { address, serial, ssid, password, resident, room } = req.body;
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Authorization token missing" });
+    }
+    const token = authHeader.split(" ")[1];
+
+    if (!address || !ssid || !password || !resident) {
+      return res.status(400).json({
+        error: "address, ssid, password and resident are required",
+      });
+    }
+
+    const piIp = getPiLanIp();
+
+    // 1) BLE provision (write WiFi + server config, wait for the fff2 acks).
+    let provisionStderr = "";
+    const provision = await new Promise((resolve, reject) => {
+      execFile(
+        GLK_PYTHON,
+        [
+          GLK_SCRIPT,
+          "provision",
+          "--address",
+          address,
+          "--ssid",
+          ssid,
+          "--password",
+          password,
+          "--pi-ip",
+          piIp,
+          "--port",
+          "8766",
+        ],
+        { timeout: 90000, cwd: path.join(__dirname, "glk") },
+        (err, stdout, stderr) => {
+          provisionStderr = stderr || "";
+          if (provisionStderr) console.error("[GLK pair] stderr:\n" + provisionStderr);
+          if (err && !stdout) {
+            return reject(new Error(stderr || err.message));
+          }
+          try {
+            resolve(JSON.parse(stdout));
+          } catch {
+            reject(new Error(`Unexpected provision output: ${stdout}`));
+          }
+        },
+      );
+    });
+
+    if (!provision.success) {
+      return res
+        .status(502)
+        .json({ error: "GLK provisioning failed", detail: provision, stderr: provisionStderr });
+    }
+
+    // 2) Record locally so the device shows in the Pie device list.
+    upsertDevice({
+      ieee_address: serial || address,
+      name: serial || address,
+      type: "glk",
+      resident,
+      status: "mapped",
+      is_unassigned: false,
+      sr_num: serial,
+    });
+
+    // 3) Map to the remote backend as an Emfit-type device (GLK vitals path).
+    // Non-fatal — BLE provisioning already succeeded + device saved locally, so
+    // don't discard that work if the remote backend is temporarily unreachable.
+    let backend_response = null;
+    let remote_error = null;
+    try {
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      const backend = await axios.post(`${REMOTE_BACKEND}/api/user/devices`, {
+        type: "Emfit",
+        resident,
+        sr_num: serial,
+        room: room || "bedroom",
+        home: readHubConfig().home_id || undefined,
+      });
+      backend_response = backend.data;
+    } catch (remoteErr) {
+      remote_error =
+        remoteErr.response?.data || remoteErr.message || "Remote registration failed";
+      console.error("[GLK pair] remote registration failed (device saved locally):", remote_error);
+    }
+
+    res.json({
+      success: true,
+      device_saved: true,
+      pi_ip: piIp,
+      provision,
+      backend_response,
+      remote_error,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.response?.data || err.message });
   }
 });
 
@@ -628,10 +682,45 @@ app.delete("/api/devices/:ieee", async (req, res) => {
       ? authHeader.split(" ")[1]
       : undefined;
 
-    // Cameras are handled differently from Zigbee devices: drop their go2rtc
-    // stream (so it stops), then delete locally + on the remote backend. No
-    // Zigbee "remove" is sent (a camera isn't a Zigbee device).
+    // Non-Zigbee devices (camera, GLK) are handled separately — no Z2M remove.
     const device = getDevices().find((d) => d.ieee_address === ieee);
+
+    // ---- GLK device delete ----
+    // GLK is mapped to the cloud backend as type "Emfit" with sr_num.
+    // Delete locally + from the remote backend by sr_num.
+    if (device?.type === "glk") {
+      // Delete from remote backend (find by sr_num, then delete by _id)
+      if (token && device.sr_num) {
+        try {
+          const headers = { Authorization: `Bearer ${token}` };
+          // Find the device on the remote backend by sr_num
+          const remoteDevices = await axios.get(
+            `${REMOTE_BACKEND}/api/user/devices`,
+            { headers, timeout: 8000 },
+          );
+          const remoteDevice = remoteDevices.data?.data?.find(
+            (d) => d.sr_num === device.sr_num,
+          );
+          if (remoteDevice?._id) {
+            await axios.delete(
+              `${REMOTE_BACKEND}/api/user/devices/${remoteDevice._id}`,
+              { headers, timeout: 8000 },
+            );
+            console.log("✅ GLK device deleted from cloud backend:", device.sr_num);
+          }
+        } catch (remoteErr) {
+          console.log(
+            "⚠️ GLK cloud delete failed (local delete continues):",
+            remoteErr.response?.data || remoteErr.message,
+          );
+        }
+      }
+      await deleteDevice(ieee, token);
+      console.log("✅ GLK delete complete for:", ieee);
+      return res.json({ success: true, message: "Device deleted" });
+    }
+
+    // ---- Camera delete ----
     if (device?.type === "camera") {
       const streamName = device.stream_name || ieee;
       try {
@@ -744,6 +833,180 @@ app.use(
 );
 
 /* =========================
+   HUB SETUP (first-time home selection)
+   Persists the home_id this Pi hub is linked to in a local JSON file.
+   The frontend calls GET /api/hub/setup to check, POST to save.
+========================= */
+
+const HUB_CONFIG_DIR =
+  process.env.DEVICES_DIR || path.join(os.homedir(), "awesomliving-data");
+const HUB_CONFIG_PATH = path.join(HUB_CONFIG_DIR, "hub-config.json");
+
+// Ensure data directory exists.
+fs.mkdirSync(HUB_CONFIG_DIR, { recursive: true });
+
+const readHubConfig = () => {
+  try {
+    return JSON.parse(fs.readFileSync(HUB_CONFIG_PATH, "utf8"));
+  } catch {
+    return {};
+  }
+};
+
+const writeHubConfig = (config) => {
+  fs.writeFileSync(HUB_CONFIG_PATH, JSON.stringify(config, null, 2));
+};
+
+app.get("/api/hub/setup", (req, res) => {
+  const config = readHubConfig();
+  res.json({
+    configured: !!config.home_id,
+    home_id: config.home_id || null,
+    hub_id: config.hub_id || getHubId(),
+    tunnel_url: config.tunnel_url || null,
+  });
+});
+
+app.post("/api/hub/setup", (req, res) => {
+  const { home_id, tunnel_url } = req.body;
+  if (!home_id) {
+    return res.status(400).json({ error: "home_id is required" });
+  }
+
+  const config = readHubConfig();
+  config.home_id = home_id;
+  config.hub_id = getHubId();
+  config.configured_at = new Date().toISOString();
+  if (tunnel_url) config.tunnel_url = tunnel_url.replace(/\/+$/, "");
+  writeHubConfig(config);
+
+  res.json({ success: true, configured: true, home_id, hub_id: config.hub_id });
+});
+
+// Separate endpoint to update tunnel URL (called by the setup script after
+// starting the Cloudflare tunnel, or manually from the dashboard).
+app.post("/api/hub/tunnel", (req, res) => {
+  const { tunnel_url } = req.body;
+  if (!tunnel_url) {
+    return res.status(400).json({ error: "tunnel_url is required" });
+  }
+
+  const config = readHubConfig();
+  config.tunnel_url = tunnel_url.replace(/\/+$/, "");
+  writeHubConfig(config);
+
+  res.json({ success: true, tunnel_url: config.tunnel_url });
+});
+
+/* =========================
+   GLK VITALS PROXY
+   glk_bridge.py on the Pi forwards sleep/vitals data to localhost:4000/api/glk/vitals,
+   and this endpoint relays it to the cloud backend's /api/health endpoint.
+========================= */
+
+app.post("/api/glk/vitals", async (req, res) => {
+  try {
+    const response = await axios.post(
+      `${REMOTE_BACKEND}/api/health`,
+      req.body,
+      { timeout: 8000 },
+    );
+    res.json(response.data);
+  } catch (err) {
+    console.log(
+      "⚠️ GLK vitals relay failed:",
+      err.response?.status,
+      err.message,
+    );
+    res.status(502).json({ error: "Failed to relay vitals to cloud backend" });
+  }
+});
+
+/* =========================
+   GO2RTC STREAM RE-REGISTRATION
+   On Pi startup, re-register all mapped camera RTSP streams in go2rtc so they
+   survive a go2rtc restart (go2rtc doesn't persist runtime-added streams, only
+   those in its YAML config). Called once at server start.
+========================= */
+
+const reRegisterStreams = async () => {
+  try {
+    const devices = getDevices();
+    const cameras = devices.filter(
+      (d) => d.type === "camera" && d.status === "mapped" && d.stream_name,
+    );
+    if (!cameras.length) return;
+
+    for (const cam of cameras) {
+      // We need an RTSP URL to register. Check the device record first
+      // (set during assign-camera), then try the go2rtc YAML as fallback.
+      let rtspUrl = cam.rtsp_url;
+      if (!rtspUrl) {
+        // Try to read from go2rtc config YAML
+        try {
+          const go2rtcConfig = yaml.load(
+            fs.readFileSync("/home/pi/go2rtc/go2rtc.yaml", "utf8"),
+          );
+          const streams = go2rtcConfig?.streams || {};
+          const entry = streams[cam.stream_name];
+          if (Array.isArray(entry)) rtspUrl = entry[0];
+          else if (typeof entry === "string") rtspUrl = entry;
+        } catch {
+          /* YAML not readable — skip */
+        }
+      }
+
+      if (!rtspUrl) {
+        console.log(`⚠️ No RTSP URL for ${cam.stream_name} — skipping re-register`);
+        continue;
+      }
+
+      try {
+        // Delete stale then re-add (same pattern as assign-camera).
+        await axios.delete(`${GO2RTC_URL}/api/streams`, {
+          params: { src: cam.stream_name },
+        });
+      } catch {
+        /* stream may not exist yet */
+      }
+      try {
+        await axios.put(`${GO2RTC_URL}/api/streams`, null, {
+          params: { name: cam.stream_name, src: rtspUrl },
+        });
+        console.log(`🎥 Re-registered stream: ${cam.stream_name}`);
+      } catch (err) {
+        console.log(
+          `⚠️ Failed to re-register ${cam.stream_name}:`,
+          err.message,
+        );
+      }
+    }
+  } catch (err) {
+    console.log("⚠️ Stream re-registration error:", err.message);
+  }
+};
+
+// Also persist the RTSP URL in devices.json when assigning a camera,
+// and update go2rtc.yaml so streams survive even a go2rtc config reload.
+const persistStreamConfig = (streamName, rtspUrl) => {
+  if (!rtspUrl) return;
+  try {
+    const configPath = "/home/pi/go2rtc/go2rtc.yaml";
+    let config = {};
+    try {
+      config = yaml.load(fs.readFileSync(configPath, "utf8")) || {};
+    } catch {
+      /* file may not exist yet */
+    }
+    if (!config.streams) config.streams = {};
+    config.streams[streamName] = [rtspUrl];
+    fs.writeFileSync(configPath, yaml.dump(config));
+  } catch (err) {
+    console.log("⚠️ Could not persist go2rtc config:", err.message);
+  }
+};
+
+/* =========================
    SERVE REACT BUILD
 ========================= */
 
@@ -756,9 +1019,216 @@ app.use((req, res) => {
 });
 
 /* =========================
+   HUB HEARTBEAT (Pi -> backend, every 30s)
+   Tells the cloud backend the Pi is alive and how good its internet is. The
+   backend infers "offline / no power" when these stop arriving for > 30 min
+   (a dead Pi can't phone home). We also report a graded internet level so the
+   family app can show connection quality live.
+========================= */
+
+// Ping every 15s. The backend flags the hub offline after >30s of silence
+// (2 missed pings), so a power-off shows offline within ~30s without flapping.
+const HUB_HEARTBEAT_INTERVAL_MS = 15 * 1000;
+
+// Stable per-Pi id from the CPU serial (falls back to hostname).
+let cachedHubId = null;
+const getHubId = () => {
+  if (cachedHubId) return cachedHubId;
+  try {
+    const cpuinfo = fs.readFileSync("/proc/cpuinfo", "utf8");
+    const m = cpuinfo.match(/Serial\s*:\s*([0-9a-fA-F]+)/);
+    if (m) cachedHubId = `pi-${m[1]}`;
+  } catch {
+    /* not a Pi / no cpuinfo — fall through */
+  }
+  if (!cachedHubId) cachedHubId = `pi-${os.hostname()}`;
+  return cachedHubId;
+};
+
+// A resident this Pi manages, so the backend can bind the hub to the right
+// home/family. Uses the first mapped device's resident from devices.json.
+const getManagedResident = () => {
+  try {
+    const device = getDevices().find((d) => d.resident && d.status === "mapped");
+    return device ? device.resident : null;
+  } catch {
+    return null;
+  }
+};
+
+// Grade internet quality by pinging a nearby anycast host (8.8.8.8). Returns a
+// level + avg latency, or { level: null } if ping is unavailable/blocked (the
+// caller then relies on the heartbeat POST itself to prove connectivity).
+const measureInternet = () =>
+  new Promise((resolve) => {
+    exec("ping -c 2 -w 3 8.8.8.8", (err, stdout = "") => {
+      const lossMatch = stdout.match(/(\d+)% packet loss/);
+      const avgMatch = stdout.match(/=\s*[\d.]+\/([\d.]+)\//);
+      const loss = lossMatch ? parseInt(lossMatch[1], 10) : 100;
+      const avg = avgMatch ? parseFloat(avgMatch[1]) : null;
+
+      if (!err && avg != null && loss < 100) {
+        let level;
+        if (loss > 20 || avg > 150) level = "online-poor";
+        else if (avg > 60) level = "online-good";
+        else level = "online-excellent";
+        return resolve({ level, ms: Math.round(avg) });
+      }
+      resolve({ level: null, ms: null }); // unknown via ping
+    });
+  });
+
+// Read the Cloudflare tunnel URL from the hub config (set by the setup script
+// or manually). The backend uses this to build per-camera stream URLs for the
+// mobile app. Falls back to env for backward compatibility.
+const getTunnelUrl = () => {
+  try {
+    const config = readHubConfig();
+    if (config.tunnel_url) return config.tunnel_url;
+  } catch {
+    /* no config file yet */
+  }
+  return process.env.TUNNEL_URL || null;
+};
+
+// Count mapped cameras on this hub (for the backend's camera_count field).
+const getMappedCameraCount = () => {
+  try {
+    return getDevices().filter(
+      (d) => d.type === "camera" && d.status === "mapped",
+    ).length;
+  } catch {
+    return 0;
+  }
+};
+
+const sendHeartbeat = async () => {
+  try {
+    const { level, ms } = await measureInternet();
+    const payload = {
+      hub_id: getHubId(),
+      // Send home directly from hub config so the backend can bind the hub even
+      // when no device has a resident mapped yet (belt-and-suspenders alongside
+      // the resident lookup the backend already does).
+      home: readHubConfig().home_id || undefined,
+      resident: getManagedResident(),
+      // If ping couldn't grade it but the POST below succeeds, we're at least
+      // online — report a safe middle tier rather than nothing.
+      internet_level: level || "online-good",
+      latency_ms: ms,
+      // Multi-camera: tell the backend how to reach this Pi's go2rtc.
+      tunnel_url: getTunnelUrl(),
+      camera_count: getMappedCameraCount(),
+    };
+    const headers = {};
+    if (process.env.HUB_SECRET_KEY) {
+      headers["x-hub-secret"] = process.env.HUB_SECRET_KEY;
+    }
+    const res = await axios.post(
+      `${REMOTE_BACKEND}/api/hub/heartbeat`,
+      payload,
+      { timeout: 8000, headers },
+    );
+    console.log(
+      `✅ hub heartbeat OK (hub=${payload.hub_id}, level=${payload.internet_level})`,
+    );
+  } catch (err) {
+    const status = err.response?.status;
+    const body = err.response?.data;
+    console.log(
+      `⚠️ hub heartbeat failed: ${err.message}`,
+      status ? `[HTTP ${status}]` : "",
+      body ? JSON.stringify(body) : "",
+    );
+  }
+};
+
+/* =========================
+   PER-CAMERA HEARTBEAT (Pi -> backend, every 30s)
+   Tells the backend each camera's go2rtc stream is alive. The backend's camera
+   health checker fires CAMERA_OFFLINE notifications when camera_last_seen goes
+   stale (>2 min). We use the bulk endpoint to avoid N individual POSTs.
+========================= */
+
+const CAMERA_HEARTBEAT_INTERVAL_MS = 30 * 1000;
+
+const sendCameraHeartbeats = async () => {
+  try {
+    const devices = getDevices();
+    const cameras = devices.filter(
+      (d) => d.type === "camera" && d.status === "mapped" && d.stream_name,
+    );
+    if (!cameras.length) return;
+
+    // Optionally verify each stream is actually alive in go2rtc before reporting.
+    let liveStreams = null;
+    try {
+      const streamsRes = await axios.get(`${GO2RTC_URL}/api/streams`, {
+        timeout: 3000,
+      });
+      if (streamsRes.data) {
+        liveStreams = new Set(Object.keys(streamsRes.data));
+      }
+    } catch {
+      // go2rtc may be briefly unreachable — report all mapped cameras anyway
+      // so the backend doesn't immediately flag them offline.
+    }
+
+    const aliveCameras = cameras
+      .filter((c) => !liveStreams || liveStreams.has(c.stream_name))
+      .map((c) => ({ stream_name: c.stream_name }));
+
+    if (!aliveCameras.length) return;
+
+    const headers = {};
+    if (process.env.HUB_SECRET_KEY) {
+      headers["x-hub-secret"] = process.env.HUB_SECRET_KEY;
+    }
+
+    const streamNames = aliveCameras.map((c) => c.stream_name);
+    const res = await axios.post(
+      `${REMOTE_BACKEND}/api/camera/heartbeat/bulk`,
+      { hub_id: getHubId(), cameras: aliveCameras },
+      { timeout: 8000, headers },
+    );
+    const backendUpdated = res.data?.data?.updated ?? "?";
+    console.log(
+      `✅ camera heartbeat OK — sent ${aliveCameras.length} stream(s) [${streamNames.join(", ")}], backend updated: ${backendUpdated}`,
+    );
+    if (backendUpdated === 0) {
+      console.log(
+        `⚠️ backend matched 0 CpPlus devices! Possible stream_name mismatch — Pi sent: [${streamNames.join(", ")}]`,
+      );
+    }
+  } catch (err) {
+    const status = err.response?.status;
+    const body = err.response?.data;
+    console.log(
+      `⚠️ camera heartbeat failed: ${err.message}`,
+      status ? `[HTTP ${status}]` : "",
+      body ? JSON.stringify(body) : "",
+    );
+  }
+};
+
+/* =========================
    START SERVER
 ========================= */
 
 server.listen(4000, () => {
   console.log("Server running on port 4000");
+
+  // Re-register all mapped camera streams in go2rtc (survives go2rtc restart).
+  reRegisterStreams();
+
+  // Kick off the hub heartbeat once the server is up, then every 15s.
+  sendHeartbeat();
+  setInterval(sendHeartbeat, HUB_HEARTBEAT_INTERVAL_MS);
+
+  // Kick off per-camera heartbeat (bulk) every 30s so the backend's camera
+  // health checker knows each stream is alive.
+  setTimeout(() => {
+    sendCameraHeartbeats();
+    setInterval(sendCameraHeartbeats, CAMERA_HEARTBEAT_INTERVAL_MS);
+  }, 5000); // small delay so streams have time to register first
 });
