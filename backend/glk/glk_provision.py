@@ -225,10 +225,14 @@ async def _write_chunks_and_wait(client, chunks, msg_type, timeout, label=""):
 # ---------------------------------------------------------------------------
 # Pre-connect: verify device is still advertising (warms up the adapter)
 # ---------------------------------------------------------------------------
-async def _verify_device_present(address: str, timeout: float = 5.0) -> bool:
+async def _verify_device_present(address: str, timeout: float = 5.0):
     """Quick scan to confirm the target device is still advertising.
     Also serves to transition the BlueZ adapter from idle/stale state into
     active mode, which makes the subsequent connect more reliable.
+
+    Returns (found: bool, ble_device: BLEDevice | None).  When found, the
+    BLEDevice carries the correct address-type metadata that BleakClient
+    needs to connect (critical for random-address devices like the GLK).
     """
     from bleak import BleakScanner
 
@@ -238,28 +242,35 @@ async def _verify_device_present(address: str, timeout: float = 5.0) -> bool:
         for device, _adv in discovered.values():
             if device.address.upper() == address.upper():
                 _dbg(f"Pre-connect scan: device {address} confirmed present (RSSI {_adv.rssi})")
-                return True
+                return True, device
         _dbg(f"Pre-connect scan: device {address} NOT found among {len(discovered)} devices")
-        return False
+        return False, None
     except Exception as e:
         _dbg(f"Pre-connect scan (non-fatal): {_exc_detail(e)}")
-        return True  # Optimistic — proceed to connect attempt anyway
+        return True, None  # Optimistic — proceed to connect attempt anyway
 
 
 # ---------------------------------------------------------------------------
 # BLE Connect with retries
 # ---------------------------------------------------------------------------
-async def _connect_with_retries(address: str, timeout: float):
+async def _connect_with_retries(address_or_device, timeout: float):
     """Try to connect to the BLE device, retrying on failure.
+    Accepts either a BLEDevice (preserves address-type metadata from scan)
+    or a plain address string as fallback.
     Returns a connected BleakClient or raises the last exception.
     """
     from bleak import BleakClient
+
+    # Use the BLEDevice object when available — it carries the correct
+    # address type (public vs random) that BlueZ needs for connection.
+    target = address_or_device
+    address = getattr(target, "address", target)
 
     last_exc = None
     for attempt in range(1, BLE_CONNECT_RETRIES + 1):
         try:
             _dbg(f"Connection attempt {attempt}/{BLE_CONNECT_RETRIES} to {address} ...")
-            client = BleakClient(address, timeout=timeout)
+            client = BleakClient(target, timeout=timeout)
             await client.connect()
             if client.is_connected:
                 _dbg(f"Connected on attempt {attempt}: {client.is_connected}")
@@ -324,12 +335,15 @@ async def provision_device(
     # Quick re-scan to (a) verify the device is still advertising and
     # (b) warm up the BlueZ adapter — significantly improves connect
     # reliability after a fresh scan-then-provision sequence.
-    device_present = await _verify_device_present(address, timeout=5.0)
+    # The returned BLEDevice carries the correct address type (public vs
+    # random) that BlueZ needs — do NOT clear the cache after this scan.
+    device_present, ble_device = await _verify_device_present(address, timeout=5.0)
     if not device_present:
         _dbg("WARNING: device not seen in pre-connect scan — will still attempt connect")
 
-    # Clear cache again after the verification scan (scan may re-populate it)
-    _remove_cached_device(address)
+    # Use the BLEDevice from the scan when available — it has the address
+    # type metadata.  Fall back to the raw address string otherwise.
+    connect_target = ble_device if ble_device else address
 
     # Per-attempt connection timeout.  Keep this shorter than the overall
     # child-process limit (90 s in server.js) so retries have room.
@@ -338,7 +352,7 @@ async def provision_device(
 
     client = None
     try:
-        client = await _connect_with_retries(address, connect_timeout)
+        client = await _connect_with_retries(connect_target, connect_timeout)
 
         # Log discovered services for debugging
         for service in client.services:
