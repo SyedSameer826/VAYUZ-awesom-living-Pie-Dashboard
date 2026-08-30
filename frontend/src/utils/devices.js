@@ -3,6 +3,7 @@ export const getDeviceId = (device, index) => {
 };
 
 export const mapDeviceRows = (devices) => {
+  if (!Array.isArray(devices)) return [];
   return devices.map((device, index) => ({
     id: getDeviceId(device, index),
     device: device.device || device.name || "Unnamed Device",

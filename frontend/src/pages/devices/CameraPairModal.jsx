@@ -26,7 +26,8 @@ const CameraPairModal = ({
   onRescan,
   onClose,
 }) => {
-  const hasUnmapped = cameras.some(
+  const safeList = Array.isArray(cameras) ? cameras : [];
+  const hasUnmapped = safeList.some(
     (c) => !(c.already_known && c.status === "mapped"),
   );
 
@@ -97,6 +98,14 @@ const CameraPairModal = ({
                   dropdowns (Main + Sub) to <b>H.264</b> → Save.
                 </li>
                 <li>
+                  <b>Setting → Network → TCP/IP</b>: set <b>Mode</b> to{" "}
+                  <b>Static</b>, enter the camera's current <b>IP Address</b>,{" "}
+                  <b>Subnet Mask</b> 255.255.255.0, <b>Default Gateway</b>{" "}
+                  192.168.50.1, <b>Preferred DNS</b> 192.168.50.1,{" "}
+                  <b>Alternate DNS</b> 8.8.8.8 → <b>Save</b>. This prevents
+                  the camera's IP from changing after a power cycle.
+                </li>
+                <li>
                   Reopen Pair Camera here, then click <b>Map</b> to assign it to a
                   resident.
                 </li>
@@ -105,12 +114,12 @@ const CameraPairModal = ({
           )}
 
           {/* 2) Then the found-cameras list */}
-          {!isScanning && cameras.length > 0 && (
+          {!isScanning && safeList.length > 0 && (
             <>
               <p style={{ margin: "0 0 8px", color: "#555" }}>
                 Cameras found on the network:
               </p>
-              {cameras.some((c) => isOnDefaultSubnet(c.ip)) && (
+              {safeList.some((c) => isOnDefaultSubnet(c.ip)) && (
                 <p
                   style={{
                     margin: "0 0 8px",
@@ -126,7 +135,7 @@ const CameraPairModal = ({
                 </p>
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {cameras.map((cam) => {
+                {safeList.map((cam) => {
                   const isMapped =
                     cam.already_known && cam.status === "mapped";
                   return (
@@ -177,7 +186,7 @@ const CameraPairModal = ({
             </>
           )}
 
-          {!isScanning && cameras.length === 0 && (
+          {!isScanning && safeList.length === 0 && (
             <p style={{ margin: "0 0 12px", color: "#555" }}>
               No cameras found. Make sure the camera is powered and connected,
               then rescan.
