@@ -11,6 +11,8 @@ import {
   scanCameras,
   enableCameraDhcp,
   openCameraSetup,
+  scanGlk,
+  pairGlk,
   getDeviceDetails,
   getResidents,
   deleteDevice,
@@ -19,6 +21,7 @@ import { getDeviceId, mapDeviceRows } from "../../utils/devices";
 import DeviceForm from "./DeviceForm";
 import CameraForm from "./CameraForm";
 import CameraPairModal from "./CameraPairModal";
+import GlkPairModal from "./GlkPairModal";
 
 const emptyCameraForm = {
   stream_name: "",
@@ -43,6 +46,11 @@ function Devices() {
   const [isPairOpen, setIsPairOpen] = useState(false);
   const [discoveredCameras, setDiscoveredCameras] = useState([]);
   const [isScanning, setIsScanning] = useState(false);
+  const [isGlkOpen, setIsGlkOpen] = useState(false);
+  const [glkDevices, setGlkDevices] = useState([]);
+  const [isGlkScanning, setIsGlkScanning] = useState(false);
+  const [isGlkPairing, setIsGlkPairing] = useState(false);
+  const [glkError, setGlkError] = useState("");
   const tableRows = useMemo(() => mapDeviceRows(devices), [devices]);
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -254,6 +262,42 @@ function Devices() {
     setError("");
     setIsCameraOpen(true);
   };
+  // ---- GLK sleep monitor pairing ----
+  const runGlkScan = async () => {
+    setIsGlkScanning(true);
+    setGlkError("");
+    try {
+      const result = await scanGlk();
+      setGlkDevices(result.devices || []);
+    } catch (glkScanError) {
+      setGlkError(glkScanError.message || "GLK scan failed");
+      setGlkDevices([]);
+    } finally {
+      setIsGlkScanning(false);
+    }
+  };
+
+  const openGlkModal = () => {
+    setGlkDevices([]);
+    setGlkError("");
+    setIsGlkOpen(true);
+    runGlkScan();
+  };
+
+  const handleGlkPair = async ({ address, serial, ssid, password, resident, room }) => {
+    setIsGlkPairing(true);
+    setGlkError("");
+    try {
+      await pairGlk({ address, serial, ssid, password, resident, room });
+      setIsGlkOpen(false);
+      await loadData();
+    } catch (glkPairError) {
+      setGlkError(glkPairError.message || "GLK pairing failed");
+    } finally {
+      setIsGlkPairing(false);
+    }
+  };
+
   useEffect(() => {
     loadData(true);
   }, []);
@@ -386,6 +430,9 @@ function Devices() {
             <button className="submit-button" onClick={openCameraForm}>
               Map Camera
             </button>
+            <button className="submit-button" onClick={openGlkModal}>
+              Pair GLK
+            </button>
           </div>
           <label className="table-search">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -441,6 +488,19 @@ function Devices() {
           onOpenSetup={handleOpenCameraSetup}
           onRescan={runCameraScan}
           onClose={() => setIsPairOpen(false)}
+        />
+      )}
+
+      {isGlkOpen && (
+        <GlkPairModal
+          devices={glkDevices}
+          isScanning={isGlkScanning}
+          isPairing={isGlkPairing}
+          residents={residents}
+          onScan={runGlkScan}
+          onPair={handleGlkPair}
+          onClose={() => setIsGlkOpen(false)}
+          error={glkError}
         />
       )}
     </main>

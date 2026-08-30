@@ -6,8 +6,10 @@ import axios from "axios";
 import http from "http";
 import https from "https";
 import crypto from "crypto";
+import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
+import { execFile } from "child_process";
 
 import { Server } from "socket.io";
 
@@ -275,6 +277,135 @@ app.post("/api/assign-name", async (req, res) => {
     res.json({ success: true, backend_response: response.data });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+/* =========================
+   GLK SLEEP MONITOR PAIRING (BLE provisioning + mapping)
+   The GLK Vital Tracker advertises as "LZ-OTA <serial>" over BLE while in
+   provisioning mode. We shell out to glk_provision.py which handles the BLE
+   handshake: write the home WiFi creds + this Pi's LAN IP so the device
+   knows where to stream its vitals data over TCP. After provisioning we
+   record it locally and map it to a resident on the remote backend.
+========================= */
+
+const GLK_PYTHON = process.env.GLK_PYTHON || "python3";
+const GLK_SCRIPT =
+  process.env.GLK_PROVISION_CMD ||
+  path.join(__dirname, "glk", "glk_provision.py");
+
+const getPiLanIp = () => {
+  const ifaces = os.networkInterfaces();
+  let fallback = null;
+  for (const name of Object.keys(ifaces)) {
+    for (const info of ifaces[name] || []) {
+      if (info.family === "IPv4" && !info.internal) {
+        if (info.address.startsWith("192.168.50.")) return info.address;
+        fallback = fallback || info.address;
+      }
+    }
+  }
+  return fallback || "192.168.50.50";
+};
+
+// POST /api/glk/scan — BLE scan for GLK devices in provisioning mode.
+app.post("/api/glk/scan", (req, res) => {
+  execFile(
+    GLK_PYTHON,
+    [GLK_SCRIPT, "scan", "--timeout", "8"],
+    { timeout: 15000 },
+    (err, stdout, stderr) => {
+      if (err) {
+        console.log("GLK scan error:", stderr || err.message);
+        return res
+          .status(500)
+          .json({ error: stderr?.trim() || err.message || "GLK scan failed" });
+      }
+      try {
+        const result = JSON.parse(stdout);
+        res.json({ success: true, devices: result.devices || [] });
+      } catch (parseErr) {
+        res.json({ success: true, devices: [] });
+      }
+    },
+  );
+});
+
+// POST /api/glk/pair — provision a GLK device onto WiFi + map to resident.
+app.post("/api/glk/pair", async (req, res) => {
+  try {
+    const { address, serial, ssid, password, resident, room } = req.body;
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Authorization token missing" });
+    }
+    const token = authHeader.split(" ")[1];
+
+    if (!address || !ssid || !password || !resident) {
+      return res.status(400).json({
+        error: "address, ssid, password, and resident are required",
+      });
+    }
+
+    const pi_ip = getPiLanIp();
+
+    // Step 1: BLE provision — write WiFi creds + Pi address to the device.
+    await new Promise((resolve, reject) => {
+      execFile(
+        GLK_PYTHON,
+        [
+          GLK_SCRIPT,
+          "provision",
+          "--address",
+          address,
+          "--ssid",
+          ssid,
+          "--password",
+          password,
+          "--server",
+          pi_ip,
+        ],
+        { timeout: 30000 },
+        (err, stdout, stderr) => {
+          if (err) {
+            return reject(
+              new Error(stderr?.trim() || err.message || "BLE provision failed"),
+            );
+          }
+          resolve(stdout);
+        },
+      );
+    });
+
+    // Step 2: Record locally so the device shows as mapped.
+    const device_id = serial || address.replace(/:/g, "");
+    upsertDevice({
+      ieee_address: device_id,
+      name: `GLK-${serial || device_id}`,
+      type: "glk",
+      resident,
+      status: "mapped",
+      is_unassigned: false,
+    });
+
+    // Step 3: Map to the remote backend as an Emfit-type device (GLK uses the
+    // same vitals schema — sleep stages, heart rate, respiratory rate).
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    const response = await axios.post(`${REMOTE_BACKEND}/api/user/devices`, {
+      type: "Emfit",
+      resident,
+      name: `GLK-${serial || device_id}`,
+      id: device_id,
+      sr_num: serial || device_id,
+      room: room || "bedroom",
+    });
+
+    res.json({ success: true, backend_response: response.data });
+  } catch (err) {
+    console.log("GLK pair error:", err.message);
+    res
+      .status(500)
+      .json({ error: err.response?.data || err.message || "GLK pairing failed" });
   }
 });
 
