@@ -362,7 +362,7 @@ app.post("/api/glk/pair", async (req, res) => {
           ssid,
           "--password",
           password,
-          "--server",
+          "--pi-ip",
           pi_ip,
         ],
         { timeout: 30000 },
