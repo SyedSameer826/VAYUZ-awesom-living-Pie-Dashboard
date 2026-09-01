@@ -301,7 +301,7 @@ app.post("/api/assign-name", async (req, res) => {
 
 app.post("/api/assign-camera", async (req, res) => {
   try {
-    const { stream_name, local_ip, rtsp_url, home_id, room } = req.body;
+    const { stream_name, local_ip, rtsp_url, home_id, room, resident } = req.body;
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ error: "Authorization token missing" });
@@ -370,6 +370,7 @@ app.post("/api/assign-camera", async (req, res) => {
         hub_id: getHubId(),
         rtsp_url: rtsp_url || null,
         home: home_id || readHubConfig().home_id || undefined,
+        resident: resident || undefined,
       },
     );
 
