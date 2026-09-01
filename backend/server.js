@@ -1019,7 +1019,9 @@ const persistStreamConfig = (streamName, rtspUrl) => {
    (async, no shell injection risk) to forward requests.
 ========================= */
 
-app.all("/api/user/*", (req, res) => {
+app.use("/api/user", (req, res) => {
+  // app.use strips the mount prefix from req.url, so rebuild the full path
+  // from req.originalUrl (which keeps /api/user/auth/sign-in intact).
   const target_url = `${REMOTE_BACKEND}${req.originalUrl}`;
 
   const curl_args = [
