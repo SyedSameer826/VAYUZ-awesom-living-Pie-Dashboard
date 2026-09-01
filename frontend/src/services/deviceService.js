@@ -1,7 +1,8 @@
 const API_BASE_URL = "/api/";
-// Main backend (EC2). Overridable at build time via VITE_BACKEND_URL.
-const REMOTE_BACKEND =
-  import.meta.env.VITE_BACKEND_URL || "http://51.20.102.125";
+// Empty string = relative URL. Requests go through the Pi's own Express
+// server, which proxies /api/user/* to the cloud backend. This avoids
+// CORS errors (browser would block a direct cross-origin fetch).
+const REMOTE_BACKEND = "";
 
 const getAuthHeaders = () => {
   const token = JSON.parse(window.localStorage.getItem("token"));

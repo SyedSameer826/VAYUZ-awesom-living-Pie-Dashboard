@@ -1007,6 +1007,25 @@ const persistStreamConfig = (streamName, rtspUrl) => {
 };
 
 /* =========================
+   CLOUD BACKEND PROXY
+   The React frontend calls cloud backend endpoints (auth, residents, etc.)
+   but browsers block cross-origin requests (CORS). We proxy /api/user/*
+   through this Express server so all frontend requests stay same-origin.
+========================= */
+
+// NOTE: context filter as first arg (not Express mount path) so the full
+// request path /api/user/... is preserved and proxied intact. If we used
+// app.use('/api/user', createProxyMiddleware({...})), Express would strip
+// the mount path and proxy to REMOTE_BACKEND/auth/sign-in (wrong).
+app.use(
+  createProxyMiddleware("/api/user", {
+    target: REMOTE_BACKEND,
+    changeOrigin: true,
+    logLevel: "warn",
+  }),
+);
+
+/* =========================
    SERVE REACT BUILD
 ========================= */
 
