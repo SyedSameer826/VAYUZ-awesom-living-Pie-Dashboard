@@ -1007,23 +1007,73 @@ const persistStreamConfig = (streamName, rtspUrl) => {
 };
 
 /* =========================
-   CLOUD BACKEND PROXY
+   CLOUD BACKEND PROXY  (curl-based)
    The React frontend calls cloud backend endpoints (auth, residents, etc.)
    but browsers block cross-origin requests (CORS). We proxy /api/user/*
    through this Express server so all frontend requests stay same-origin.
+
+   Why curl instead of http-proxy-middleware?
+   Cloudflare sits in front of awesomliving.com and blocks Node.js's TLS
+   fingerprint (JA3) with ECONNRESET. curl uses a different TLS stack whose
+   fingerprint Cloudflare accepts, so we shell out to curl via execFile
+   (async, no shell injection risk) to forward requests.
 ========================= */
 
-// NOTE: context filter as first arg (not Express mount path) so the full
-// request path /api/user/... is preserved and proxied intact. If we used
-// app.use('/api/user', createProxyMiddleware({...})), Express would strip
-// the mount path and proxy to REMOTE_BACKEND/auth/sign-in (wrong).
-app.use(
-  createProxyMiddleware("/api/user", {
-    target: REMOTE_BACKEND,
-    changeOrigin: true,
-    logLevel: "warn",
-  }),
-);
+app.all("/api/user/*", (req, res) => {
+  const target_url = `${REMOTE_BACKEND}${req.originalUrl}`;
+
+  const curl_args = [
+    "-s",                          // silent (no progress bar)
+    "-X", req.method,              // HTTP method
+    "-w", "\n__HTTP_STATUS__%{http_code}",  // append status code
+    "--max-time", "25",            // timeout (seconds)
+  ];
+
+  // forward content-type
+  const content_type = req.headers["content-type"] || "application/json";
+  curl_args.push("-H", `Content-Type: ${content_type}`);
+
+  // forward authorization header when present
+  if (req.headers.authorization) {
+    curl_args.push("-H", `Authorization: ${req.headers.authorization}`);
+  }
+
+  // forward request body for POST / PUT / PATCH
+  if (req.body && ["POST", "PUT", "PATCH"].includes(req.method)) {
+    curl_args.push("-d", JSON.stringify(req.body));
+  }
+
+  curl_args.push(target_url);
+
+  execFile("curl", curl_args, { timeout: 30000 }, (err, stdout, stderr) => {
+    if (err) {
+      console.error("[curl proxy] error:", err.message);
+      return res.status(502).json({
+        error: "proxy_error",
+        message: "cloud backend unreachable",
+      });
+    }
+
+    // split body from status code marker
+    const marker = "__HTTP_STATUS__";
+    const marker_idx = stdout.lastIndexOf(marker);
+    let status_code = 502;
+    let body = stdout;
+
+    if (marker_idx !== -1) {
+      status_code = parseInt(stdout.slice(marker_idx + marker.length).trim(), 10) || 502;
+      body = stdout.slice(0, marker_idx).trim();
+    }
+
+    // try to return JSON; fall back to plain text
+    res.status(status_code);
+    try {
+      res.json(JSON.parse(body));
+    } catch {
+      res.send(body);
+    }
+  });
+});
 
 /* =========================
    SERVE REACT BUILD
