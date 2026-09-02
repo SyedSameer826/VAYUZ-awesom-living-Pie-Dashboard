@@ -226,7 +226,7 @@ app.get("/api/devices", (req, res) => {
 
 app.post("/api/assign-name", async (req, res) => {
   try {
-    const { zigbee_ieee, zigbee_name, home_id, zigbee_type, room } = req.body;
+    const { zigbee_ieee, zigbee_name, home_id, zigbee_type, room, resident } = req.body;
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ error: "Authorization token missing" });
@@ -281,6 +281,7 @@ app.post("/api/assign-name", async (req, res) => {
         sensor_type: detectedType,
         room: room || "bathroom",
         home: home_id || readHubConfig().home_id || undefined,
+        resident: resident || undefined,
       },
     );
 
