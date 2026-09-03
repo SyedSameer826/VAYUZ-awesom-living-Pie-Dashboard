@@ -1329,6 +1329,27 @@ const sendHeartbeat = async () => {
     console.log(
       `✅ hub heartbeat OK (hub=${payload.hub_id}, level=${payload.internet_level})`,
     );
+
+    // ── Remote command delivery ───────────────────────────────────────
+    // The cloud backend piggybacks shutdown/reboot commands on the
+    // heartbeat response so the user can safely power off the Pi from
+    // the app before physically moving it.
+    const pending_cmd = res.data?.data?.pending_command;
+    if (pending_cmd === "shutdown") {
+      console.log("🛑 SHUTDOWN command received from cloud — powering off in 5s…");
+      setTimeout(() => {
+        exec("sudo shutdown -h now", (err) => {
+          if (err) console.error("shutdown exec error:", err.message);
+        });
+      }, 5000);
+    } else if (pending_cmd === "reboot") {
+      console.log("🔄 REBOOT command received from cloud — rebooting in 5s…");
+      setTimeout(() => {
+        exec("sudo reboot", (err) => {
+          if (err) console.error("reboot exec error:", err.message);
+        });
+      }, 5000);
+    }
   } catch (err) {
     const status = err.response?.status;
     const body = err.response?.data;
