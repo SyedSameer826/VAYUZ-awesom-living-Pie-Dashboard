@@ -1,0 +1,117 @@
+{
+  "realtime_vitals": {
+    "_description": "0x0E — sent every 5 seconds to POST /api/glk/vitals",
+    "_currently_sending": "All fields below are ALREADY being sent",
+    "_new_fields": "NONE — 0x0E is complete, no changes needed",
+
+    "serial_number": "332014813081",
+    "secret_key": "jwt_secret_of_awesomliving_app",
+    "data": {
+      "heart_rate": 62,
+      "respiration_rate": 14,
+      "status_code": 3,
+      "status": "snoring",
+      "in_bed": true,
+      "out_of_bed": false,
+      "apnea_suspected": false,
+      "snoring": true,
+      "body_movement": 12,
+      "battery_level": 100,
+      "signal_quality": 98,
+      "life_abnormality": false,
+      "timer_counter": 300
+    },
+    "timestamp": "2026-09-03T12:45:31.000000+00:00"
+  },
+
+  "sleep_stage": {
+    "_description": "0x4E — sent every frame (every 1 minute) to POST /api/glk/vitals",
+    "_currently_sending": "All fields below are ALREADY being sent",
+    "_new_fields": "NONE — 0x4E is complete, no changes needed",
+
+    "serial_number": "332014813081",
+    "secret_key": "jwt_secret_of_awesomliving_app",
+    "data": {
+      "type": "sleep_stage",
+      "heart_rate": 56,
+      "respiration_rate": 11,
+      "status_code": 3,
+      "status": "in_bed",
+      "in_bed": true,
+      "out_of_bed": false,
+      "life_abnormality": false,
+      "apnea_suspected": false,
+      "snoring": false,
+      "body_movement": false,
+      "battery_level": 100,
+      "sleep_stage_code": 4,
+      "sleep_stage": "deep_sleep",
+      "time_offset": 1788419565,
+      "embedded_serial": "332014813081",
+      "raw_hex": "8217015f4e6a991ded380b0364043320148130816a991dede2"
+    },
+    "timestamp": "2026-09-03T12:42:45.000000+00:00"
+  },
+
+  "emergency": {
+    "_description": "0x0D — sent immediately to POST /api/glk/vitals",
+    "_currently_sending": "Fields WITHOUT ★ marker",
+    "_new_fields": "Fields WITH ★ marker — parsed from payload instead of hardcoded null",
+
+    "serial_number": "332014813081",
+    "secret_key": "jwt_secret_of_awesomliving_app",
+    "data": {
+      "type": "emergency",
+      "life_abnormality": true,
+      "status_code": 5,
+      "status": "life_abnormality",
+      "in_bed": true,
+      "out_of_bed": false,
+      "heart_rate": null,
+      "respiration_rate": null,
+      "raw_hex": "820501710d01fb",
+      "★ emergency_flag": 1,
+      "★ payload_length": 1
+    },
+    "timestamp": "2026-09-03T12:50:00.000000+00:00"
+  },
+
+  "★ device_status": {
+    "_description": "NEW — not currently sent. Should fire on every device connect/disconnect",
+    "_currently_sending": "NOTHING — this data is only logged on Pi, backend never sees it",
+    "_source": "Parsed from LOGIN (0x03) + DEVICE_INFO (0x04) + connection lifecycle",
+
+    "serial_number": "332014813081",
+    "secret_key": "jwt_secret_of_awesomliving_app",
+    "data": {
+      "type": "device_status",
+      "event": "connected",
+      "firmware": "0570",
+      "device_type": "wifi-compact",
+      "verification_code": "d6000000",
+      "ip_address": "192.168.50.147",
+      "connection_time": "2026-09-03T12:30:14.000000+00:00"
+    },
+    "timestamp": "2026-09-03T12:30:14.000000+00:00"
+  },
+
+  "★ device_disconnected": {
+    "_description": "NEW — not currently sent. Should fire when device drops TCP connection",
+    "_currently_sending": "NOTHING — only logged as 'sn=X disconnected (time_syncs=Y, sleep_stages=Z)'",
+    "_source": "Connection close event in handle_client finally block",
+
+    "serial_number": "332014813081",
+    "secret_key": "jwt_secret_of_awesomliving_app",
+    "data": {
+      "type": "device_status",
+      "event": "disconnected",
+      "session_duration_seconds": 3659,
+      "session_duration_display": "1 hour 0 min 59 sec",
+      "time_syncs_this_session": 1,
+      "sleep_stages_this_session": 47,
+      "realtime_frames_this_session": 732,
+      "disconnect_reason": "connection_reset"
+    },
+    "timestamp": "2026-09-03T13:31:13.000000+00:00"
+  }
+}
