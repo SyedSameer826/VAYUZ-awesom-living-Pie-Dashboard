@@ -58,9 +58,13 @@ const BpPairModal = ({
               lineHeight: 1.5,
             }}
           >
-            <b>Before you start:</b> turn on the BP monitor and put it in{" "}
-            <b>pairing mode</b> (usually by holding the Bluetooth button). Keep
-            it close to the Pi during scanning.
+            <b>Instructions:</b>
+            <ol style={{ margin: "6px 0 0", paddingLeft: 18 }}>
+              <li>Turn on the BP monitor and put it in <b>pairing mode</b> (hold the Bluetooth button until it blinks).</li>
+              <li>Keep it <b>within 1 meter</b> of the Pi during the entire process.</li>
+              <li>Click <b>Pair &amp; Map</b> immediately after selecting the device — do not wait, the monitor stops advertising after a short time.</li>
+              <li>If pairing fails, put the monitor back in pairing mode and try again.</li>
+            </ol>
           </div>
 
           {error && <p className="crud-alert">{error}</p>}
