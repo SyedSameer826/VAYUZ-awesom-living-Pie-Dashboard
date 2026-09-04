@@ -328,11 +328,11 @@ function Devices() {
     runBpScan();
   };
 
-  const handleBpPair = async ({ address, name, resident, room }) => {
+  const handleBpPair = async ({ address, name, resident }) => {
     setIsBpPairing(true);
     setBpError("");
     try {
-      await pairBp({ address, name, resident, room });
+      await pairBp({ address, name, resident });
       setIsBpOpen(false);
       await loadData();
     } catch (bpPairError) {

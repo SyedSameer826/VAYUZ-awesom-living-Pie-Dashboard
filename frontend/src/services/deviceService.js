@@ -203,11 +203,11 @@ export const scanBp = async () => {
 };
 
 // Bond with a BP monitor and map it to a resident on the cloud backend.
-export const pairBp = async ({ address, name, resident, room }) => {
+export const pairBp = async ({ address, name, resident }) => {
   const response = await fetch(`${API_BASE_URL}bp/pair`, {
     method: "POST",
     headers: getAuthHeaders(),
-    body: JSON.stringify({ address, name, resident, room }),
+    body: JSON.stringify({ address, name, resident }),
   });
 
   const data = await response.json().catch(() => ({}));

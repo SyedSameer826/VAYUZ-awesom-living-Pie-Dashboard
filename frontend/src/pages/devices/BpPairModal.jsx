@@ -18,7 +18,6 @@ const BpPairModal = ({
   const [selected, setSelected] = useState(null); // the chosen device object
   const [form, setForm] = useState({
     resident: "",
-    room: "bedroom",
   });
 
   const change = (e) =>
@@ -33,7 +32,6 @@ const BpPairModal = ({
       address: selected.address,
       name: selected.name,
       resident: form.resident,
-      room: form.room.trim() || "bedroom",
     });
   };
 
@@ -122,17 +120,7 @@ const BpPairModal = ({
             </p>
           )}
 
-          {/* 2) Resident + room (enabled once a device is selected) */}
-          <label className="form-field">
-            <span>Room</span>
-            <input
-              name="room"
-              value={form.room}
-              onChange={change}
-              placeholder="e.g. bedroom"
-              disabled={!selected}
-            />
-          </label>
+          {/* 2) Resident (enabled once a device is selected) */}
           <label className="form-field">
             <span>Resident</span>
             <select
