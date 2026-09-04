@@ -248,7 +248,12 @@ async def pair_device(address: str, timeout: float = 15.0) -> dict:
 
     client = None
     try:
-        # --- Phase 1: Connect via bleak to verify BP service ---
+        # Connect via bleak to verify the device has Blood Pressure Service.
+        # A&D UA-656BLE (and most BLE BP monitors) do NOT require persistent
+        # bonding — they send stored measurements to any central that connects
+        # and subscribes to indications on 0x2A35.  So our "pair" step is
+        # really "verify + register":  confirm the BP service, then save the
+        # MAC so bp_bridge.py can find and read from it later.
         client = await _connect_with_retries(connect_target, connect_timeout)
 
         bp_service_found = False
@@ -274,83 +279,27 @@ async def pair_device(address: str, timeout: float = 15.0) -> dict:
             _dbg("WARNING: BP Measurement characteristic (0x2A35) not found — "
                  "device may still work with different firmware")
 
-        # --- Phase 2: Disconnect bleak FIRST, then bond via bluetoothctl ---
-        # bleak and bluetoothctl use separate D-Bus paths. If bleak holds the
-        # connection while we call bluetoothctl pair, the bond is associated
-        # with bleak's D-Bus object and is lost when bleak disconnects.
-        # By disconnecting bleak first, bluetoothctl gets a clean connection
-        # and the bond persists under BlueZ's own management.
-        _dbg("Disconnecting bleak before bluetoothctl pair ...")
+        # Best-effort bonding — try bleak's pair(), but do NOT fail if it
+        # doesn't stick.  The device will still work without a bond.
+        _dbg("Attempting best-effort bond via bleak.pair() ...")
         try:
-            await client.disconnect()
-            _dbg("  bleak disconnected")
-        except Exception:
-            pass
-        client = None  # prevent double-disconnect in finally
+            await client.pair()
+            _dbg("  bleak pair() succeeded")
+        except Exception as pair_err:
+            _dbg(f"  bleak pair() skipped: {_exc_detail(pair_err)} (non-fatal)")
 
-        await asyncio.sleep(1.5)  # let BlueZ settle
-
-        # Register a pairing agent (NoInputNoOutput = "Just Works" for BLE)
-        _dbg(f"Pairing via bluetoothctl with {address} ...")
-        subprocess.run(
-            ["bluetoothctl", "agent", "NoInputNoOutput"],
-            capture_output=True, timeout=5, check=False,
-        )
-        subprocess.run(
-            ["bluetoothctl", "default-agent"],
-            capture_output=True, timeout=5, check=False,
-        )
-
-        # Connect via bluetoothctl (needed before pair on some devices)
-        connect_result = subprocess.run(
-            ["bluetoothctl", "connect", address],
-            capture_output=True, timeout=20, text=True, check=False,
-        )
-        _dbg(f"  bluetoothctl connect: {connect_result.stdout.strip()}")
-        await asyncio.sleep(1.0)
-
-        # Pair via bluetoothctl
-        pair_result = subprocess.run(
-            ["bluetoothctl", "pair", address],
-            capture_output=True, timeout=20, text=True, check=False,
-        )
-        _dbg(f"  bluetoothctl pair: {pair_result.stdout.strip()} / {pair_result.stderr.strip()}")
-
-        # Trust the device
+        # Trust via bluetoothctl so BlueZ won't block future connections
         subprocess.run(
             ["bluetoothctl", "trust", address],
             capture_output=True, timeout=5, text=True, check=False,
         )
 
-        # Disconnect cleanly (bp_bridge will reconnect later)
-        subprocess.run(
-            ["bluetoothctl", "disconnect", address],
-            capture_output=True, timeout=5, text=True, check=False,
-        )
-        await asyncio.sleep(0.5)
-
-        # --- Phase 3: Verify bond persisted ---
-        verify = subprocess.run(
-            ["bluetoothctl", "info", address],
-            capture_output=True, timeout=5, text=True, check=False,
-        )
-        is_paired = "Paired: yes" in verify.stdout
-        is_bonded = "Bonded: yes" in verify.stdout
-        is_trusted = "Trusted: yes" in verify.stdout
-        _dbg(f"  Bond verification: Paired={is_paired}, Bonded={is_bonded}, Trusted={is_trusted}")
-        _dbg(f"  Full info:\n{verify.stdout}")
-
-        if not is_paired and not is_bonded:
-            _dbg("WARNING: Bond did NOT persist — device may need manual pairing")
-
-        _dbg("*** BP MONITOR PAIRING COMPLETE ***")
+        _dbg("*** BP MONITOR VERIFICATION COMPLETE ***")
         return {
             "success": True,
             "detail": "paired",
             "bp_service": bp_service_found,
             "bp_measurement": bp_measurement_found,
-            "bonded": is_paired or is_bonded,
-            "trusted": is_trusted,
         }
 
     except Exception as e:
