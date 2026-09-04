@@ -248,9 +248,9 @@ async def pair_device(address: str, timeout: float = 15.0) -> dict:
 
     client = None
     try:
+        # --- Phase 1: Connect via bleak to verify BP service ---
         client = await _connect_with_retries(connect_target, connect_timeout)
 
-        # Log discovered services
         bp_service_found = False
         bp_measurement_found = False
         for service in client.services:
@@ -274,46 +274,74 @@ async def pair_device(address: str, timeout: float = 15.0) -> dict:
             _dbg("WARNING: BP Measurement characteristic (0x2A35) not found — "
                  "device may still work with different firmware")
 
-        # Bond using bleak's native pair() — this uses the SAME D-Bus
-        # connection that bleak opened, so the bond actually persists.
-        # Shelling out to `bluetoothctl pair` while bleak holds the
-        # connection uses a different D-Bus path and the bond is lost
-        # when bleak disconnects.
-        _dbg(f"Requesting BLE bond via bleak.pair() with {address} ...")
+        # --- Phase 2: Disconnect bleak FIRST, then bond via bluetoothctl ---
+        # bleak and bluetoothctl use separate D-Bus paths. If bleak holds the
+        # connection while we call bluetoothctl pair, the bond is associated
+        # with bleak's D-Bus object and is lost when bleak disconnects.
+        # By disconnecting bleak first, bluetoothctl gets a clean connection
+        # and the bond persists under BlueZ's own management.
+        _dbg("Disconnecting bleak before bluetoothctl pair ...")
         try:
-            paired = await client.pair()
-            _dbg(f"  bleak pair() returned: {paired}")
-        except Exception as pair_err:
-            # Some devices bond implicitly during GATT discovery and
-            # bleak.pair() raises "Already paired" — that's fine.
-            err_msg = str(pair_err).lower()
-            if "already paired" in err_msg or "already bonded" in err_msg:
-                _dbg(f"  Device already paired/bonded: {_exc_detail(pair_err)}")
-            else:
-                _dbg(f"  bleak pair() error (will try bluetoothctl fallback): {_exc_detail(pair_err)}")
-                # Fallback: try bluetoothctl pair as a last resort
-                bond_result = subprocess.run(
-                    ["bluetoothctl", "pair", address],
-                    capture_output=True, timeout=15, text=True, check=False,
-                )
-                _dbg(f"  bluetoothctl pair fallback: {bond_result.stdout.strip()} / {bond_result.stderr.strip()}")
+            await client.disconnect()
+            _dbg("  bleak disconnected")
+        except Exception:
+            pass
+        client = None  # prevent double-disconnect in finally
 
-        # Trust the device so BlueZ auto-connects in future
+        await asyncio.sleep(1.5)  # let BlueZ settle
+
+        # Register a pairing agent (NoInputNoOutput = "Just Works" for BLE)
+        _dbg(f"Pairing via bluetoothctl with {address} ...")
+        subprocess.run(
+            ["bluetoothctl", "agent", "NoInputNoOutput"],
+            capture_output=True, timeout=5, check=False,
+        )
+        subprocess.run(
+            ["bluetoothctl", "default-agent"],
+            capture_output=True, timeout=5, check=False,
+        )
+
+        # Connect via bluetoothctl (needed before pair on some devices)
+        connect_result = subprocess.run(
+            ["bluetoothctl", "connect", address],
+            capture_output=True, timeout=20, text=True, check=False,
+        )
+        _dbg(f"  bluetoothctl connect: {connect_result.stdout.strip()}")
+        await asyncio.sleep(1.0)
+
+        # Pair via bluetoothctl
+        pair_result = subprocess.run(
+            ["bluetoothctl", "pair", address],
+            capture_output=True, timeout=20, text=True, check=False,
+        )
+        _dbg(f"  bluetoothctl pair: {pair_result.stdout.strip()} / {pair_result.stderr.strip()}")
+
+        # Trust the device
         subprocess.run(
             ["bluetoothctl", "trust", address],
             capture_output=True, timeout=5, text=True, check=False,
         )
 
-        # Verify the bond actually persisted in BlueZ
+        # Disconnect cleanly (bp_bridge will reconnect later)
+        subprocess.run(
+            ["bluetoothctl", "disconnect", address],
+            capture_output=True, timeout=5, text=True, check=False,
+        )
+        await asyncio.sleep(0.5)
+
+        # --- Phase 3: Verify bond persisted ---
         verify = subprocess.run(
             ["bluetoothctl", "info", address],
             capture_output=True, timeout=5, text=True, check=False,
         )
         is_paired = "Paired: yes" in verify.stdout
+        is_bonded = "Bonded: yes" in verify.stdout
         is_trusted = "Trusted: yes" in verify.stdout
-        _dbg(f"  Bond verification: Paired={is_paired}, Trusted={is_trusted}")
-        if not is_paired:
-            _dbg("WARNING: Bond did NOT persist — device may need re-pairing")
+        _dbg(f"  Bond verification: Paired={is_paired}, Bonded={is_bonded}, Trusted={is_trusted}")
+        _dbg(f"  Full info:\n{verify.stdout}")
+
+        if not is_paired and not is_bonded:
+            _dbg("WARNING: Bond did NOT persist — device may need manual pairing")
 
         _dbg("*** BP MONITOR PAIRING COMPLETE ***")
         return {
@@ -321,7 +349,7 @@ async def pair_device(address: str, timeout: float = 15.0) -> dict:
             "detail": "paired",
             "bp_service": bp_service_found,
             "bp_measurement": bp_measurement_found,
-            "bonded": is_paired,
+            "bonded": is_paired or is_bonded,
             "trusted": is_trusted,
         }
 
