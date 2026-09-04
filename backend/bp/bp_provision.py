@@ -226,16 +226,20 @@ async def pair_device(address: str, timeout: float = 15.0) -> dict:
     device is bonded and can be reconnected by bp_bridge.py for readings.
     """
 
-    # Pre-flight: adapter health check and stale cache cleanup
+    # Pre-flight: adapter health check
     adapter_ok = _check_adapter_health()
     if not adapter_ok:
         _dbg("Adapter health check failed — attempting reset before connecting")
         _reset_bluetooth_adapter()
 
-    _remove_cached_device(address)
+    # Do NOT remove the cached device on the first attempt — BlueZ may still
+    # have the D-Bus object from the scan that just ran. Removing it forces a
+    # fresh discovery, but the BP monitor may have stopped advertising by now.
+    # Instead, try to connect using whatever BlueZ already knows first.
 
-    # Quick re-scan to verify device is still advertising
-    device_present, ble_device = await _verify_device_present(address, timeout=5.0)
+    # Quick re-scan to grab a fresh BLEDevice object (helps bleak resolve the
+    # D-Bus path). Use 8s so the monitor has time to advertise again.
+    device_present, ble_device = await _verify_device_present(address, timeout=8.0)
     if not device_present:
         _dbg("WARNING: device not seen in pre-connect scan — will still attempt connect")
 
