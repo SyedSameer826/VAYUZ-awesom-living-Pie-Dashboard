@@ -225,10 +225,12 @@ async def _connect_with_retries(address_or_device, timeout: float):
 async def pair_device(address: str, timeout: float = 15.0) -> dict:
     """Connect to a BP monitor and verify its Blood Pressure Service.
 
-    BlueZ handles bonding automatically when the device requires it during
-    GATT discovery. After a successful connect + service discovery, the
-    device is bonded and can be reconnected by bp_bridge.py for readings.
+    Uses a targeted BLE scan with a detection callback — the instant the
+    monitor advertises, we grab the fresh BLEDevice and connect immediately.
+    This eliminates the timing gap between the scan endpoint and pair endpoint
+    that caused previous failures (the monitor stops advertising after ~30s).
     """
+    from bleak import BleakScanner, BleakClient
 
     # Pre-flight: adapter health check
     adapter_ok = _check_adapter_health()
@@ -236,24 +238,62 @@ async def pair_device(address: str, timeout: float = 15.0) -> dict:
         _dbg("Adapter health check failed — attempting reset before connecting")
         _reset_bluetooth_adapter()
 
-    # IMPORTANT: Do NOT re-scan for the device here. The scan endpoint already
-    # found it and BlueZ has the device cached. Re-scanning wastes time and the
-    # monitor likely stopped advertising by now. Connect directly by MAC —
-    # bleak resolves the D-Bus path from BlueZ's cache.
-    _dbg(f"Connecting directly by MAC {address} (no pre-scan — using BlueZ cache)")
-    connect_target = address
-    connect_timeout = min(timeout, 15.0)
+    _dbg(f"=== PAIR START for {address} ===")
 
+    # ---------------------------------------------------------------
+    # Step 1: Targeted scan — wait for the device to advertise.
+    # Uses a detection callback so we react the INSTANT the monitor
+    # sends an advertisement, rather than waiting for a full scan to
+    # finish. 20s window gives the user time to press the monitor
+    # button if it stopped advertising after the earlier scan.
+    # ---------------------------------------------------------------
+    ble_device = None
+    found_event = asyncio.Event()
+
+    def _on_detect(device, adv_data):
+        nonlocal ble_device
+        if device.address.upper() == address.upper():
+            ble_device = device
+            _dbg(f"TARGET DETECTED: {device.name or address} RSSI={adv_data.rssi}")
+            found_event.set()
+
+    scan_timeout = 20.0
+    _dbg(f"Scanning for {address} (up to {scan_timeout}s) ...")
+    scanner = BleakScanner(detection_callback=_on_detect)
+    await scanner.start()
+    try:
+        await asyncio.wait_for(found_event.wait(), timeout=scan_timeout)
+    except asyncio.TimeoutError:
+        _dbg(f"Timed out — {address} did not advertise in {scan_timeout}s")
+    finally:
+        await scanner.stop()
+
+    if ble_device is None:
+        _dbg(f"Device {address} never advertised — cannot connect")
+        return {
+            "success": False,
+            "detail": (
+                f"BP monitor {address} not found. "
+                "Press the Bluetooth button on the monitor and try again."
+            ),
+        }
+
+    # ---------------------------------------------------------------
+    # Step 2: Connect immediately using the fresh BLEDevice object.
+    # No retries needed — we just saw the device advertising, so the
+    # BLE connection should succeed on the first attempt.
+    # ---------------------------------------------------------------
+    connect_timeout = min(timeout, 15.0)
     client = None
     try:
-        # Connect via bleak to verify the device has Blood Pressure Service.
-        # A&D UA-656BLE (and most BLE BP monitors) do NOT require persistent
-        # bonding — they send stored measurements to any central that connects
-        # and subscribes to indications on 0x2A35.  So our "pair" step is
-        # really "verify + register":  confirm the BP service, then save the
-        # MAC so bp_bridge.py can find and read from it later.
-        client = await _connect_with_retries(connect_target, connect_timeout)
+        _dbg(f"Connecting to {address} with fresh BLEDevice ...")
+        client = BleakClient(ble_device, timeout=connect_timeout)
+        await client.connect()
+        if not client.is_connected:
+            raise RuntimeError("connect() succeeded but is_connected=False")
+        _dbg(f"CONNECTED to {address}")
 
+        # --- Verify Blood Pressure Service ---
         bp_service_found = False
         bp_measurement_found = False
         for service in client.services:
@@ -279,12 +319,12 @@ async def pair_device(address: str, timeout: float = 15.0) -> dict:
 
         # Best-effort bonding — try bleak's pair(), but do NOT fail if it
         # doesn't stick.  The device will still work without a bond.
-        _dbg("Attempting best-effort bond via bleak.pair() ...")
+        _dbg("Best-effort bond via bleak.pair() ...")
         try:
             await client.pair()
-            _dbg("  bleak pair() succeeded")
+            _dbg("  pair() succeeded")
         except Exception as pair_err:
-            _dbg(f"  bleak pair() skipped: {_exc_detail(pair_err)} (non-fatal)")
+            _dbg(f"  pair() skipped: {_exc_detail(pair_err)} (non-fatal)")
 
         # Trust via bluetoothctl so BlueZ won't block future connections
         subprocess.run(
