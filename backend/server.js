@@ -505,44 +505,74 @@ app.post("/api/glk/pair", async (req, res) => {
     const piIp = getPiLanIp();
 
     // 1) BLE provision (write WiFi + server config, wait for the fff2 acks).
+    //    BLE on Raspberry Pi (BlueZ) is inherently flaky — connections drop,
+    //    notifications get lost, the adapter needs a reset between attempts.
+    //    Retry up to 3 times with a 3s gap so the adapter can settle.
+    const MAX_BLE_RETRIES = 3;
+    const BLE_RETRY_DELAY_MS = 3000;
+    let provision = null;
     let provisionStderr = "";
-    const provision = await new Promise((resolve, reject) => {
-      execFile(
-        GLK_PYTHON,
-        [
-          GLK_SCRIPT,
-          "provision",
-          "--address",
-          address,
-          "--ssid",
-          ssid,
-          "--password",
-          password,
-          "--pi-ip",
-          piIp,
-          "--port",
-          "8766",
-        ],
-        { timeout: 90000, cwd: path.join(__dirname, "glk") },
-        (err, stdout, stderr) => {
-          provisionStderr = stderr || "";
-          if (provisionStderr) console.error("[GLK pair] stderr:\n" + provisionStderr);
-          if (err && !stdout) {
-            return reject(new Error(stderr || err.message));
-          }
-          try {
-            resolve(JSON.parse(stdout));
-          } catch {
-            reject(new Error(`Unexpected provision output: ${stdout}`));
-          }
-        },
-      );
-    });
 
-    if (!provision.success) {
+    const run_provision = () =>
+      new Promise((resolve, reject) => {
+        execFile(
+          GLK_PYTHON,
+          [
+            GLK_SCRIPT,
+            "provision",
+            "--address",
+            address,
+            "--ssid",
+            ssid,
+            "--password",
+            password,
+            "--pi-ip",
+            piIp,
+            "--port",
+            "8766",
+          ],
+          { timeout: 90000, cwd: path.join(__dirname, "glk") },
+          (err, stdout, stderr) => {
+            provisionStderr = stderr || "";
+            if (provisionStderr) console.error("[GLK pair] stderr:\n" + provisionStderr);
+            if (err && !stdout) {
+              return reject(new Error(stderr || err.message));
+            }
+            try {
+              resolve(JSON.parse(stdout));
+            } catch {
+              reject(new Error(`Unexpected provision output: ${stdout}`));
+            }
+          },
+        );
+      });
+
+    for (let attempt = 1; attempt <= MAX_BLE_RETRIES; attempt++) {
+      try {
+        provision = await run_provision();
+        if (provision.success) {
+          if (attempt > 1) console.log(`[GLK pair] succeeded on attempt ${attempt}/${MAX_BLE_RETRIES}`);
+          break;
+        }
+        console.warn(
+          `[GLK pair] attempt ${attempt}/${MAX_BLE_RETRIES} failed: ${provision.detail || "no ack"}`,
+        );
+      } catch (err) {
+        console.warn(
+          `[GLK pair] attempt ${attempt}/${MAX_BLE_RETRIES} error: ${err.message}`,
+        );
+        provision = { success: false, detail: err.message };
+      }
+      if (attempt < MAX_BLE_RETRIES) {
+        console.log(`[GLK pair] waiting ${BLE_RETRY_DELAY_MS}ms before retry...`);
+        await new Promise((r) => setTimeout(r, BLE_RETRY_DELAY_MS));
+      }
+    }
+
+    if (!provision || !provision.success) {
       return res
         .status(422)
-        .json({ error: "GLK provisioning failed", detail: provision, stderr: provisionStderr });
+        .json({ error: "GLK provisioning failed after 3 attempts", detail: provision, stderr: provisionStderr });
     }
 
     // 2) Record locally so the device shows in the Pie device list.
@@ -587,6 +617,205 @@ app.post("/api/glk/pair", async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: err.response?.data || err.message });
+  }
+});
+
+/* =========================
+   BP MONITOR PAIRING + READING RELAY
+   BP monitors are paired via BLE (bonding only — no WiFi provisioning needed).
+   The Pi shells out to backend/bp/bp_provision.py for BLE scan + pair, stores
+   the device locally in devices.json, and registers it on the cloud backend
+   as a BpMonitor-type device.
+
+   After pairing, bp_bridge.py (systemd service) periodically connects to
+   bonded BP monitors, reads stored measurements via BLE indications on
+   0x2A35, and POSTs them to /api/bp/reading below — which relays to the
+   cloud backend's /api/bp/log.
+========================= */
+
+const BP_PYTHON = process.env.BP_PYTHON || "python3";
+const BP_SCRIPT =
+  process.env.BP_PROVISION_CMD || path.join(__dirname, "bp", "bp_provision.py");
+
+// Scan for BP monitors advertising Blood Pressure Service (0x1810).
+app.post("/api/bp/scan", (req, res) => {
+  execFile(
+    BP_PYTHON,
+    [BP_SCRIPT, "scan", "--timeout", "10"],
+    { timeout: 25000, cwd: path.join(__dirname, "bp") },
+    (err, stdout, stderr) => {
+      if (err && !stdout) {
+        return res
+          .status(500)
+          .json({ error: stderr || err.message || "BP scan failed" });
+      }
+      try {
+        return res.json(JSON.parse(stdout));
+      } catch {
+        return res
+          .status(500)
+          .json({ error: "Unexpected scan output", raw: stdout, stderr });
+      }
+    },
+  );
+});
+
+// Pair (bond) with a chosen BP monitor, then map it to a resident.
+app.post("/api/bp/pair", async (req, res) => {
+  try {
+    const { address, name, resident, room } = req.body;
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Authorization token missing" });
+    }
+    const token = authHeader.split(" ")[1];
+
+    if (!address || !resident) {
+      return res.status(400).json({
+        error: "address and resident are required",
+      });
+    }
+
+    // 1) BLE pair (bond) with retries
+    const MAX_BLE_RETRIES = 3;
+    const BLE_RETRY_DELAY_MS = 3000;
+    let pairResult = null;
+    let pairStderr = "";
+
+    const run_pair = () =>
+      new Promise((resolve, reject) => {
+        execFile(
+          BP_PYTHON,
+          [BP_SCRIPT, "pair", "--address", address],
+          { timeout: 60000, cwd: path.join(__dirname, "bp") },
+          (err, stdout, stderr) => {
+            pairStderr = stderr || "";
+            if (pairStderr) console.error("[BP pair] stderr:\n" + pairStderr);
+            if (err && !stdout) {
+              return reject(new Error(stderr || err.message));
+            }
+            try {
+              resolve(JSON.parse(stdout));
+            } catch {
+              reject(new Error(`Unexpected pair output: ${stdout}`));
+            }
+          },
+        );
+      });
+
+    for (let attempt = 1; attempt <= MAX_BLE_RETRIES; attempt++) {
+      try {
+        pairResult = await run_pair();
+        if (pairResult.success) {
+          if (attempt > 1) console.log(`[BP pair] succeeded on attempt ${attempt}/${MAX_BLE_RETRIES}`);
+          break;
+        }
+        console.warn(
+          `[BP pair] attempt ${attempt}/${MAX_BLE_RETRIES} failed: ${pairResult.detail || "no ack"}`,
+        );
+      } catch (err) {
+        console.warn(
+          `[BP pair] attempt ${attempt}/${MAX_BLE_RETRIES} error: ${err.message}`,
+        );
+        pairResult = { success: false, detail: err.message };
+      }
+      if (attempt < MAX_BLE_RETRIES) {
+        console.log(`[BP pair] waiting ${BLE_RETRY_DELAY_MS}ms before retry...`);
+        await new Promise((r) => setTimeout(r, BLE_RETRY_DELAY_MS));
+      }
+    }
+
+    if (!pairResult || !pairResult.success) {
+      return res
+        .status(422)
+        .json({ error: "BP pairing failed after 3 attempts", detail: pairResult, stderr: pairStderr });
+    }
+
+    // 2) Record locally so the device shows in the Pie device list.
+    // Use the BLE MAC address as ieee_address (unique key in devices.json).
+    upsertDevice({
+      ieee_address: address,
+      name: name || `BP Monitor (${address})`,
+      type: "bp_monitor",
+      resident,
+      status: "mapped",
+      is_unassigned: false,
+    });
+
+    // 3) Map to the remote backend as a BpMonitor device.
+    let backend_response = null;
+    let remote_error = null;
+    try {
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      const backend = await axios.post(`${REMOTE_BACKEND}/api/user/devices`, {
+        type: "BpMonitor",
+        resident,
+        mac_address: address,
+        room: room || "bedroom",
+        home: readHubConfig().home_id || undefined,
+      });
+      backend_response = backend.data;
+    } catch (remoteErr) {
+      remote_error =
+        remoteErr.response?.data || remoteErr.message || "Remote registration failed";
+      console.error("[BP pair] remote registration failed (device saved locally):", remote_error);
+    }
+
+    res.json({
+      success: true,
+      device_saved: true,
+      pair_result: pairResult,
+      backend_response,
+      remote_error,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.response?.data || err.message });
+  }
+});
+
+/* =========================
+   BP READING RELAY
+   bp_bridge.py on the Pi forwards BP measurements to localhost:4000/api/bp/reading.
+   This endpoint relays to the cloud backend's /api/bp/log endpoint.
+========================= */
+
+app.post("/api/bp/reading", async (req, res) => {
+  const { mac_address, systolic, diastolic, pulse_rate, measured_at,
+          mean_arterial_pressure, unit, irregular_heartbeat, timestamp } = req.body;
+
+  console.log(
+    `BP reading from ${mac_address}: ${systolic}/${diastolic} mmHg, pulse=${pulse_rate}`,
+  );
+
+  // Relay to cloud backend
+  try {
+    const response = await axios.post(
+      `${REMOTE_BACKEND}/api/bp/log`,
+      {
+        mac_address,
+        systolic,
+        diastolic,
+        pulse_rate,
+        mean_arterial_pressure,
+        unit,
+        measured_at,
+        irregular_heartbeat,
+        secret_key: req.body.secret_key,
+        timestamp,
+      },
+      {
+        headers: { "x-hub-secret": req.body.secret_key },
+        timeout: 8000,
+      },
+    );
+    res.json(response.data);
+  } catch (err) {
+    console.log(
+      "BP reading relay failed:",
+      err.response?.status,
+      err.message,
+    );
+    res.status(502).json({ error: "Failed to relay BP reading to cloud backend" });
   }
 });
 

@@ -13,6 +13,8 @@ import {
   openCameraSetup,
   scanGlk,
   pairGlk,
+  scanBp,
+  pairBp,
   getDeviceDetails,
   getResidents,
   deleteDevice,
@@ -22,6 +24,7 @@ import DeviceForm from "./DeviceForm";
 import CameraForm from "./CameraForm";
 import CameraPairModal from "./CameraPairModal";
 import GlkPairModal from "./GlkPairModal";
+import BpPairModal from "./BpPairModal";
 
 const emptyCameraForm = {
   stream_name: "",
@@ -51,6 +54,11 @@ function Devices() {
   const [isGlkScanning, setIsGlkScanning] = useState(false);
   const [isGlkPairing, setIsGlkPairing] = useState(false);
   const [glkError, setGlkError] = useState("");
+  const [isBpOpen, setIsBpOpen] = useState(false);
+  const [bpDevices, setBpDevices] = useState([]);
+  const [isBpScanning, setIsBpScanning] = useState(false);
+  const [isBpPairing, setIsBpPairing] = useState(false);
+  const [bpError, setBpError] = useState("");
   const tableRows = useMemo(() => mapDeviceRows(devices), [devices]);
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -298,6 +306,42 @@ function Devices() {
     }
   };
 
+  // ---- BP monitor pairing ----
+  const runBpScan = async () => {
+    setIsBpScanning(true);
+    setBpError("");
+    try {
+      const result = await scanBp();
+      setBpDevices(result.devices || []);
+    } catch (bpScanError) {
+      setBpError(bpScanError.message || "BP scan failed");
+      setBpDevices([]);
+    } finally {
+      setIsBpScanning(false);
+    }
+  };
+
+  const openBpModal = () => {
+    setBpDevices([]);
+    setBpError("");
+    setIsBpOpen(true);
+    runBpScan();
+  };
+
+  const handleBpPair = async ({ address, name, resident, room }) => {
+    setIsBpPairing(true);
+    setBpError("");
+    try {
+      await pairBp({ address, name, resident, room });
+      setIsBpOpen(false);
+      await loadData();
+    } catch (bpPairError) {
+      setBpError(bpPairError.message || "BP pairing failed");
+    } finally {
+      setIsBpPairing(false);
+    }
+  };
+
   useEffect(() => {
     loadData(true);
   }, []);
@@ -433,6 +477,9 @@ function Devices() {
             <button className="submit-button" onClick={openGlkModal}>
               Pair GLK
             </button>
+            <button className="submit-button" onClick={openBpModal}>
+              Pair BP
+            </button>
           </div>
           <label className="table-search">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -501,6 +548,19 @@ function Devices() {
           onPair={handleGlkPair}
           onClose={() => setIsGlkOpen(false)}
           error={glkError}
+        />
+      )}
+
+      {isBpOpen && (
+        <BpPairModal
+          devices={bpDevices}
+          isScanning={isBpScanning}
+          isPairing={isBpPairing}
+          residents={residents}
+          onScan={runBpScan}
+          onPair={handleBpPair}
+          onClose={() => setIsBpOpen(false)}
+          error={bpError}
         />
       )}
     </main>

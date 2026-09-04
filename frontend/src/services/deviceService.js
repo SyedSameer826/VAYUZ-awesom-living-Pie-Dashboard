@@ -188,6 +188,35 @@ export const pairGlk = async ({
   return data;
 };
 
+// Scan (over BLE) for Blood Pressure monitors advertising service 0x1810.
+export const scanBp = async () => {
+  const response = await fetch(`${API_BASE_URL}bp/scan`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "BP scan failed");
+  }
+  return data; // { success, devices: [{ name, address, rssi }] }
+};
+
+// Bond with a BP monitor and map it to a resident on the cloud backend.
+export const pairBp = async ({ address, name, resident, room }) => {
+  const response = await fetch(`${API_BASE_URL}bp/pair`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ address, name, resident, room }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "BP pairing failed");
+  }
+  return data;
+};
+
 export const deleteDevice = async (ieee_address) => {
   const response = await fetch(`${API_BASE_URL}devices/${ieee_address}`, {
     method: "DELETE",
