@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-bp_bridge.py  v12 — BLE bridge for Bluetooth Blood Pressure monitors.
+bp_bridge.py  v13 — BLE bridge for Bluetooth Blood Pressure monitors.
 
 Continuously scans for known (paired) BP monitors. The instant a monitor
 starts advertising (user pressed its Bluetooth button after taking a
@@ -40,28 +40,32 @@ A&D UA-656BLE behaviour:
       stored (unsent) readings as indications, one per reading
     - After successful transfer the device clears its "unsent" flag
 
-v12 changes — race the advertising window:
-    The cuff only advertises for ~30 seconds.  v10/v11 burned most of that
-    window on the parent's 15-second full scan + child startup + child's
-    own Bleak scan.  By the time the child tried to connect, the cuff had
-    already stopped advertising → le-connection-abort-by-local.
+v13 changes — auto-connect instead of explicit connect:
+    v10-v12 all used explicit connect commands (Bleak connect() or
+    bluetoothctl 'connect') which consistently hit le-connection-abort-
+    by-local.  The manual test that actually worked used a completely
+    different flow: remove → scan → trust-while-scanning → BlueZ
+    auto-connects.  No explicit 'connect' command at all.
 
-    v12 fixes:
-    1. REAL-TIME parent scan — returns immediately when the target MAC is
-       found instead of waiting for the full 15-second scan window.  This
-       alone saves ~12 seconds on average.
-    2. Parent pre-trusts the device so BlueZ can auto-connect on discovery.
-    3. Child skips Bleak scan in Attempt 1 — device is already in BlueZ
-       cache from the parent scan.  Just stop-scan → trust → connect.
-    4. Explicit scan-off before every connect — BLE scanning on the same
-       adapter can interfere with connection establishment.
-    5. Shorter Bleak connect timeout (12s not 20s) — fail fast, try fallback.
-    6. pexpect-based interactive bluetoothctl as Attempt 2 — matches the
-       manual test sequence that worked (keeps session alive during GATT).
+    Root cause: when a device is both discovered AND trusted during an
+    active BLE scan, BlueZ internally initiates the connection.  This
+    internal mechanism coordinates with its own scanning and does NOT
+    trigger abort-by-local.  Explicit connect commands (from Bleak or
+    bluetoothctl) bypass this coordination → abort.
+
+    v13 fixes:
+    1. Child uses pexpect interactive bluetoothctl for the ENTIRE flow
+       (connect + GATT) — single D-Bus session, no competing clients.
+    2. Trust is issued WHILE scan is still active — this triggers BlueZ
+       auto-connect (the proven manual-test sequence).
+    3. NO explicit 'connect' command unless auto-connect times out.
+    4. Bleak is used ONLY for GATT reads after connection is established.
+    5. Parent adds a 1.5s settle delay after detection before spawning
+       the child, so the adapter is cleanly idle.
 
     Parent — real-time async bluetoothctl scan (returns on first match)
-    Child  — Attempt 1: stop-scan + trust + Bleak connect (fast, no re-scan)
-             Attempt 2: pexpect interactive session + Bleak GATT wrap
+    Child  — Attempt 1: pexpect auto-connect (trust during active scan)
+             Attempt 2: adapter reset + repeat auto-connect
 
 Run with pm2:
     pm2 start bp_bridge.py --name bp-bridge --interpreter python3
@@ -90,7 +94,7 @@ from urllib.request import Request, urlopen
 from urllib.error import URLError
 
 # ---------------------------------------------------------------------------
-# Optional: pexpect for interactive bluetoothctl (Attempt 2)
+# pexpect is REQUIRED for v13 auto-connect strategy
 # ---------------------------------------------------------------------------
 try:
     import pexpect
@@ -120,7 +124,7 @@ BP_SERVICE_UUID = "00001810-0000-1000-8000-00805f9b34fb"
 BP_MEASUREMENT_CHAR = "00002a35-0000-1000-8000-00805f9b34fb"
 
 # Subprocess timeout
-SUBPROCESS_TIMEOUT = 90  # v12: shorter, 2 attempts are faster now
+SUBPROCESS_TIMEOUT = 90
 
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL, logging.INFO),
@@ -276,22 +280,6 @@ def forward_reading(mac_address: str, reading: dict) -> bool:
 # BlueZ helper commands (individual, non-interactive)
 # ---------------------------------------------------------------------------
 
-def _stop_scanning():
-    """Explicitly stop BLE scanning to prevent scan/connect interference.
-
-    BLE scanning and connecting on the same adapter simultaneously can cause
-    le-connection-abort-by-local.  Always call this before connecting.
-    """
-    try:
-        subprocess.run(
-            ["bash", "-c", '{ echo "scan off"; sleep 0.3; echo "quit"; } | bluetoothctl 2>/dev/null'],
-            capture_output=True, timeout=5, text=True, check=False,
-        )
-        print("  Scan stopped", file=sys.stderr, flush=True)
-    except Exception:
-        pass
-
-
 def _trust_device(address: str):
     """Trust device via bluetoothctl so BlueZ allows auto-connect."""
     try:
@@ -360,7 +348,7 @@ def _reset_adapter():
             subprocess.run(["bluetoothctl", "power", "on"],
                            capture_output=True, timeout=5, check=False)
             time.sleep(1.0)
-            print("  Adapter power-cycled", file=sys.stderr, flush=True)
+            print("  Adapter power-cycled via bluetoothctl", file=sys.stderr, flush=True)
     except Exception as e:
         print(f"  Adapter reset failed: {e}", file=sys.stderr, flush=True)
 
@@ -399,68 +387,9 @@ def _check_device_state(address: str):
         pass
 
 
-def _is_device_connected(address: str) -> bool:
-    """Check if device is currently connected via bluetoothctl info."""
-    try:
-        result = subprocess.run(
-            ["bluetoothctl", "info", address],
-            capture_output=True, timeout=5, text=True, check=False,
-        )
-        for line in result.stdout.splitlines():
-            if "Connected: yes" in line:
-                return True
-    except Exception:
-        pass
-    return False
-
-
-def _full_cleanup(address: str):
-    """Force-disconnect + remove a device to clear ALL BlueZ state."""
-    print(f"  Cleanup: disconnect + remove {address} ...", file=sys.stderr, flush=True)
-    try:
-        subprocess.run(["bluetoothctl", "disconnect", address],
-                       capture_output=True, timeout=5, text=True, check=False)
-    except Exception:
-        pass
-    time.sleep(0.5)
-    try:
-        subprocess.run(["bluetoothctl", "remove", address],
-                       capture_output=True, timeout=5, text=True, check=False)
-    except Exception:
-        pass
-    time.sleep(1.0)
-    print(f"  Cleanup done", file=sys.stderr, flush=True)
-
-
 # ---------------------------------------------------------------------------
-# Bleak-based scan + connect + GATT read
+# Bleak GATT read (subscribe to indications on already-connected device)
 # ---------------------------------------------------------------------------
-
-async def _scan_for_device(address: str, timeout: float = 10.0):
-    """Run a targeted BLE scan and return the BLEDevice if found."""
-    from bleak import BleakScanner
-
-    ble_device = None
-    found_event = asyncio.Event()
-
-    def _on_detect(device, adv_data):
-        nonlocal ble_device
-        if device.address.upper() == address:
-            ble_device = device
-            print(f"  Scan found {address} (RSSI={adv_data.rssi})", file=sys.stderr, flush=True)
-            found_event.set()
-
-    scanner = BleakScanner(detection_callback=_on_detect)
-    await scanner.start()
-    try:
-        await asyncio.wait_for(found_event.wait(), timeout=timeout)
-    except asyncio.TimeoutError:
-        print(f"  Device {address} not found in {timeout}s scan", file=sys.stderr, flush=True)
-    finally:
-        await scanner.stop()
-
-    return ble_device
-
 
 async def _read_indications(client, readings: list[dict]):
     """Subscribe to BP measurement indications and collect readings."""
@@ -506,274 +435,184 @@ async def _read_indications(client, readings: list[dict]):
 
 
 # ---------------------------------------------------------------------------
-# Attempt 1: fast connect — no re-scan, just trust + Bleak connect
+# v13: pexpect AUTO-CONNECT — trust during active scan, no explicit connect
 # ---------------------------------------------------------------------------
 
-async def _attempt_fast_connect(address: str, readings: list[dict]) -> bool:
-    """Fast connect: device is already in BlueZ cache from parent scan.
-
-    No cleanup, no re-scan.  Just stop scanning, trust, and connect.
-    This gets us connecting within ~3 seconds of the child spawning,
-    while the cuff's 30-second advertising window is still open.
-    """
-    from bleak import BleakClient
-
-    print("  Stopping any active scan ...", file=sys.stderr, flush=True)
-    _stop_scanning()
-    await asyncio.sleep(0.5)
-
-    _trust_device(address)
-    await asyncio.sleep(1.0)
-
-    # Check if BlueZ auto-connected after trust
-    if _is_device_connected(address):
-        print("  Device auto-connected after trust!", file=sys.stderr, flush=True)
-
-    client = None
-    connected = False
-
-    # Try Bleak connect — shorter timeout to leave room for fallback
-    try:
-        print(f"  Bleak connect {address} (timeout=12s) ...", file=sys.stderr, flush=True)
-        client = BleakClient(address, timeout=12.0)
-        await client.connect()
-        connected = client.is_connected
-        if connected:
-            print(f"  Bleak CONNECTED", file=sys.stderr, flush=True)
-    except Exception as e:
-        err_msg = str(e).lower()
-        print(f"  Bleak: {type(e).__name__}: {e}", file=sys.stderr, flush=True)
-
-        if "inprogress" in err_msg or "in progress" in err_msg:
-            print(f"  InProgress — waiting for auto-connect ...", file=sys.stderr, flush=True)
-            if client:
-                try: await client.disconnect()
-                except: pass
-                client = None
-            await asyncio.sleep(3.0)
-            try:
-                client = BleakClient(address, timeout=10.0)
-                await client.connect()
-                connected = client.is_connected
-                if connected:
-                    print(f"  Bleak CONNECTED (after InProgress wait)", file=sys.stderr, flush=True)
-            except Exception as e2:
-                print(f"  Retry failed: {type(e2).__name__}: {e2}", file=sys.stderr, flush=True)
-
-    if not connected:
-        if client:
-            try: await client.disconnect()
-            except: pass
-        return False
-
-    # Read indications
-    try:
-        await _read_indications(client, readings)
-    except Exception as e:
-        print(f"  Read error: {type(e).__name__}: {e}", file=sys.stderr, flush=True)
-    finally:
-        try:
-            await client.disconnect()
-            print(f"  Disconnected", file=sys.stderr, flush=True)
-        except Exception:
-            pass
-
-    return len(readings) > 0
-
-
-# ---------------------------------------------------------------------------
-# Attempt 2: pexpect interactive session (matches manual test exactly)
-# ---------------------------------------------------------------------------
-
-def _pexpect_connect(address: str, scan_timeout: int = 12) -> tuple[bool, "pexpect.spawn | None"]:
-    """Interactive bluetoothctl via pexpect — keeps session alive.
+def _pexpect_autoconnect(address: str, scan_timeout: int = 15) -> tuple[bool, "pexpect.spawn | None"]:
+    """Connect via BlueZ auto-connect — trust during active LE scan.
 
     This matches the EXACT sequence that worked in manual testing:
-    remove → scan → find device → scan off → trust → connect.
+    remove → scan le → [device appears] → trust (while scanning!) → auto-connect.
 
-    The pexpect session stays alive so the D-Bus connection reference
-    is maintained while Bleak reads GATT.  Returns (connected, child).
+    The key insight: BlueZ automatically connects a device that is both
+    discovered AND trusted during an active scan.  When BlueZ manages the
+    connection internally, it coordinates with its own scanning — avoiding
+    the le-connection-abort-by-local that all explicit connect commands hit.
+
+    Returns (connected, pexpect_child).  The child MUST stay alive during
+    GATT reads — closing it drops the D-Bus session that holds the connection.
     """
     if not HAS_PEXPECT:
+        print("  ERROR: pexpect not installed — cannot auto-connect", file=sys.stderr, flush=True)
+        print("  Install with: pip3 install pexpect", file=sys.stderr, flush=True)
         return False, None
 
     print("  Starting pexpect bluetoothctl session ...", file=sys.stderr, flush=True)
     try:
         child = pexpect.spawn("bluetoothctl", encoding="utf-8", timeout=5)
-        # Wait for prompt
         child.expect([r"#", pexpect.TIMEOUT, pexpect.EOF], timeout=3)
 
-        # Remove stale cache
+        # 1. Remove device for a completely clean slate
+        print(f"  Removing {address} ...", file=sys.stderr, flush=True)
         child.sendline(f"remove {address}")
         child.expect([r"#", pexpect.TIMEOUT], timeout=5)
         time.sleep(0.5)
 
-        # Start scan
+        # 2. Start LE scan
         child.sendline("scan le")
         time.sleep(0.5)
 
-        # Wait for our device to appear in scan output
+        # 3. Wait for our device to appear in scan output
         print(f"  Scanning for {address} (max {scan_timeout}s) ...", file=sys.stderr, flush=True)
         try:
             child.expect(address, timeout=scan_timeout)
             print(f"  Device found in scan!", file=sys.stderr, flush=True)
         except pexpect.TIMEOUT:
-            print(f"  Device not found in {scan_timeout}s scan", file=sys.stderr, flush=True)
+            print(f"  Device not found in {scan_timeout}s", file=sys.stderr, flush=True)
             child.sendline("scan off")
+            time.sleep(0.3)
             child.sendline("quit")
             child.close()
             return False, None
 
-        # Stop scanning (critical: scan interferes with connect)
-        child.sendline("scan off")
-        time.sleep(1.0)
-
-        # Trust
+        # 4. TRUST WHILE SCANNING — this is the critical step.
+        #    BlueZ auto-connects when a device is discovered + trusted
+        #    during an active scan.  DO NOT stop scanning before trust.
+        time.sleep(0.3)
         child.sendline(f"trust {address}")
-        try:
-            child.expect(["trust succeeded", pexpect.TIMEOUT], timeout=5)
-            print(f"  Trust succeeded", file=sys.stderr, flush=True)
-        except pexpect.TIMEOUT:
-            pass
         time.sleep(0.5)
+        print(f"  Trust sent (scan still active — waiting for auto-connect)", file=sys.stderr, flush=True)
 
-        # Connect
-        print(f"  Connecting ...", file=sys.stderr, flush=True)
-        child.sendline(f"connect {address}")
+        # 5. Wait for auto-connect
+        #    BlueZ will emit "[CHG] Device XX:XX Connected: yes"
+        try:
+            child.expect("Connected: yes", timeout=10)
+            print(f"  AUTO-CONNECTED!", file=sys.stderr, flush=True)
 
-        # Wait for connection result
-        result = child.expect([
-            "Connection successful",
-            "Connected: yes",
-            "InProgress",
-            "Failed",
-            "not available",
-            pexpect.TIMEOUT,
-        ], timeout=15)
+            # Stop scanning now that we're connected
+            child.sendline("scan off")
+            time.sleep(1.0)
 
-        if result in (0, 1):
-            print(f"  Connected!", file=sys.stderr, flush=True)
-            time.sleep(1.0)  # Let services resolve
+            # Verify connection is stable via info command
+            child.sendline(f"info {address}")
+            try:
+                idx = child.expect(["Connected: yes", "Connected: no", pexpect.TIMEOUT], timeout=5)
+                if idx == 0:
+                    print(f"  Connection verified stable", file=sys.stderr, flush=True)
+                elif idx == 1:
+                    print(f"  Connection dropped immediately after auto-connect", file=sys.stderr, flush=True)
+                    child.sendline("quit")
+                    child.close()
+                    return False, None
+            except pexpect.TIMEOUT:
+                # info may be slow; trust the earlier Connected: yes
+                print(f"  Info check timed out, trusting auto-connect", file=sys.stderr, flush=True)
+
             return True, child
 
-        if result == 2:  # InProgress — auto-connecting
-            print(f"  InProgress — waiting for connection ...", file=sys.stderr, flush=True)
+        except pexpect.TIMEOUT:
+            print(f"  Auto-connect timed out (10s)", file=sys.stderr, flush=True)
+
+            # Fallback: stop scan, try explicit connect as last resort
+            child.sendline("scan off")
+            time.sleep(1.0)
+
+            print(f"  Fallback: explicit connect {address} ...", file=sys.stderr, flush=True)
+            child.sendline(f"connect {address}")
+
             try:
-                r2 = child.expect(["Connected: yes", "Connection successful",
-                                    "Failed", pexpect.TIMEOUT], timeout=10)
-                if r2 in (0, 1):
-                    print(f"  Connected!", file=sys.stderr, flush=True)
+                result = child.expect([
+                    "Connection successful",
+                    "Connected: yes",
+                    "Failed",
+                    "not available",
+                    pexpect.TIMEOUT,
+                ], timeout=15)
+
+                if result in (0, 1):
+                    print(f"  Connected via explicit connect (fallback)", file=sys.stderr, flush=True)
                     time.sleep(1.0)
                     return True, child
+                else:
+                    print(f"  Explicit connect also failed", file=sys.stderr, flush=True)
             except pexpect.TIMEOUT:
-                pass
+                print(f"  Explicit connect timed out", file=sys.stderr, flush=True)
 
-        # Check if connected despite error messages
-        time.sleep(1.0)
-        child.sendline(f"info {address}")
-        try:
-            idx = child.expect(["Connected: yes", "Connected: no",
-                                "not available", pexpect.TIMEOUT], timeout=5)
-            if idx == 0:
-                print(f"  Connected (confirmed via info)!", file=sys.stderr, flush=True)
-                return True, child
-        except pexpect.TIMEOUT:
-            pass
-
-        print(f"  pexpect connect failed", file=sys.stderr, flush=True)
-        child.sendline("quit")
-        child.close()
-        return False, None
+            child.sendline("quit")
+            child.close()
+            return False, None
 
     except Exception as e:
         print(f"  pexpect error: {type(e).__name__}: {e}", file=sys.stderr, flush=True)
         return False, None
 
 
-async def _attempt_pexpect_connect(address: str, readings: list[dict]) -> bool:
-    """Attempt 2: pexpect interactive session + Bleak GATT wrap.
+async def _attempt_autoconnect(address: str, readings: list[dict]) -> bool:
+    """Auto-connect via pexpect, then use Bleak for GATT reads.
 
-    This keeps the bluetoothctl session alive throughout the GATT read,
-    matching the manual test where the connection stayed stable.
+    The pexpect bluetoothctl session stays alive throughout — closing it
+    would drop the BlueZ D-Bus session that holds the BLE connection.
+    Bleak is used ONLY for GATT service discovery and indication reads,
+    NOT for the BLE connection itself.
     """
     from bleak import BleakClient
 
-    connected, btctl_child = await asyncio.to_thread(_pexpect_connect, address, 12)
+    connected, btctl_child = await asyncio.to_thread(_pexpect_autoconnect, address)
     if not connected or btctl_child is None:
         return False
 
     client = None
     try:
-        # Bleak wraps the existing connection for GATT reads
+        # Bleak wraps the existing BLE connection for GATT operations.
+        # The device is already connected via BlueZ auto-connect —
+        # Bleak discovers services on the existing connection.
         print(f"  Bleak wrapping connection for GATT ...", file=sys.stderr, flush=True)
-        await asyncio.sleep(1.0)
-        client = BleakClient(address, timeout=12.0)
-        await client.connect()
+        await asyncio.sleep(2.0)  # let BlueZ finish service resolution
+
+        client = BleakClient(address, timeout=10.0)
+        try:
+            await client.connect()
+        except Exception as e:
+            err = str(e).lower()
+            # "Already connected" is expected and fine
+            if "already connected" in err:
+                print(f"  Bleak: already connected (expected)", file=sys.stderr, flush=True)
+            else:
+                print(f"  Bleak connect: {type(e).__name__}: {e}", file=sys.stderr, flush=True)
 
         if client.is_connected:
-            print(f"  Bleak GATT ready", file=sys.stderr, flush=True)
+            print(f"  Bleak GATT ready — reading indications", file=sys.stderr, flush=True)
             await _read_indications(client, readings)
         else:
-            print(f"  Bleak wrap: is_connected=False", file=sys.stderr, flush=True)
+            print(f"  Bleak: not connected after wrap", file=sys.stderr, flush=True)
     except Exception as e:
-        print(f"  Bleak wrap error: {type(e).__name__}: {e}", file=sys.stderr, flush=True)
+        print(f"  Bleak GATT error: {type(e).__name__}: {e}", file=sys.stderr, flush=True)
     finally:
+        # Disconnect Bleak first (GATT cleanup)
         if client:
             try:
                 await client.disconnect()
             except Exception:
                 pass
-        # Close the pexpect session
+        # Then close the pexpect session (drops BLE connection)
         try:
-            btctl_child.sendline(f"disconnect {address}")
-            time.sleep(0.5)
-            btctl_child.sendline("quit")
-            btctl_child.close()
+            if btctl_child:
+                btctl_child.sendline(f"disconnect {address}")
+                time.sleep(0.5)
+                btctl_child.sendline("quit")
+                btctl_child.close()
         except Exception:
             pass
-
-    return len(readings) > 0
-
-
-# ---------------------------------------------------------------------------
-# Attempt 3: full cleanup + scan + connect (v11 approach, last resort)
-# ---------------------------------------------------------------------------
-
-async def _attempt_full_reconnect(address: str, readings: list[dict]) -> bool:
-    """Full reset + re-scan + trust + connect as last resort."""
-    from bleak import BleakClient
-
-    _full_cleanup(address)
-    _reset_adapter()
-    await asyncio.sleep(3.0)
-
-    _stop_scanning()
-    await asyncio.sleep(0.5)
-
-    ble_device = await _scan_for_device(address, timeout=10.0)
-    if not ble_device:
-        print("  Device not found after reset", file=sys.stderr, flush=True)
-        return False
-
-    _stop_scanning()
-    await asyncio.sleep(0.5)
-
-    _trust_device(address)
-    await asyncio.sleep(2.0)
-
-    client = None
-    try:
-        client = BleakClient(ble_device, timeout=12.0)
-        await client.connect()
-        if client.is_connected:
-            print(f"  Bleak CONNECTED (full reconnect)", file=sys.stderr, flush=True)
-            await _read_indications(client, readings)
-    except Exception as e:
-        print(f"  Full reconnect failed: {type(e).__name__}: {e}", file=sys.stderr, flush=True)
-    finally:
-        if client:
-            try: await client.disconnect()
-            except: pass
 
     return len(readings) > 0
 
@@ -785,17 +624,19 @@ async def _attempt_full_reconnect(address: str, readings: list[dict]) -> bool:
 async def _oneshot_read(address: str) -> list[dict]:
     """One-shot BLE read — subprocess mode.
 
-    v12: Three-tier strategy optimised for the ~30-second advertising window.
+    v13: Auto-connect strategy — trust during active scan, let BlueZ
+    handle the connection internally.  This is the ONLY sequence that
+    avoids le-connection-abort-by-local on this adapter/cuff combination.
 
-    Attempt 1 (FAST ~3s startup): Device is in BlueZ cache from parent scan.
-        Stop scanning → trust → Bleak connect.  No cleanup, no re-scan.
-    Attempt 2 (INTERACTIVE ~15s): pexpect bluetoothctl session matching
-        the manual test that worked: remove → scan → trust → connect.
-        Session stays alive during GATT read.
-    Attempt 3 (FULL RESET ~20s): adapter reset + scan + trust + connect.
+    Attempt 1: pexpect auto-connect (remove → scan → trust-while-scanning)
+    Attempt 2: adapter reset + repeat auto-connect
     """
     address = address.upper()
     readings: list[dict] = []
+
+    if not HAS_PEXPECT:
+        print("FATAL: pexpect not installed. Run: pip3 install pexpect", file=sys.stderr, flush=True)
+        return readings
 
     # --- Diagnostics ---
     _check_adapter_state()
@@ -809,31 +650,26 @@ async def _oneshot_read(address: str) -> list[dict]:
         await asyncio.sleep(1.0)
 
     # =================================================================
-    #  ATTEMPT 1: FAST — no cleanup, no re-scan
-    #  Device is in BlueZ cache from parent scan.  Race the ad window.
+    #  ATTEMPT 1: AUTO-CONNECT (trust during active scan)
+    #  The exact sequence that worked in manual testing.
     # =================================================================
-    print("ATTEMPT 1/3 — fast connect (no re-scan, trust + Bleak)", file=sys.stderr, flush=True)
+    print("ATTEMPT 1/2 — auto-connect (trust during scan)", file=sys.stderr, flush=True)
 
-    if await _attempt_fast_connect(address, readings):
+    if await _attempt_autoconnect(address, readings):
         return readings
     print("  Attempt 1 failed", file=sys.stderr, flush=True)
 
     # =================================================================
-    #  ATTEMPT 2: PEXPECT — interactive session matching manual test
+    #  ATTEMPT 2: ADAPTER RESET + retry auto-connect
+    #  Fresh adapter state, then repeat the proven sequence.
     # =================================================================
-    if HAS_PEXPECT:
-        print("ATTEMPT 2/3 — pexpect interactive session", file=sys.stderr, flush=True)
-        if await _attempt_pexpect_connect(address, readings):
-            return readings
-        print("  Attempt 2 failed", file=sys.stderr, flush=True)
-    else:
-        print("ATTEMPT 2/3 — skipped (pexpect not installed)", file=sys.stderr, flush=True)
+    print("ATTEMPT 2/2 — adapter reset + auto-connect retry", file=sys.stderr, flush=True)
+    _reset_adapter()
+    await asyncio.sleep(2.0)
 
-    # =================================================================
-    #  ATTEMPT 3: FULL RESET — adapter reset + re-scan + trust + connect
-    # =================================================================
-    print("ATTEMPT 3/3 — full reset + scan + trust + connect", file=sys.stderr, flush=True)
-    await _attempt_full_reconnect(address, readings)
+    if await _attempt_autoconnect(address, readings):
+        return readings
+    print("  Attempt 2 failed", file=sys.stderr, flush=True)
 
     return readings
 
@@ -904,7 +740,7 @@ def read_device_subprocess(address: str) -> list[dict]:
 async def _btctl_scan_realtime(known_macs: set[str], timeout: int = 20) -> str | None:
     """Real-time BLE scan that returns IMMEDIATELY when a target MAC is found.
 
-    v12: Instead of waiting the full scan duration and then parsing output,
+    Instead of waiting the full scan duration and then parsing output,
     this reads bluetoothctl output line-by-line and returns the instant
     a known MAC appears.  This saves ~12 seconds on average — critical
     because the cuff only advertises for ~30 seconds.
@@ -950,9 +786,12 @@ async def _btctl_scan_realtime(known_macs: set[str], timeout: int = 20) -> str |
             except asyncio.TimeoutError:
                 continue
     finally:
-        # Stop scan and quit
+        # Stop scan and quit — ensure adapter is idle before child spawns
         try:
-            proc.stdin.write(b"scan off\nquit\n")
+            proc.stdin.write(b"scan off\n")
+            await proc.stdin.drain()
+            await asyncio.sleep(0.5)
+            proc.stdin.write(b"quit\n")
             await proc.stdin.drain()
         except Exception:
             pass
@@ -971,8 +810,9 @@ async def _btctl_scan_realtime(known_macs: set[str], timeout: int = 20) -> str |
 async def scanner_loop():
     """Continuously scan for known BP monitors and read when detected.
 
-    v12: Uses real-time scan that returns immediately on match.
+    v13: Uses real-time scan that returns immediately on match.
     Pre-trusts devices so BlueZ can auto-connect on discovery.
+    Adds settle delay after detection so adapter is idle for child.
     """
     last_read: dict[str, float] = {}
     trusted_macs: set[str] = set()  # MACs we've already pre-trusted
@@ -997,7 +837,7 @@ async def scanner_loop():
 
         log.info("Scanning for %d BP monitor(s): %s", len(known_macs), ", ".join(known_macs))
 
-        # v12: real-time scan — returns immediately on first match
+        # Real-time scan — returns immediately on first match
         detected_address = await _btctl_scan_realtime(known_macs, timeout=20)
 
         if detected_address:
@@ -1006,7 +846,12 @@ async def scanner_loop():
                 await asyncio.sleep(5)
                 continue
 
-            log.info("BP MONITOR DETECTED: %s — spawning reader NOW", detected_address)
+            log.info("BP MONITOR DETECTED: %s", detected_address)
+
+            # v13: settle delay — let adapter fully stop scanning before
+            # the child subprocess starts its own bluetoothctl session
+            log.info("Settling adapter (1.5s) before spawning reader ...")
+            await asyncio.sleep(1.5)
 
             readings = read_device_subprocess(detected_address)
             if readings:
@@ -1043,8 +888,10 @@ async def run():
 
 
 def main():
-    log.info("Starting BP bridge v12 (real-time scan, fast-connect, pexpect fallback, backend=%s)", READING_ENDPOINT)
+    log.info("Starting BP bridge v13 (auto-connect, pexpect, backend=%s)", READING_ENDPOINT)
     log.info("pexpect available: %s", HAS_PEXPECT)
+    if not HAS_PEXPECT:
+        log.warning("pexpect NOT installed — auto-connect will fail. Run: pip3 install pexpect")
     asyncio.run(run())
 
 
