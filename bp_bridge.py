@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-bp_bridge.py  v8 — BLE bridge for Bluetooth Blood Pressure monitors.
+bp_bridge.py  v9 — BLE bridge for Bluetooth Blood Pressure monitors.
 
 Continuously scans for known (paired) BP monitors. The instant a monitor
 starts advertising (user pressed its Bluetooth button after taking a
@@ -40,21 +40,23 @@ A&D UA-656BLE behaviour:
       stored (unsent) readings as indications, one per reading
     - After successful transfer the device clears its "unsent" flag
 
-v8 connect strategy — pairing-first interactive bluetoothctl + Bleak:
-    v7 used standalone bluetoothctl connect without pairing.  The A&D
-    UA-656BLE requires Just Works pairing before BlueZ will complete
-    GATT service discovery — without it, the LE link is established
-    (Connected: yes) then immediately torn down by the local host
-    (le-connection-abort-by-local).
+v9 connect strategy — Bleak-free parent + clean-child Bleak:
+    v7/v8 used BleakScanner in the parent process for detection.
+    BleakScanner holds D-Bus adapter references that persist even after
+    stop() — these cause the child subprocess's BLE connections to fail
+    with le-connection-abort-by-local (BlueZ sees two D-Bus clients
+    fighting over the adapter).
 
-    v8 runs bluetoothctl in interactive mode (single session via bash
-    pipe) so a NoInputNoOutput agent stays registered throughout the
-    agent → trust → pair → connect sequence.  Individual bluetoothctl
-    commands each spawn their own process and lose the agent.
+    v9 eliminates Bleak from the parent entirely.  The parent scans
+    using bluetoothctl (subprocess, no D-Bus state in Python).  The
+    child subprocess gets a completely clean D-Bus session with no
+    pre-existing adapter references — the same environment that makes
+    bp_provision.py work reliably.
 
-    Attempt 1 — Scan + pair + connect (preserving cache)
-    Attempt 2 — Remove + scan + pair + connect
-    Attempt 3 — Adapter reset + remove + scan + pair + connect
+    Parent — bluetoothctl scan (no Bleak import, no D-Bus state)
+    Child  — Attempt 1: plain Bleak scan + connect (like bp_provision)
+             Attempt 2: remove + pair_and_connect (bluetoothctl) + Bleak GATT
+             Attempt 3: adapter reset + remove + pair_and_connect + Bleak GATT
 
 Run with pm2:
     pm2 start bp_bridge.py --name bp-bridge --interpreter python3
@@ -663,14 +665,15 @@ async def _attempt_connect_and_read(address: str, ble_device, readings: list[dic
 async def _oneshot_read(address: str) -> list[dict]:
     """One-shot BLE read — called only in subprocess (--read) mode.
 
-    Hybrid strategy: uses bluetoothctl for the BLE connection (bypasses
-    Bleak's D-Bus adapter reference issues) and Bleak only for GATT
-    indication reads.
+    v9: Parent process uses bluetoothctl for scanning (no Bleak), so
+    this child subprocess has a completely clean D-Bus session — no
+    pre-existing adapter references.  Attempt 1 uses plain Bleak
+    (the same approach as bp_provision.py).
 
     Three-tier escalation:
-      Attempt 1 — Scan + pair + connect (preserves BlueZ cache)
-      Attempt 2 — Remove cached device + scan + pair + connect
-      Attempt 3 — Full adapter reset + remove + scan + pair + connect
+      Attempt 1 — Plain Bleak scan + connect (like bp_provision.py)
+      Attempt 2 — Remove + pair_and_connect (bluetoothctl) + Bleak GATT
+      Attempt 3 — Adapter reset + remove + pair_and_connect + Bleak GATT
     """
     address = address.upper()
     readings: list[dict] = []
@@ -687,22 +690,35 @@ async def _oneshot_read(address: str) -> list[dict]:
         await asyncio.sleep(1.0)
 
     # =================================================================
-    #  ATTEMPT 1: Scan + connect (preserve cache & bond)
+    #  ATTEMPT 1: Plain Bleak scan + connect (like bp_provision.py)
+    #  Should work now that parent has no Bleak/D-Bus state.
     # =================================================================
-    print("ATTEMPT 1/3 — Scan + pair + connect (preserving cache)", file=sys.stderr, flush=True)
+    print("ATTEMPT 1/3 — Plain Bleak scan + connect (clean subprocess)", file=sys.stderr, flush=True)
 
     ble_device = await _scan_for_device(address, timeout=8.0)
     if ble_device:
-        if await _attempt_connect_and_read(address, ble_device, readings):
-            return readings
+        client = await _bleak_direct_connect(address, ble_device, timeout=15.0)
+        if client:
+            try:
+                await _read_indications(client, readings)
+            except Exception as e:
+                print(f"  Read error: {type(e).__name__}: {e}", file=sys.stderr, flush=True)
+            finally:
+                try:
+                    await client.disconnect()
+                except Exception:
+                    pass
+            if readings:
+                return readings
         print("  Attempt 1 failed, escalating ...", file=sys.stderr, flush=True)
     else:
         print("  Device not found in scan, escalating ...", file=sys.stderr, flush=True)
 
     # =================================================================
-    #  ATTEMPT 2: Remove cached device + scan + connect
+    #  ATTEMPT 2: Remove + pair_and_connect (interactive bluetoothctl)
+    #  + Bleak GATT wrap
     # =================================================================
-    print("ATTEMPT 2/3 — Remove + scan + pair + connect", file=sys.stderr, flush=True)
+    print("ATTEMPT 2/3 — Remove + pair + connect (bluetoothctl)", file=sys.stderr, flush=True)
 
     _remove_cached_device(address)
     await asyncio.sleep(2.0)
@@ -716,9 +732,9 @@ async def _oneshot_read(address: str) -> list[dict]:
         print("  Device not found in scan, escalating ...", file=sys.stderr, flush=True)
 
     # =================================================================
-    #  ATTEMPT 3: Full adapter reset + remove + scan + connect
+    #  ATTEMPT 3: Adapter reset + remove + pair_and_connect + Bleak GATT
     # =================================================================
-    print("ATTEMPT 3/3 — Adapter reset + remove + scan + pair + connect", file=sys.stderr, flush=True)
+    print("ATTEMPT 3/3 — Adapter reset + remove + pair + connect", file=sys.stderr, flush=True)
 
     _reset_adapter()
     _remove_cached_device(address)
@@ -802,19 +818,55 @@ def read_device_subprocess(address: str) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Main scanner loop — event-driven, reacts instantly to advertisements
+# Parent scanner — uses bluetoothctl (no Bleak, no D-Bus adapter state)
 # ---------------------------------------------------------------------------
+def _btctl_scan_once(known_macs: set[str], timeout: int = 15) -> str | None:
+    """Run a single BLE scan via bluetoothctl and return first known MAC found.
+
+    This avoids importing Bleak in the parent process — BleakScanner holds
+    D-Bus adapter references that interfere with the child subprocess's BLE
+    connections even after stop().
+    """
+    script = (
+        "{ "
+        'echo "scan le"; '
+        f"sleep {timeout}; "
+        'echo "scan off"; sleep 0.3; echo "quit"; '
+        "} | bluetoothctl 2>&1"
+    )
+    try:
+        result = subprocess.run(
+            ["bash", "-c", script],
+            capture_output=True, timeout=timeout + 10, text=True, check=False,
+        )
+        for line in result.stdout.splitlines():
+            # Lines look like: [NEW] Device AA:BB:CC:DD:EE:FF DeviceName
+            #               or: [CHG] Device AA:BB:CC:DD:EE:FF RSSI: int16
+            if "Device" not in line:
+                continue
+            for part in line.split():
+                cleaned = part.strip("[](),")
+                if len(cleaned) == 17 and cleaned.count(":") == 5:
+                    mac = cleaned.upper()
+                    if mac in known_macs:
+                        return mac
+    except subprocess.TimeoutExpired:
+        log.debug("bluetoothctl scan timed out")
+    except Exception as e:
+        log.warning("bluetoothctl scan error: %s", e)
+    return None
+
+
 async def scanner_loop():
     """Continuously scan for known BP monitors and read when detected.
 
-    Instead of polling every N minutes (which misses the ~30s advertising
-    window), this keeps a BLE scanner active at all times. The instant a
-    known BP monitor starts advertising, the bridge connects and reads.
+    v9: Uses bluetoothctl for scanning — NO Bleak in the parent process.
+    This ensures the child subprocess gets a completely clean D-Bus session
+    with no pre-existing adapter references (the root cause of v5–v8
+    connection failures).
 
     A per-device cooldown prevents re-reading the same advertisement burst.
     """
-    from bleak import BleakScanner
-
     last_read: dict[str, float] = {}  # MAC → timestamp of last read
     log.info("Scanner loop started (read_timeout=%ds, cooldown=%ds)", READ_TIMEOUT, COOLDOWN)
 
@@ -830,48 +882,22 @@ async def scanner_loop():
         known_macs.discard("")
         log.info("Scanning for %d BP monitor(s): %s", len(known_macs), ", ".join(known_macs))
 
-        detected_address = None
-        found_event = asyncio.Event()
-
-        def _on_detect(device, adv_data):
-            nonlocal detected_address
-            mac = device.address.upper()
-            if mac not in known_macs:
-                return
-            # Check cooldown
-            last = last_read.get(mac, 0)
-            if time.time() - last < COOLDOWN:
-                return
-            detected_address = mac
-            log.info("BP MONITOR DETECTED: %s (name=%s, RSSI=%s)",
-                     mac, device.name or "?", adv_data.rssi)
-            found_event.set()
-
-        scanner = BleakScanner(detection_callback=_on_detect)
-
-        try:
-            await scanner.start()
-
-            # Scan for up to 60 seconds, then refresh device list
-            try:
-                await asyncio.wait_for(found_event.wait(), timeout=60.0)
-            except asyncio.TimeoutError:
-                pass  # No device detected this cycle — loop and refresh
-
-            await scanner.stop()
-
-        except Exception as e:
-            log.warning("Scanner error: %s", e)
-            try:
-                await scanner.stop()
-            except Exception:
-                pass
-            await asyncio.sleep(5)
-            continue
+        # Run the blocking bluetoothctl scan in a thread so we don't
+        # freeze the event loop (needed for signal handling).
+        detected_address = await asyncio.to_thread(
+            _btctl_scan_once, known_macs, 15,
+        )
 
         if detected_address:
-            # Stop the scanner BEFORE spawning the subprocess — avoids
-            # two processes fighting over the BLE adapter.
+            # Check cooldown
+            if time.time() - last_read.get(detected_address, 0) < COOLDOWN:
+                log.info("Cooldown active for %s, skipping", detected_address)
+                await asyncio.sleep(5)
+                continue
+
+            log.info("BP MONITOR DETECTED: %s", detected_address)
+
+            # No scanner D-Bus state to clean up — parent never imported Bleak
             readings = read_device_subprocess(detected_address)
             if readings:
                 last_read[detected_address] = time.time()
@@ -909,7 +935,7 @@ async def run():
 
 
 def main():
-    log.info("Starting BP bridge v8 (pair-first bluetoothctl+bleak, backend=%s)", READING_ENDPOINT)
+    log.info("Starting BP bridge v9 (btctl-scan parent + clean-bleak child, backend=%s)", READING_ENDPOINT)
     asyncio.run(run())
 
 
