@@ -241,6 +241,14 @@ async def pair_device(address: str, timeout: float = 15.0) -> dict:
     _dbg(f"=== PAIR START for {address} ===")
 
     # ---------------------------------------------------------------
+    # Step 0: Clear stale BlueZ cache for this device.
+    # Previous failed pair attempts leave a cached D-Bus object that
+    # can block new connections. Removing it forces BlueZ to start
+    # fresh from the advertisement we're about to receive.
+    # ---------------------------------------------------------------
+    _remove_cached_device(address)
+
+    # ---------------------------------------------------------------
     # Step 1: Targeted scan — wait for the device to advertise.
     # Uses a detection callback so we react the INSTANT the monitor
     # sends an advertisement, rather than waiting for a full scan to
@@ -279,19 +287,44 @@ async def pair_device(address: str, timeout: float = 15.0) -> dict:
         }
 
     # ---------------------------------------------------------------
-    # Step 2: Connect immediately using the fresh BLEDevice object.
-    # No retries needed — we just saw the device advertising, so the
-    # BLE connection should succeed on the first attempt.
+    # Step 2: Connect using the fresh BLEDevice, with retries.
+    # The monitor advertises for ~30s; if the first connect times out
+    # (stale BlueZ state, transient BLE interference), retry quickly.
     # ---------------------------------------------------------------
     connect_timeout = min(timeout, 15.0)
     client = None
+    last_connect_err = None
+
+    for attempt in range(1, 4):  # up to 3 connect attempts
+        try:
+            _dbg(f"Connect attempt {attempt}/3 to {address} ...")
+            client = BleakClient(ble_device, timeout=connect_timeout)
+            await client.connect()
+            if not client.is_connected:
+                raise RuntimeError("connect() succeeded but is_connected=False")
+            _dbg(f"CONNECTED to {address} on attempt {attempt}")
+            last_connect_err = None
+            break
+        except Exception as e:
+            last_connect_err = e
+            _dbg(f"Connect attempt {attempt} FAILED: {_exc_detail(e)}")
+            try:
+                await client.disconnect()
+            except Exception:
+                pass
+            client = None
+            if attempt < 3:
+                _remove_cached_device(address)
+                await asyncio.sleep(1.0)
+
+    if last_connect_err is not None:
+        _dbg(f"All 3 connect attempts failed for {address}")
+        return {
+            "success": False,
+            "detail": f"BLE connect failed: {_exc_detail(last_connect_err)}",
+        }
+
     try:
-        _dbg(f"Connecting to {address} with fresh BLEDevice ...")
-        client = BleakClient(ble_device, timeout=connect_timeout)
-        await client.connect()
-        if not client.is_connected:
-            raise RuntimeError("connect() succeeded but is_connected=False")
-        _dbg(f"CONNECTED to {address}")
 
         # --- Verify Blood Pressure Service ---
         bp_service_found = False
