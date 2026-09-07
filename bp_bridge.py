@@ -46,6 +46,7 @@ import logging
 import os
 import signal
 import struct
+import subprocess
 import sys
 import time
 from datetime import datetime, timezone
@@ -239,13 +240,42 @@ def forward_reading(mac_address: str, reading: dict) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# BlueZ cache cleanup — clear stale D-Bus state that blocks BLE connects
+# ---------------------------------------------------------------------------
+def _remove_cached_device(address: str):
+    """Remove a cached/stale BLE device from BlueZ so the next connect is fresh."""
+    try:
+        log.debug("Removing cached device %s from BlueZ ...", address)
+        subprocess.run(
+            ["bluetoothctl", "remove", address],
+            capture_output=True, timeout=5, text=True, check=False,
+        )
+    except Exception as e:
+        log.debug("  remove cached device (non-fatal): %s", e)
+
+
+def _trust_device(address: str):
+    """Trust device via bluetoothctl so BlueZ allows future connections."""
+    try:
+        subprocess.run(
+            ["bluetoothctl", "trust", address],
+            capture_output=True, timeout=5, text=True, check=False,
+        )
+    except Exception:
+        pass
+
+
+# ---------------------------------------------------------------------------
 # Connect to a BP device using a fresh BLEDevice and read indications
 # ---------------------------------------------------------------------------
+BLE_CONNECT_RETRIES = 3
+BLE_RETRY_DELAY = 1.5  # seconds between retries
+
 async def read_device_ble(ble_device) -> int:
     """Connect to a detected BP monitor, read indications, forward readings.
 
-    Uses the fresh BLEDevice from the scanner callback for immediate
-    connection — same approach as bp_provision.py's targeted scan.
+    Clears stale BlueZ D-Bus cache before connecting, then retries up to 3
+    times — same approach that fixed bp_provision.py pairing failures.
 
     Returns the number of readings successfully forwarded.
     """
@@ -253,6 +283,10 @@ async def read_device_ble(ble_device) -> int:
 
     address = ble_device.address
     log.info("=== BP READ START for %s ===", address)
+
+    # Step 0: Clear stale BlueZ cache — previous pair/connect attempts leave
+    # D-Bus objects that cause connect() to hang for 15s then timeout.
+    _remove_cached_device(address)
 
     readings: list[dict] = []
 
@@ -267,17 +301,45 @@ async def read_device_ble(ble_device) -> int:
                      reading.get("diastolic"),
                      reading.get("pulse_rate"))
 
+    # Step 1: Connect with retries
     client = None
+    last_err = None
+    for attempt in range(1, BLE_CONNECT_RETRIES + 1):
+        try:
+            log.info("  Connect attempt %d/%d to %s ...",
+                     attempt, BLE_CONNECT_RETRIES, address)
+            client = BleakClient(ble_device, timeout=15.0)
+            await client.connect()
+            if not client.is_connected:
+                raise RuntimeError("connect() succeeded but is_connected=False")
+            log.info("  CONNECTED to %s on attempt %d", address, attempt)
+            last_err = None
+            break
+        except Exception as e:
+            last_err = e
+            log.warning("  Connect attempt %d FAILED: %s: %s",
+                        attempt, type(e).__name__, e)
+            try:
+                await client.disconnect()
+            except Exception:
+                pass
+            client = None
+            if attempt < BLE_CONNECT_RETRIES:
+                _remove_cached_device(address)
+                await asyncio.sleep(BLE_RETRY_DELAY)
+
+    if last_err is not None:
+        log.warning("  All %d connect attempts failed for %s",
+                    BLE_CONNECT_RETRIES, address)
+        log.info("=== BP READ DONE for %s: 0 collected, 0 forwarded (connect failed) ===",
+                 address)
+        return 0
+
+    # Step 2: Re-trust so BlueZ allows future connections
+    _trust_device(address)
+
+    # Step 3: Read indications
     try:
-        client = BleakClient(ble_device, timeout=15.0)
-        await client.connect()
-
-        if not client.is_connected:
-            log.warning("  Could not connect to %s", address)
-            return 0
-
-        log.info("  Connected to %s", address)
-
         # Find the BP Measurement characteristic
         bp_char = None
         for service in client.services:
@@ -313,7 +375,7 @@ async def read_device_ble(ble_device) -> int:
             pass
 
     except Exception as e:
-        log.warning("  BLE error with %s: %s", address, e)
+        log.warning("  BLE error with %s: %s: %s", address, type(e).__name__, e)
     finally:
         if client:
             try:
@@ -440,7 +502,7 @@ async def run():
 
 
 def main():
-    log.info("Starting BP bridge v2 (event-driven scanner, backend=%s)",
+    log.info("Starting BP bridge v3 (event-driven + cache-cleanup, backend=%s)",
              READING_ENDPOINT)
     asyncio.run(run())
 
