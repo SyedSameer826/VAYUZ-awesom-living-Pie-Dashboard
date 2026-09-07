@@ -266,28 +266,61 @@ def _trust_device(address: str):
 
 
 # ---------------------------------------------------------------------------
-# Connect to a BP device using a fresh BLEDevice and read indications
+# Connect to a BP device, read indications, forward readings
 # ---------------------------------------------------------------------------
 BLE_CONNECT_RETRIES = 3
-BLE_RETRY_DELAY = 1.5  # seconds between retries
 
-async def read_device_ble(ble_device) -> int:
+async def read_device_ble(address: str) -> int:
     """Connect to a detected BP monitor, read indications, forward readings.
 
-    Clears stale BlueZ D-Bus cache before connecting, then retries up to 3
-    times — same approach that fixed bp_provision.py pairing failures.
+    Mirrors bp_provision.py's proven approach:
+      1. Clear BlueZ cache (removes stale D-Bus objects)
+      2. Fresh targeted scan to re-discover device (re-registers in BlueZ)
+      3. Connect with the fresh BLEDevice + retries
+      4. Read BP measurement indications
+      5. Forward readings to backend
 
     Returns the number of readings successfully forwarded.
     """
-    from bleak import BleakClient
+    from bleak import BleakScanner, BleakClient
 
-    address = ble_device.address
+    address = address.upper()
     log.info("=== BP READ START for %s ===", address)
 
     # Step 0: Clear stale BlueZ cache — previous pair/connect attempts leave
     # D-Bus objects that cause connect() to hang for 15s then timeout.
+    # We MUST re-scan after this to get a fresh BLEDevice reference.
     _remove_cached_device(address)
 
+    # Step 1: Fresh targeted scan — re-discover the device so BlueZ has a
+    # clean D-Bus entry. The monitor should still be advertising (30s window).
+    ble_device = None
+    found_event = asyncio.Event()
+
+    def _on_detect(device, adv_data):
+        nonlocal ble_device
+        if device.address.upper() == address:
+            ble_device = device
+            log.info("  Re-discovered %s (RSSI=%s)", address, adv_data.rssi)
+            found_event.set()
+
+    rescan_timeout = 10.0
+    log.info("  Re-scanning for %s after cache clear (%ds) ...", address, rescan_timeout)
+    scanner = BleakScanner(detection_callback=_on_detect)
+    await scanner.start()
+    try:
+        await asyncio.wait_for(found_event.wait(), timeout=rescan_timeout)
+    except asyncio.TimeoutError:
+        log.warning("  %s did not re-advertise in %ds", address, rescan_timeout)
+    finally:
+        await scanner.stop()
+
+    if ble_device is None:
+        log.info("=== BP READ DONE for %s: 0 collected (device gone after cache clear) ===",
+                 address)
+        return 0
+
+    # Step 2: Connect with retries using the fresh BLEDevice
     readings: list[dict] = []
 
     def on_indicate(_char, data: bytearray):
@@ -301,7 +334,6 @@ async def read_device_ble(ble_device) -> int:
                      reading.get("diastolic"),
                      reading.get("pulse_rate"))
 
-    # Step 1: Connect with retries
     client = None
     last_err = None
     for attempt in range(1, BLE_CONNECT_RETRIES + 1):
@@ -326,7 +358,7 @@ async def read_device_ble(ble_device) -> int:
             client = None
             if attempt < BLE_CONNECT_RETRIES:
                 _remove_cached_device(address)
-                await asyncio.sleep(BLE_RETRY_DELAY)
+                await asyncio.sleep(1.0)
 
     if last_err is not None:
         log.warning("  All %d connect attempts failed for %s",
@@ -335,10 +367,10 @@ async def read_device_ble(ble_device) -> int:
                  address)
         return 0
 
-    # Step 2: Re-trust so BlueZ allows future connections
+    # Step 3: Re-trust so BlueZ allows future connections
     _trust_device(address)
 
-    # Step 3: Read indications
+    # Step 4: Read indications
     try:
         # Find the BP Measurement characteristic
         bp_char = None
@@ -464,7 +496,7 @@ async def scanner_loop():
             continue
 
         if detected_device:
-            count = await read_device_ble(detected_device)
+            count = await read_device_ble(detected_device.address)
             if count > 0:
                 last_read[detected_device.address.upper()] = time.time()
                 log.info("Cooldown active for %s (%ds)",
@@ -502,7 +534,7 @@ async def run():
 
 
 def main():
-    log.info("Starting BP bridge v3 (event-driven + cache-cleanup, backend=%s)",
+    log.info("Starting BP bridge v4 (cache-clear + re-scan + connect, backend=%s)",
              READING_ENDPOINT)
     asyncio.run(run())
 
