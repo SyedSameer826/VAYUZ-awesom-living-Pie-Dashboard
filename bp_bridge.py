@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-bp_bridge.py  v9 — BLE bridge for Bluetooth Blood Pressure monitors.
+bp_bridge.py  v10 — BLE bridge for Bluetooth Blood Pressure monitors.
 
 Continuously scans for known (paired) BP monitors. The instant a monitor
 starts advertising (user pressed its Bluetooth button after taking a
@@ -40,23 +40,26 @@ A&D UA-656BLE behaviour:
       stored (unsent) readings as indications, one per reading
     - After successful transfer the device clears its "unsent" flag
 
-v9 connect strategy — Bleak-free parent + clean-child Bleak:
-    v7/v8 used BleakScanner in the parent process for detection.
-    BleakScanner holds D-Bus adapter references that persist even after
-    stop() — these cause the child subprocess's BLE connections to fail
-    with le-connection-abort-by-local (BlueZ sees two D-Bus clients
-    fighting over the adapter).
+v10 connect strategy — connect-only (no explicit pair) + cleanup:
+    v9 used an interactive bluetoothctl session that ran "pair" before
+    "connect".  When pair fails, BlueZ leaves the adapter in a dirty
+    state — subsequent connect attempts get le-connection-abort-by-local,
+    and the Bleak fallback gets InProgress.
 
-    v9 eliminates Bleak from the parent entirely.  The parent scans
-    using bluetoothctl (subprocess, no D-Bus state in Python).  The
-    child subprocess gets a completely clean D-Bus session with no
-    pre-existing adapter references — the same environment that makes
-    bp_provision.py work reliably.
+    v10 fixes:
+    1. connect-only via bluetoothctl (no explicit "pair" command) —
+       bluetoothctl's "connect" triggers Just Works pairing automatically
+       when the device requires it, without the pair command's state
+       pollution on failure.
+    2. Explicit cleanup between EVERY attempt — disconnect + remove + wait
+       so no leftover state bleeds between attempts.
+    3. Longer delays after adapter reset (3s).
+    4. Parent still uses bluetoothctl scan (no Bleak import, no D-Bus state).
 
-    Parent — bluetoothctl scan (no Bleak import, no D-Bus state)
+    Parent — bluetoothctl scan (no Bleak, no D-Bus state)
     Child  — Attempt 1: plain Bleak scan + connect (like bp_provision)
-             Attempt 2: remove + pair_and_connect (bluetoothctl) + Bleak GATT
-             Attempt 3: adapter reset + remove + pair_and_connect + Bleak GATT
+             Attempt 2: cleanup + trust + connect-only (bluetoothctl) + Bleak GATT
+             Attempt 3: adapter reset + cleanup + trust + connect-only + Bleak GATT
 
 Run with pm2:
     pm2 start bp_bridge.py --name bp-bridge --interpreter python3
@@ -429,18 +432,46 @@ def _bluetoothctl_connect(address: str, timeout: int = 15) -> bool:
         return False
 
 
-def _pair_and_connect(address: str, timeout: int = 25) -> tuple[bool, str]:
-    """Connect via interactive bluetoothctl: agent + trust + pair + connect.
+def _full_cleanup(address: str):
+    """Force-disconnect + remove a device to clear ALL BlueZ state.
 
-    The A&D UA-656BLE requires Just Works pairing before the BLE
-    connection will complete — without pairing, BlueZ aborts the LE
-    link with le-connection-abort-by-local during service discovery.
+    Must be called between connection attempts to prevent InProgress and
+    le-connection-abort-by-local errors from leftover adapter state.
+    """
+    print(f"  Cleanup: disconnect + remove {address} ...", file=sys.stderr, flush=True)
+    try:
+        subprocess.run(
+            ["bluetoothctl", "disconnect", address],
+            capture_output=True, timeout=5, text=True, check=False,
+        )
+    except Exception:
+        pass
+    time.sleep(0.5)
+    try:
+        subprocess.run(
+            ["bluetoothctl", "remove", address],
+            capture_output=True, timeout=5, text=True, check=False,
+        )
+    except Exception:
+        pass
+    time.sleep(1.5)
+    print(f"  Cleanup done", file=sys.stderr, flush=True)
+
+
+def _trust_and_connect(address: str, timeout: int = 25) -> tuple[bool, str]:
+    """Connect via interactive bluetoothctl: agent + trust + connect (NO pair).
+
+    v10: Removed the explicit "pair" command.  bluetoothctl's "connect"
+    triggers Just Works pairing automatically when the device requires it.
+    Running "pair" before "connect" poisons BlueZ state on failure —
+    the pair command initiates a connection, fails, disconnects, and
+    leaves the adapter in a dirty state where the next connect attempt
+    gets le-connection-abort-by-local.
 
     Individual bluetoothctl commands each start a new process, so the
     BLE agent (needed for Just Works) is lost between calls.  This uses
     a single interactive session: bash pipes timed commands to
-    bluetoothctl's stdin so the agent stays registered throughout the
-    agent → trust → pair → connect sequence.
+    bluetoothctl's stdin so the agent stays registered throughout.
 
     Returns (connected: bool, raw_output: str).
     """
@@ -450,13 +481,12 @@ def _pair_and_connect(address: str, timeout: int = 25) -> tuple[bool, str]:
         'echo "agent NoInputNoOutput"; sleep 0.3; '
         'echo "default-agent"; sleep 0.3; '
         f'echo "trust {address}"; sleep 0.5; '
-        f'echo "pair {address}"; sleep 4; '
-        f'echo "connect {address}"; sleep 6; '
+        f'echo "connect {address}"; sleep 10; '
         'echo "quit"; '
         "} | bluetoothctl 2>&1"
     )
 
-    print(f"  pair+connect {address} (interactive session) ...", file=sys.stderr, flush=True)
+    print(f"  trust+connect {address} (interactive session, no explicit pair) ...", file=sys.stderr, flush=True)
     try:
         result = subprocess.run(
             ["bash", "-c", script],
@@ -487,10 +517,10 @@ def _pair_and_connect(address: str, timeout: int = 25) -> tuple[bool, str]:
         return connected, output
 
     except subprocess.TimeoutExpired:
-        print(f"  pair+connect timed out after {timeout}s", file=sys.stderr, flush=True)
+        print(f"  trust+connect timed out after {timeout}s", file=sys.stderr, flush=True)
         return False, "timeout"
     except Exception as e:
-        print(f"  pair+connect error: {e}", file=sys.stderr, flush=True)
+        print(f"  trust+connect error: {e}", file=sys.stderr, flush=True)
         return False, str(e)
 
 
@@ -621,10 +651,10 @@ async def _read_indications(client, readings: list[dict]):
 
 
 async def _attempt_connect_and_read(address: str, ble_device, readings: list[dict]) -> bool:
-    """Try pair+connect then Bleak GATT read.
+    """Try trust+connect (no pair) then Bleak GATT read.
 
-    v8 flow:
-      1. Interactive bluetoothctl session (agent + trust + pair + connect)
+    v10 flow:
+      1. Interactive bluetoothctl session (agent + trust + connect, NO pair)
       2. Bleak wraps the established connection for GATT indication reads
       3. Fallback: Bleak direct connect if bluetoothctl path fails
 
@@ -632,17 +662,28 @@ async def _attempt_connect_and_read(address: str, ble_device, readings: list[dic
     """
     client = None
 
-    # --- Method A: interactive bluetoothctl (pair + connect) + Bleak GATT ---
-    connected, _output = _pair_and_connect(address, timeout=25)
+    # --- Method A: interactive bluetoothctl (trust + connect) + Bleak GATT ---
+    connected, _output = _trust_and_connect(address, timeout=25)
     if connected:
         # Brief pause for BlueZ to stabilise services
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(1.0)
         client = await _bleak_connect_to_existing(address, timeout=15.0)
 
     # --- Method B: Direct Bleak connect (fallback) ---
     if client is None and ble_device is not None:
-        print("  Falling back to Bleak direct connect ...", file=sys.stderr, flush=True)
-        client = await _bleak_direct_connect(address, ble_device, timeout=15.0)
+        # Cleanup before Bleak attempt — clear any leftover bluetoothctl state
+        print("  Cleaning up before Bleak fallback ...", file=sys.stderr, flush=True)
+        _full_cleanup(address)
+        await asyncio.sleep(1.0)
+
+        # Re-scan to get a fresh BLE device reference after cleanup
+        print("  Re-scanning for fresh device reference ...", file=sys.stderr, flush=True)
+        fresh_device = await _scan_for_device(address, timeout=8.0)
+        if fresh_device:
+            print("  Falling back to Bleak direct connect ...", file=sys.stderr, flush=True)
+            client = await _bleak_direct_connect(address, fresh_device, timeout=15.0)
+        else:
+            print("  Device not found in re-scan, skipping Bleak fallback", file=sys.stderr, flush=True)
 
     if client is None:
         return False
@@ -665,15 +706,20 @@ async def _attempt_connect_and_read(address: str, ble_device, readings: list[dic
 async def _oneshot_read(address: str) -> list[dict]:
     """One-shot BLE read — called only in subprocess (--read) mode.
 
-    v9: Parent process uses bluetoothctl for scanning (no Bleak), so
+    v10: Parent process uses bluetoothctl for scanning (no Bleak), so
     this child subprocess has a completely clean D-Bus session — no
     pre-existing adapter references.  Attempt 1 uses plain Bleak
     (the same approach as bp_provision.py).
 
+    v10 changes from v9:
+    - No explicit "pair" command (connect-only triggers Just Works)
+    - Full cleanup (disconnect + remove + wait) between EVERY attempt
+    - Longer delays after adapter reset (3s)
+
     Three-tier escalation:
       Attempt 1 — Plain Bleak scan + connect (like bp_provision.py)
-      Attempt 2 — Remove + pair_and_connect (bluetoothctl) + Bleak GATT
-      Attempt 3 — Adapter reset + remove + pair_and_connect + Bleak GATT
+      Attempt 2 — Cleanup + trust + connect-only (bluetoothctl) + Bleak GATT
+      Attempt 3 — Adapter reset + cleanup + trust + connect-only + Bleak GATT
     """
     address = address.upper()
     readings: list[dict] = []
@@ -710,18 +756,19 @@ async def _oneshot_read(address: str) -> list[dict]:
                     pass
             if readings:
                 return readings
-        print("  Attempt 1 failed, escalating ...", file=sys.stderr, flush=True)
+        print("  Attempt 1 failed, cleaning up before next attempt ...", file=sys.stderr, flush=True)
     else:
         print("  Device not found in scan, escalating ...", file=sys.stderr, flush=True)
 
+    # --- Full cleanup between attempts to clear ALL BlueZ state ---
+    _full_cleanup(address)
+    await asyncio.sleep(1.0)
+
     # =================================================================
-    #  ATTEMPT 2: Remove + pair_and_connect (interactive bluetoothctl)
+    #  ATTEMPT 2: Trust + connect-only (no pair) via bluetoothctl
     #  + Bleak GATT wrap
     # =================================================================
-    print("ATTEMPT 2/3 — Remove + pair + connect (bluetoothctl)", file=sys.stderr, flush=True)
-
-    _remove_cached_device(address)
-    await asyncio.sleep(2.0)
+    print("ATTEMPT 2/3 — Cleanup + trust + connect-only (bluetoothctl)", file=sys.stderr, flush=True)
 
     ble_device = await _scan_for_device(address, timeout=10.0)
     if ble_device:
@@ -731,14 +778,16 @@ async def _oneshot_read(address: str) -> list[dict]:
     else:
         print("  Device not found in scan, escalating ...", file=sys.stderr, flush=True)
 
+    # --- Full cleanup + adapter reset before final attempt ---
+    _full_cleanup(address)
+
     # =================================================================
-    #  ATTEMPT 3: Adapter reset + remove + pair_and_connect + Bleak GATT
+    #  ATTEMPT 3: Adapter reset + trust + connect-only + Bleak GATT
     # =================================================================
-    print("ATTEMPT 3/3 — Adapter reset + remove + pair + connect", file=sys.stderr, flush=True)
+    print("ATTEMPT 3/3 — Adapter reset + cleanup + trust + connect-only", file=sys.stderr, flush=True)
 
     _reset_adapter()
-    _remove_cached_device(address)
-    await asyncio.sleep(2.0)
+    await asyncio.sleep(3.0)  # v10: longer delay after reset (was 2s)
 
     ble_device = await _scan_for_device(address, timeout=12.0)
     if ble_device:
@@ -935,7 +984,7 @@ async def run():
 
 
 def main():
-    log.info("Starting BP bridge v9 (btctl-scan parent + clean-bleak child, backend=%s)", READING_ENDPOINT)
+    log.info("Starting BP bridge v10 (connect-only, no pair, full cleanup between attempts, backend=%s)", READING_ENDPOINT)
     asyncio.run(run())
 
 
