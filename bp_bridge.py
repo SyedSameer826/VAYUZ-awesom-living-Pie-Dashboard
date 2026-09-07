@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-bp_bridge.py — BLE bridge for Bluetooth Blood Pressure monitors.
+bp_bridge.py  v5 — BLE bridge for Bluetooth Blood Pressure monitors.
 
 Continuously scans for known (paired) BP monitors. The instant a monitor
 starts advertising (user pressed its Bluetooth button after taking a
-reading), the bridge connects, reads any pending Blood Pressure Measurement
-indications (characteristic 0x2A35), parses IEEE 11073-20601 SFLOAT values,
-and forwards readings to the Pi's local backend (which relays to the cloud).
+reading), the bridge spawns a **fresh subprocess** to connect, read any
+pending Blood Pressure Measurement indications (characteristic 0x2A35),
+and parse IEEE 11073-20601 SFLOAT values.  The parent process forwards
+the readings to the Pi's local backend (which relays to the cloud).
 
 Architecture:
     BP monitor ──BLE──▶  This bridge  ──HTTP──▶  Pi server.js (/api/bp/reading)
@@ -14,10 +15,22 @@ Architecture:
                                                        ▼
                                               Cloud backend (/api/bp/log)
 
-The bridge runs as a pm2 service. It keeps a BLE scanner active at all
-times, reacting within seconds when a BP monitor advertises — no polling
-delay. After reading from a device, a 60-second cooldown prevents
-re-reading the same advertisement burst.
+Why subprocess?
+    bp_provision.py (one-shot CLI) connects to the A&D UA-656BLE reliably
+    every time, but the same BLE code running inside a long-lived pm2
+    process fails with 15-second connect timeouts.  The root cause is
+    stale BlueZ D-Bus session state that accumulates in a long-running
+    process.  By spawning a fresh Python process for each read, we get a
+    clean D-Bus session — the same advantage bp_provision.py has.
+
+Two execution modes:
+    Normal  (pm2):   python3 bp_bridge.py
+                     → runs the event-driven scanner loop, spawns
+                       subprocesses to do actual BLE reads.
+
+    Read    (child): python3 bp_bridge.py --read <MAC_ADDRESS>
+                     → one-shot: connect to the device, read indications,
+                       print each reading as a JSON line to stdout, exit.
 
 A&D UA-656BLE behaviour:
     - User takes a reading with the cuff
@@ -74,6 +87,9 @@ BP_SERVICE_UUID = "00001810-0000-1000-8000-00805f9b34fb"
 # Blood Pressure Measurement characteristic (0x2A35) — indicate
 BP_MEASUREMENT_CHAR = "00002a35-0000-1000-8000-00805f9b34fb"
 
+# Subprocess timeout — generous: scan(10) + connect(15) + read(30) + overhead
+SUBPROCESS_TIMEOUT = 70
+
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL, logging.INFO),
     format="%(asctime)s [bp-bridge] %(levelname)s %(message)s",
@@ -123,7 +139,6 @@ def parse_bp_measurement(data: bytes) -> dict:
         [next]  measurement_status (uint16, if flags bit 4 set)
     """
     if len(data) < 7:
-        log.warning("BP measurement too short (%d bytes)", len(data))
         return {}
 
     flags = data[0]
@@ -239,19 +254,20 @@ def forward_reading(mac_address: str, reading: dict) -> bool:
         return False
 
 
-# ---------------------------------------------------------------------------
-# BlueZ cache cleanup — clear stale D-Bus state that blocks BLE connects
-# ---------------------------------------------------------------------------
+# ===================================================================
+#  SUBPROCESS READ MODE  (--read <MAC>)
+#  Runs in a fresh process — clean BlueZ D-Bus session every time.
+# ===================================================================
+
 def _remove_cached_device(address: str):
-    """Remove a cached/stale BLE device from BlueZ so the next connect is fresh."""
+    """Remove a cached/stale BLE device from BlueZ."""
     try:
-        log.debug("Removing cached device %s from BlueZ ...", address)
         subprocess.run(
             ["bluetoothctl", "remove", address],
             capture_output=True, timeout=5, text=True, check=False,
         )
-    except Exception as e:
-        log.debug("  remove cached device (non-fatal): %s", e)
+    except Exception:
+        pass
 
 
 def _trust_device(address: str):
@@ -265,166 +281,211 @@ def _trust_device(address: str):
         pass
 
 
-# ---------------------------------------------------------------------------
-# Connect to a BP device, read indications, forward readings
-# ---------------------------------------------------------------------------
-BLE_CONNECT_RETRIES = 3
-
-async def read_device_ble(address: str) -> int:
-    """Connect to a detected BP monitor, read indications, forward readings.
+async def _oneshot_read(address: str) -> list[dict]:
+    """One-shot BLE read — called only in subprocess (--read) mode.
 
     Mirrors bp_provision.py's proven approach:
-      1. Clear BlueZ cache (removes stale D-Bus objects)
-      2. Fresh targeted scan to re-discover device (re-registers in BlueZ)
-      3. Connect with the fresh BLEDevice + retries
+      1. Clear BlueZ cache (remove stale D-Bus objects)
+      2. Fresh targeted scan to re-discover device
+      3. Connect with retries (full re-scan between each retry)
       4. Read BP measurement indications
-      5. Forward readings to backend
-
-    Returns the number of readings successfully forwarded.
+      5. Return list of parsed readings
     """
     from bleak import BleakScanner, BleakClient
 
     address = address.upper()
-    log.info("=== BP READ START for %s ===", address)
-
-    # Step 0: Clear stale BlueZ cache — previous pair/connect attempts leave
-    # D-Bus objects that cause connect() to hang for 15s then timeout.
-    # We MUST re-scan after this to get a fresh BLEDevice reference.
-    _remove_cached_device(address)
-
-    # Step 1: Fresh targeted scan — re-discover the device so BlueZ has a
-    # clean D-Bus entry. The monitor should still be advertising (30s window).
-    ble_device = None
-    found_event = asyncio.Event()
-
-    def _on_detect(device, adv_data):
-        nonlocal ble_device
-        if device.address.upper() == address:
-            ble_device = device
-            log.info("  Re-discovered %s (RSSI=%s)", address, adv_data.rssi)
-            found_event.set()
-
-    rescan_timeout = 10.0
-    log.info("  Re-scanning for %s after cache clear (%ds) ...", address, rescan_timeout)
-    scanner = BleakScanner(detection_callback=_on_detect)
-    await scanner.start()
-    try:
-        await asyncio.wait_for(found_event.wait(), timeout=rescan_timeout)
-    except asyncio.TimeoutError:
-        log.warning("  %s did not re-advertise in %ds", address, rescan_timeout)
-    finally:
-        await scanner.stop()
-
-    if ble_device is None:
-        log.info("=== BP READ DONE for %s: 0 collected (device gone after cache clear) ===",
-                 address)
-        return 0
-
-    # Step 2: Connect with retries using the fresh BLEDevice
+    max_attempts = 3
     readings: list[dict] = []
 
-    def on_indicate(_char, data: bytearray):
-        """Called when the device sends a BP measurement indication."""
-        log.info("  BP indication: %d bytes: %s", len(data), data.hex())
-        reading = parse_bp_measurement(bytes(data))
-        if reading and reading.get("systolic") is not None:
-            readings.append(reading)
-            log.info("  Parsed: sys=%s dia=%s pulse=%s",
-                     reading.get("systolic"),
-                     reading.get("diastolic"),
-                     reading.get("pulse_rate"))
+    for attempt in range(1, max_attempts + 1):
+        print(f"ATTEMPT {attempt}/{max_attempts}", file=sys.stderr, flush=True)
 
-    client = None
-    last_err = None
-    for attempt in range(1, BLE_CONNECT_RETRIES + 1):
+        # --- Step 1: Clear stale BlueZ cache ---
+        _remove_cached_device(address)
+        await asyncio.sleep(0.5)
+
+        # --- Step 2: Fresh targeted scan ---
+        ble_device = None
+        found_event = asyncio.Event()
+
+        def _on_detect(device, adv_data):
+            nonlocal ble_device
+            if device.address.upper() == address:
+                ble_device = device
+                print(f"  Found {address} (RSSI={adv_data.rssi})", file=sys.stderr, flush=True)
+                found_event.set()
+
+        scanner = BleakScanner(detection_callback=_on_detect)
+        await scanner.start()
         try:
-            log.info("  Connect attempt %d/%d to %s ...",
-                     attempt, BLE_CONNECT_RETRIES, address)
+            await asyncio.wait_for(found_event.wait(), timeout=10.0)
+        except asyncio.TimeoutError:
+            print(f"  Device {address} not found in scan", file=sys.stderr, flush=True)
+        finally:
+            await scanner.stop()
+
+        if ble_device is None:
+            print(f"  No device after scan, attempt {attempt} done", file=sys.stderr, flush=True)
+            if attempt < max_attempts:
+                await asyncio.sleep(1.0)
+            continue
+
+        # --- Step 3: Connect ---
+        client = None
+        connected = False
+        try:
+            print(f"  Connecting to {address} ...", file=sys.stderr, flush=True)
             client = BleakClient(ble_device, timeout=15.0)
             await client.connect()
-            if not client.is_connected:
-                raise RuntimeError("connect() succeeded but is_connected=False")
-            log.info("  CONNECTED to %s on attempt %d", address, attempt)
-            last_err = None
-            break
+            if client.is_connected:
+                connected = True
+                print(f"  CONNECTED on attempt {attempt}", file=sys.stderr, flush=True)
         except Exception as e:
-            last_err = e
-            log.warning("  Connect attempt %d FAILED: %s: %s",
-                        attempt, type(e).__name__, e)
-            try:
-                await client.disconnect()
-            except Exception:
-                pass
-            client = None
-            if attempt < BLE_CONNECT_RETRIES:
-                _remove_cached_device(address)
+            print(f"  Connect failed: {type(e).__name__}: {e}", file=sys.stderr, flush=True)
+            if client:
+                try:
+                    await client.disconnect()
+                except Exception:
+                    pass
+            if attempt < max_attempts:
                 await asyncio.sleep(1.0)
+            continue
 
-    if last_err is not None:
-        log.warning("  All %d connect attempts failed for %s",
-                    BLE_CONNECT_RETRIES, address)
-        log.info("=== BP READ DONE for %s: 0 collected, 0 forwarded (connect failed) ===",
-                 address)
-        return 0
+        if not connected:
+            if attempt < max_attempts:
+                await asyncio.sleep(1.0)
+            continue
 
-    # Step 3: Re-trust so BlueZ allows future connections
-    _trust_device(address)
+        # --- Step 4: Re-trust for future connections ---
+        _trust_device(address)
 
-    # Step 4: Read indications
-    try:
-        # Find the BP Measurement characteristic
-        bp_char = None
-        for service in client.services:
-            for char in service.characteristics:
-                if BP_MEASUREMENT_CHAR.lower() in char.uuid.lower():
-                    bp_char = char
-                    break
+        # --- Step 5: Read indications ---
+        try:
+            bp_char = None
+            for service in client.services:
+                for char in service.characteristics:
+                    if BP_MEASUREMENT_CHAR.lower() in char.uuid.lower():
+                        bp_char = char
+                        break
 
-        if not bp_char:
-            log.warning("  BP Measurement characteristic (0x2A35) not found on %s", address)
-            return 0
-
-        # Subscribe to indications — device sends stored readings immediately
-        log.info("  Subscribing to BP indications on %s ...", bp_char.uuid)
-        await client.start_notify(bp_char.uuid, on_indicate)
-
-        # Wait for indications
-        elapsed = 0.0
-        while elapsed < READ_TIMEOUT:
-            await asyncio.sleep(0.5)
-            elapsed += 0.5
-            # Once we have at least one reading, wait 5 more seconds for extras
-            if readings and elapsed > 5.0:
-                remaining_wait = min(5.0, READ_TIMEOUT - elapsed)
-                await asyncio.sleep(remaining_wait)
+            if not bp_char:
+                print("  BP characteristic 0x2A35 not found", file=sys.stderr, flush=True)
                 break
 
-        log.info("  Indication wait done — got %d reading(s)", len(readings))
+            print(f"  Subscribing to indications on {bp_char.uuid} ...", file=sys.stderr, flush=True)
 
-        try:
-            await client.stop_notify(bp_char.uuid)
-        except Exception:
-            pass
+            def on_indicate(_char, data: bytearray):
+                """Called when device sends a BP measurement indication."""
+                reading = parse_bp_measurement(bytes(data))
+                if reading and reading.get("systolic") is not None:
+                    readings.append(reading)
+                    print(f"  Reading: sys={reading.get('systolic')} "
+                          f"dia={reading.get('diastolic')} "
+                          f"pulse={reading.get('pulse_rate')}",
+                          file=sys.stderr, flush=True)
 
-    except Exception as e:
-        log.warning("  BLE error with %s: %s: %s", address, type(e).__name__, e)
-    finally:
-        if client:
+            await client.start_notify(bp_char.uuid, on_indicate)
+
+            # Wait for indications (device sends stored readings immediately)
+            elapsed = 0.0
+            while elapsed < READ_TIMEOUT:
+                await asyncio.sleep(0.5)
+                elapsed += 0.5
+                # Once we have at least one reading, wait 5 more seconds
+                if readings and elapsed > 5.0:
+                    remaining = min(5.0, READ_TIMEOUT - elapsed)
+                    await asyncio.sleep(remaining)
+                    break
+
+            print(f"  Got {len(readings)} reading(s)", file=sys.stderr, flush=True)
+
             try:
-                await client.disconnect()
-                log.info("  Disconnected from %s", address)
+                await client.stop_notify(bp_char.uuid)
             except Exception:
                 pass
 
-    # Forward all collected readings
+        except Exception as e:
+            print(f"  BLE read error: {type(e).__name__}: {e}", file=sys.stderr, flush=True)
+        finally:
+            if client:
+                try:
+                    await client.disconnect()
+                    print(f"  Disconnected from {address}", file=sys.stderr, flush=True)
+                except Exception:
+                    pass
+
+        # Connected and read — done (don't retry on success)
+        break
+
+    return readings
+
+
+def run_oneshot_read(address: str):
+    """Entry point for --read mode. Prints readings as JSON lines to stdout."""
+    readings = asyncio.run(_oneshot_read(address))
+    # Each reading as a separate JSON line on stdout (parent parses these)
+    for r in readings:
+        print(json.dumps(r), flush=True)
+    # Exit code: 0 if we got readings, 1 if not
+    sys.exit(0 if readings else 1)
+
+
+# ===================================================================
+#  PARENT BRIDGE MODE  (default — runs as pm2 service)
+# ===================================================================
+
+def read_device_subprocess(address: str) -> list[dict]:
+    """Spawn a fresh subprocess to do the BLE read.
+
+    The subprocess runs this same script in --read mode, giving it a
+    clean BlueZ D-Bus session. Readings come back as JSON lines on stdout.
+    """
+    address = address.upper()
+    log.info("=== BP READ START for %s (subprocess) ===", address)
+
+    script_path = os.path.abspath(__file__)
+    cmd = [sys.executable, script_path, "--read", address]
+
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=SUBPROCESS_TIMEOUT,
+            env={**os.environ, "BP_LOG_LEVEL": LOG_LEVEL},
+        )
+    except subprocess.TimeoutExpired:
+        log.warning("  Subprocess timed out after %ds for %s", SUBPROCESS_TIMEOUT, address)
+        log.info("=== BP READ DONE for %s: 0 collected, 0 forwarded (timeout) ===", address)
+        return []
+
+    # Log subprocess stderr (diagnostic messages)
+    if result.stderr:
+        for line in result.stderr.strip().splitlines():
+            log.info("  [child] %s", line)
+
+    # Parse JSON readings from stdout
+    readings = []
+    for line in result.stdout.strip().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            reading = json.loads(line)
+            if reading.get("systolic") is not None:
+                readings.append(reading)
+        except json.JSONDecodeError:
+            log.debug("  Non-JSON stdout line: %s", line)
+
+    # Forward all collected readings to backend
     forwarded = 0
     for reading in readings:
         if forward_reading(address, reading):
             forwarded += 1
 
-    log.info("=== BP READ DONE for %s: %d collected, %d forwarded ===",
-             address, len(readings), forwarded)
-    return forwarded
+    log.info("=== BP READ DONE for %s: %d collected, %d forwarded (exit=%d) ===",
+             address, len(readings), forwarded, result.returncode)
+    return readings
 
 
 # ---------------------------------------------------------------------------
@@ -456,11 +517,11 @@ async def scanner_loop():
         known_macs.discard("")
         log.info("Scanning for %d BP monitor(s): %s", len(known_macs), ", ".join(known_macs))
 
-        detected_device = None
+        detected_address = None
         found_event = asyncio.Event()
 
         def _on_detect(device, adv_data):
-            nonlocal detected_device
+            nonlocal detected_address
             mac = device.address.upper()
             if mac not in known_macs:
                 return
@@ -468,7 +529,7 @@ async def scanner_loop():
             last = last_read.get(mac, 0)
             if time.time() - last < COOLDOWN:
                 return
-            detected_device = device
+            detected_address = mac
             log.info("BP MONITOR DETECTED: %s (name=%s, RSSI=%s)",
                      mac, device.name or "?", adv_data.rssi)
             found_event.set()
@@ -495,12 +556,13 @@ async def scanner_loop():
             await asyncio.sleep(5)
             continue
 
-        if detected_device:
-            count = await read_device_ble(detected_device.address)
-            if count > 0:
-                last_read[detected_device.address.upper()] = time.time()
-                log.info("Cooldown active for %s (%ds)",
-                         detected_device.address, COOLDOWN)
+        if detected_address:
+            # Stop the scanner BEFORE spawning the subprocess — avoids
+            # two processes fighting over the BLE adapter.
+            readings = read_device_subprocess(detected_address)
+            if readings:
+                last_read[detected_address] = time.time()
+                log.info("Cooldown active for %s (%ds)", detected_address, COOLDOWN)
             # Brief pause before resuming scan
             await asyncio.sleep(2.0)
         else:
@@ -534,10 +596,13 @@ async def run():
 
 
 def main():
-    log.info("Starting BP bridge v4 (cache-clear + re-scan + connect, backend=%s)",
-             READING_ENDPOINT)
+    log.info("Starting BP bridge v5 (subprocess reads, backend=%s)", READING_ENDPOINT)
     asyncio.run(run())
 
 
 if __name__ == "__main__":
-    main()
+    # --read mode: one-shot subprocess for BLE connect+read
+    if len(sys.argv) >= 3 and sys.argv[1] == "--read":
+        run_oneshot_read(sys.argv[2])
+    else:
+        main()
