@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-bp_bridge.py  v7 — BLE bridge for Bluetooth Blood Pressure monitors.
+bp_bridge.py  v8 — BLE bridge for Bluetooth Blood Pressure monitors.
 
 Continuously scans for known (paired) BP monitors. The instant a monitor
 starts advertising (user pressed its Bluetooth button after taking a
@@ -40,17 +40,21 @@ A&D UA-656BLE behaviour:
       stored (unsent) readings as indications, one per reading
     - After successful transfer the device clears its "unsent" flag
 
-v7 connect strategy — hybrid bluetoothctl + Bleak:
-    The parent's persistent BleakScanner holds D-Bus adapter references
-    that prevent child subprocess Bleak connects from succeeding (even
-    after scanner.stop()).  v7 fixes this by using bluetoothctl for the
-    BLE connection (bypasses Bleak's adapter/D-Bus path) and Bleak only
-    for GATT indication reads on the already-connected device.
+v8 connect strategy — pairing-first interactive bluetoothctl + Bleak:
+    v7 used standalone bluetoothctl connect without pairing.  The A&D
+    UA-656BLE requires Just Works pairing before BlueZ will complete
+    GATT service discovery — without it, the LE link is established
+    (Connected: yes) then immediately torn down by the local host
+    (le-connection-abort-by-local).
 
-    Attempt 1 — Scan + bluetoothctl connect + Bleak GATT read
-    Attempt 2 — Remove + scan + bluetoothctl connect + Bleak GATT read
-    Attempt 3 — Adapter reset + remove + scan + bluetoothctl connect +
-                Bleak GATT read
+    v8 runs bluetoothctl in interactive mode (single session via bash
+    pipe) so a NoInputNoOutput agent stays registered throughout the
+    agent → trust → pair → connect sequence.  Individual bluetoothctl
+    commands each spawn their own process and lose the agent.
+
+    Attempt 1 — Scan + pair + connect (preserving cache)
+    Attempt 2 — Remove + scan + pair + connect
+    Attempt 3 — Adapter reset + remove + scan + pair + connect
 
 Run with pm2:
     pm2 start bp_bridge.py --name bp-bridge --interpreter python3
@@ -100,7 +104,7 @@ BP_SERVICE_UUID = "00001810-0000-1000-8000-00805f9b34fb"
 BP_MEASUREMENT_CHAR = "00002a35-0000-1000-8000-00805f9b34fb"
 
 # Subprocess timeout — generous: 3 attempts × (scan+connect) + read + overhead
-SUBPROCESS_TIMEOUT = 90
+SUBPROCESS_TIMEOUT = 120
 
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL, logging.INFO),
@@ -423,6 +427,71 @@ def _bluetoothctl_connect(address: str, timeout: int = 15) -> bool:
         return False
 
 
+def _pair_and_connect(address: str, timeout: int = 25) -> tuple[bool, str]:
+    """Connect via interactive bluetoothctl: agent + trust + pair + connect.
+
+    The A&D UA-656BLE requires Just Works pairing before the BLE
+    connection will complete — without pairing, BlueZ aborts the LE
+    link with le-connection-abort-by-local during service discovery.
+
+    Individual bluetoothctl commands each start a new process, so the
+    BLE agent (needed for Just Works) is lost between calls.  This uses
+    a single interactive session: bash pipes timed commands to
+    bluetoothctl's stdin so the agent stays registered throughout the
+    agent → trust → pair → connect sequence.
+
+    Returns (connected: bool, raw_output: str).
+    """
+    script = (
+        "{ "
+        'echo "power on"; sleep 0.3; '
+        'echo "agent NoInputNoOutput"; sleep 0.3; '
+        'echo "default-agent"; sleep 0.3; '
+        f'echo "trust {address}"; sleep 0.5; '
+        f'echo "pair {address}"; sleep 4; '
+        f'echo "connect {address}"; sleep 6; '
+        'echo "quit"; '
+        "} | bluetoothctl 2>&1"
+    )
+
+    print(f"  pair+connect {address} (interactive session) ...", file=sys.stderr, flush=True)
+    try:
+        result = subprocess.run(
+            ["bash", "-c", script],
+            capture_output=True, timeout=timeout, text=True, check=False,
+        )
+        output = result.stdout.strip()
+
+        # Log meaningful lines (filter bluetoothctl prompt noise)
+        for line in output.splitlines():
+            stripped = line.strip()
+            if not stripped:
+                continue
+            low = stripped.lower()
+            if any(k in low for k in [
+                "agent registered", "default-agent", "trust succeeded",
+                "pairing successful", "already exists", "connection successful",
+                "failed to", "error", "connected:", "bonded:", "paired:",
+                "not available", "[chg]", "attempting to",
+                "abort", "reject", "services resolved",
+            ]):
+                print(f"  btctl: {stripped}", file=sys.stderr, flush=True)
+
+        connected = "Connection successful" in output
+        paired = ("Pairing successful" in output
+                  or "AlreadyExists" in output
+                  or "already exists" in output.lower())
+        print(f"  Result: paired={paired}, connected={connected}", file=sys.stderr, flush=True)
+        return connected, output
+
+    except subprocess.TimeoutExpired:
+        print(f"  pair+connect timed out after {timeout}s", file=sys.stderr, flush=True)
+        return False, "timeout"
+    except Exception as e:
+        print(f"  pair+connect error: {e}", file=sys.stderr, flush=True)
+        return False, str(e)
+
+
 async def _scan_for_device(address: str, timeout: float = 10.0):
     """Run a targeted BLE scan and return the BLEDevice if found."""
     from bleak import BleakScanner
@@ -550,20 +619,25 @@ async def _read_indications(client, readings: list[dict]):
 
 
 async def _attempt_connect_and_read(address: str, ble_device, readings: list[dict]) -> bool:
-    """Try both connection methods (bluetoothctl + Bleak fallback) and read.
+    """Try pair+connect then Bleak GATT read.
+
+    v8 flow:
+      1. Interactive bluetoothctl session (agent + trust + pair + connect)
+      2. Bleak wraps the established connection for GATT indication reads
+      3. Fallback: Bleak direct connect if bluetoothctl path fails
 
     Returns True if we got readings, False otherwise.
     """
     client = None
 
-    # --- Method A: bluetoothctl connect + Bleak GATT wrap ---
-    if _bluetoothctl_connect(address, timeout=15):
-        _trust_device(address)
-        # Brief pause for BlueZ to stabilize the connection
+    # --- Method A: interactive bluetoothctl (pair + connect) + Bleak GATT ---
+    connected, _output = _pair_and_connect(address, timeout=25)
+    if connected:
+        # Brief pause for BlueZ to stabilise services
         await asyncio.sleep(0.5)
         client = await _bleak_connect_to_existing(address, timeout=15.0)
 
-    # --- Method B: Direct Bleak connect (same as bp_provision.py) ---
+    # --- Method B: Direct Bleak connect (fallback) ---
     if client is None and ble_device is not None:
         print("  Falling back to Bleak direct connect ...", file=sys.stderr, flush=True)
         client = await _bleak_direct_connect(address, ble_device, timeout=15.0)
@@ -594,9 +668,9 @@ async def _oneshot_read(address: str) -> list[dict]:
     indication reads.
 
     Three-tier escalation:
-      Attempt 1 — Scan + connect (preserves BlueZ cache & bond)
-      Attempt 2 — Remove cached device + scan + connect
-      Attempt 3 — Full adapter reset + remove + scan + connect
+      Attempt 1 — Scan + pair + connect (preserves BlueZ cache)
+      Attempt 2 — Remove cached device + scan + pair + connect
+      Attempt 3 — Full adapter reset + remove + scan + pair + connect
     """
     address = address.upper()
     readings: list[dict] = []
@@ -615,7 +689,7 @@ async def _oneshot_read(address: str) -> list[dict]:
     # =================================================================
     #  ATTEMPT 1: Scan + connect (preserve cache & bond)
     # =================================================================
-    print("ATTEMPT 1/3 — Scan + connect (preserving cache)", file=sys.stderr, flush=True)
+    print("ATTEMPT 1/3 — Scan + pair + connect (preserving cache)", file=sys.stderr, flush=True)
 
     ble_device = await _scan_for_device(address, timeout=8.0)
     if ble_device:
@@ -628,7 +702,7 @@ async def _oneshot_read(address: str) -> list[dict]:
     # =================================================================
     #  ATTEMPT 2: Remove cached device + scan + connect
     # =================================================================
-    print("ATTEMPT 2/3 — Remove + scan + connect", file=sys.stderr, flush=True)
+    print("ATTEMPT 2/3 — Remove + scan + pair + connect", file=sys.stderr, flush=True)
 
     _remove_cached_device(address)
     await asyncio.sleep(2.0)
@@ -644,7 +718,7 @@ async def _oneshot_read(address: str) -> list[dict]:
     # =================================================================
     #  ATTEMPT 3: Full adapter reset + remove + scan + connect
     # =================================================================
-    print("ATTEMPT 3/3 — Adapter reset + remove + scan + connect", file=sys.stderr, flush=True)
+    print("ATTEMPT 3/3 — Adapter reset + remove + scan + pair + connect", file=sys.stderr, flush=True)
 
     _reset_adapter()
     _remove_cached_device(address)
@@ -835,7 +909,7 @@ async def run():
 
 
 def main():
-    log.info("Starting BP bridge v7 (hybrid bluetoothctl+bleak, backend=%s)", READING_ENDPOINT)
+    log.info("Starting BP bridge v8 (pair-first bluetoothctl+bleak, backend=%s)", READING_ENDPOINT)
     asyncio.run(run())
 
 
