@@ -1,0 +1,92 @@
+{
+  "frame_type": "Realtime Vitals",
+  "frequency": "Every 1 second (forwarded to backend every 5 seconds)",
+  "total_bytes": 17,
+  "received_at": "08 Sep 2026, 03:08:46 AM IST",
+  "device_serial": "332014813081",
+  "envelope": {
+    "start_marker": 130,
+    "length": 15,
+    "ack_flag": "1 (request from device)",
+    "sequence_number": 1,
+    "command": "14 (Realtime Vitals)",
+    "checksum": 211,
+    "checksum_valid": true
+  },
+  "payload_bytes": 11,
+  "decoded_data": {
+    "heart_rate": {
+      "value": 78,
+      "unit": "bpm",
+      "display": "78 bpm",
+      "normal_range": "60-100 bpm (resting adult)"
+    },
+    "breathing_rate": {
+      "value": 16,
+      "unit": "breaths/min",
+      "display": "16 breaths/min",
+      "normal_range": "12-20 breaths/min (resting adult)"
+    },
+    "status": {
+      "code": 3,
+      "label": "Snoring Detected",
+      "all_possible_values": {
+        "0": "Initializing (sensor warming up)",
+        "1": "In Bed (person lying on the pad)",
+        "2": "Apnea Suspected (breathing pause detected)",
+        "3": "Snoring Detected",
+        "4": "Out of Bed (nobody on the pad)",
+        "5": "Life Abnormality (CRITICAL — no breathing/heartbeat)",
+        "6": "Light Sleep"
+      }
+    },
+    "is_person_on_bed": {
+      "value": true,
+      "logic": "True when status is 1, 2, 3, 5, or 6"
+    },
+    "snoring": {
+      "value": true,
+      "logic": "True when status = 3"
+    },
+    "apnea_suspected": {
+      "value": false,
+      "logic": "True when status = 2"
+    },
+    "life_danger_alert": {
+      "value": false,
+      "logic": "True when status = 5"
+    },
+    "body_movement": {
+      "value": 237,
+      "scale": "0-255",
+      "display": "237 (very high movement)",
+      "interpretation": "0 = no movement, 255 = maximum movement"
+    },
+    "battery_level": {
+      "value": 100,
+      "unit": "%",
+      "display": "100%"
+    },
+    "signal_quality": {
+      "value": 100,
+      "scale": "0-100",
+      "display": "100 (excellent)",
+      "interpretation": "90-100 = excellent, 70-89 = good, below 70 = weak"
+    },
+    "timer_counter": {
+      "value": 0,
+      "unit": "seconds",
+      "display": "0 seconds (0 min 0 sec)",
+      "meaning": "Time elapsed since device connected"
+    },
+    "protocol_markers": {
+      "value_1": 106,
+      "value_2": 138,
+      "meaning": "Constant values (always 106, 138), not health data"
+    },
+    "reserved_byte": {
+      "value": 0,
+      "meaning": "Always 0, unused by current firmware"
+    }
+  }
+}

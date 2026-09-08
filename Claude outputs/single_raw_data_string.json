@@ -1,0 +1,10 @@
+{
+  "index": 1,
+  "time_ist": "08 Sep 2026, 03:08:46 AM IST",
+  "timestamp_utc": "2026-09-07T21:38:46.203042+00:00",
+  "frame_type": "realtime_vitals",
+  "command": "0x0E (14)",
+  "total_bytes": 17,
+  "raw_hex": "82 0F 01 01 0E 4E 10 03 ED 64 64 00 00 6A 8A 00 D3",
+  "summary": "HR=78, RR=16, BM=237, status=snoring, battery=100%"
+}
