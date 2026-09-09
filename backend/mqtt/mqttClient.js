@@ -26,6 +26,41 @@ client.on("connect", () => {
 // (or new devices not yet in devices.json). Mapped devices keep their
 // existing data — upsertDevice's guard already ensures that.
 
+// Human-readable type labels for auto-naming.
+const TYPE_LABELS = {
+  motion: "Motion Sensor",
+  contact: "Contact Sensor",
+  presence: "Presence Sensor",
+  switch: "Switch",
+  unknown: "Zigbee Device",
+};
+
+/**
+ * Build a human-readable default name for a newly detected device.
+ *
+ * Priority:
+ *   1. Z2M friendly_name — if the user already renamed it in Z2M (i.e. it
+ *      does NOT start with "0x"), use that as-is.
+ *   2. "<Type Label> <N>" — e.g. "Motion Sensor 1", "Contact Sensor 2",
+ *      where N is based on how many devices of the same type already exist
+ *      in devices.json (both mapped and unmapped).
+ */
+const build_device_name = (friendly_name, type, current_devices) => {
+  // If Z2M has a custom friendly name (user-set), use it.
+  if (friendly_name && !friendly_name.startsWith("0x")) {
+    return friendly_name;
+  }
+
+  const label = TYPE_LABELS[type] || TYPE_LABELS.unknown;
+
+  // Count existing devices of the same type to get the next number.
+  const same_type_count = current_devices.filter(
+    (d) => d.type === type,
+  ).length;
+
+  return `${label} ${same_type_count + 1}`;
+};
+
 const handle_bridge_devices = (payload) => {
   let devices;
   try {
@@ -36,7 +71,8 @@ const handle_bridge_devices = (payload) => {
   if (!Array.isArray(devices)) return;
 
   const detected = detect_all_types(devices);
-  const current_devices = getDevices();
+  // Re-read current devices before each batch so sequence numbers are correct.
+  let current_devices = getDevices();
 
   let new_count = 0;
   let updated_count = 0;
@@ -47,32 +83,44 @@ const handle_bridge_devices = (payload) => {
     );
 
     if (!existing) {
-      // Brand-new device — add as unmapped with detected type.
+      // Brand-new device — add as unmapped with detected type + readable name.
+      const name = build_device_name(d.friendly_name, d.type, current_devices);
       upsertDevice({
         ieee_address: d.ieee_address,
-        name: d.friendly_name,
+        name,
         type: d.type,
         model: d.model,
         vendor: d.vendor,
         description: d.description,
       });
+      // Refresh so the next device in this batch gets the right sequence number.
+      current_devices = getDevices();
       new_count++;
     } else if (
       existing.is_unassigned !== false &&
-      existing.status !== "mapped" &&
-      (existing.type === "unknown" || !existing.type)
+      existing.status !== "mapped"
     ) {
-      // Existing unmapped device whose type was unknown — update with
-      // the detected type now that we have richer data from Z2M.
-      upsertDevice({
-        ieee_address: d.ieee_address,
-        name: existing.name,
-        type: d.type,
-        model: d.model,
-        vendor: d.vendor,
-        description: d.description,
-      });
-      updated_count++;
+      // Existing unmapped device — update type if it was unknown, and fix
+      // the name if it's still a raw IEEE address.
+      const needs_type = existing.type === "unknown" || !existing.type;
+      const needs_name =
+        !existing.name || existing.name.startsWith("0x");
+
+      if (needs_type || needs_name) {
+        const name = needs_name
+          ? build_device_name(d.friendly_name, d.type, current_devices)
+          : existing.name;
+        upsertDevice({
+          ieee_address: d.ieee_address,
+          name,
+          type: needs_type ? d.type : existing.type,
+          model: d.model,
+          vendor: d.vendor,
+          description: d.description,
+        });
+        current_devices = getDevices();
+        updated_count++;
+      }
     }
   }
 
@@ -112,15 +160,21 @@ const handle_bridge_event = (payload) => {
   // Try to detect type from the event data (may be sparse).
   const detected_type = detect_zigbee_type(device_data) || "unknown";
 
-  const existing = getDevices().find((e) => e.ieee_address === ieee);
+  const current_devices = getDevices();
+  const existing = current_devices.find((e) => e.ieee_address === ieee);
   if (!existing) {
+    const name = build_device_name(
+      device_data.friendly_name,
+      detected_type,
+      current_devices,
+    );
     upsertDevice({
       ieee_address: ieee,
-      name: device_data.friendly_name || ieee,
+      name,
       type: detected_type,
     });
     console.log(
-      `📡 New Zigbee device joined: ${ieee} → ${detected_type}`,
+      `📡 New Zigbee device joined: ${ieee} → ${detected_type} (${name})`,
     );
   }
 };
