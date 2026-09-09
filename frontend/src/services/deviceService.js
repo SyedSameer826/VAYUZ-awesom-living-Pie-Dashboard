@@ -60,16 +60,28 @@ export const assignDeviceName = async ({
   zigbee_name,
   zigbee_type,
   resident,
+  paired_motion_ieee,
+  paired_window_ieee,
 }) => {
+  const payload = {
+    zigbee_ieee,
+    zigbee_name,
+    zigbee_type,
+    resident,
+  };
+
+  if (paired_motion_ieee) {
+    payload.paired_motion_ieee = paired_motion_ieee;
+  }
+
+  if (paired_window_ieee) {
+    payload.paired_window_ieee = paired_window_ieee;
+  }
+
   const response = await fetch(`${API_BASE_URL}assign-name`, {
     method: "POST",
     headers: getAuthHeaders(),
-    body: JSON.stringify({
-      zigbee_ieee,
-      zigbee_name,
-      zigbee_type,
-      resident,
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {

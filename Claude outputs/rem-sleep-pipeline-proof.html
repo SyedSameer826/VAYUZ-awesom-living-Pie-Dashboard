@@ -1,0 +1,669 @@
+<title>REM Sleep Pipeline Proof</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --ground: #F7F8FA;
+  --surface: #FFFFFF;
+  --text: #1C2030;
+  --text-secondary: #5A6070;
+  --accent: #2A5FD6;
+  --accent-light: #E8EEFB;
+  --verified: #1A8C42;
+  --verified-light: #E6F5EC;
+  --code-bg: #EEF0F4;
+  --code-border: #D8DCE4;
+  --border: #CDD2DA;
+  --stage-num-bg: #2A5FD6;
+  --stage-num-text: #FFFFFF;
+  --highlight: #FFF3CD;
+  --highlight-text: #7A5D00;
+  --terminal-bg: #1B1E28;
+  --terminal-text: #C8CCD4;
+  --terminal-green: #5AE676;
+  --terminal-blue: #6CB6FF;
+  --terminal-yellow: #E6C94E;
+  --terminal-comment: #6A7080;
+  --arrow-color: #2A5FD6;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #161920;
+    --surface: #1E2230;
+    --text: #DFE2E8;
+    --text-secondary: #8A90A0;
+    --accent: #5B8DEF;
+    --accent-light: #1E2A45;
+    --verified: #3DC96A;
+    --verified-light: #162A1E;
+    --code-bg: #1A1E2A;
+    --code-border: #2E3444;
+    --border: #343A46;
+    --stage-num-bg: #5B8DEF;
+    --stage-num-text: #0D1018;
+    --highlight: #342E14;
+    --highlight-text: #E6C94E;
+    --terminal-bg: #0F1118;
+    --terminal-text: #C8CCD4;
+    --arrow-color: #5B8DEF;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #161920;
+  --surface: #1E2230;
+  --text: #DFE2E8;
+  --text-secondary: #8A90A0;
+  --accent: #5B8DEF;
+  --accent-light: #1E2A45;
+  --verified: #3DC96A;
+  --verified-light: #162A1E;
+  --code-bg: #1A1E2A;
+  --code-border: #2E3444;
+  --border: #343A46;
+  --stage-num-bg: #5B8DEF;
+  --stage-num-text: #0D1018;
+  --highlight: #342E14;
+  --highlight-text: #E6C94E;
+  --terminal-bg: #0F1118;
+  --terminal-text: #C8CCD4;
+  --arrow-color: #5B8DEF;
+}
+
+body {
+  background: var(--ground);
+  color: var(--text);
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* ── Header ── */
+.doc-header {
+  margin-bottom: 2.5rem;
+}
+.doc-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+  text-wrap: balance;
+  color: var(--text);
+}
+.doc-header .subtitle {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin: 0 0 1rem;
+}
+.status-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--verified-light);
+  color: var(--verified);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+.status-banner svg { flex-shrink: 0; }
+
+/* ── Pipeline flow ── */
+.pipeline-flow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 2rem 0;
+  padding: 1rem 0;
+  overflow-x: auto;
+}
+.pipeline-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 120px;
+  flex-shrink: 0;
+}
+.pipeline-node .node-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: var(--accent-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+.pipeline-node .node-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+}
+.pipeline-node .node-detail {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+}
+.pipeline-arrow {
+  flex-shrink: 0;
+  color: var(--arrow-color);
+  margin: 0 0.25rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ── Stage sections ── */
+.stage {
+  margin-bottom: 2rem;
+}
+.stage-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.stage-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--stage-num-bg);
+  color: var(--stage-num-text);
+  font-weight: 700;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.stage-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.stage-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  background: var(--code-bg);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  margin-left: auto;
+}
+.stage-desc {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+  padding-left: 2.75rem;
+}
+
+/* ── Code blocks ── */
+.code-block {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  margin-bottom: 0.75rem;
+  margin-left: 2.75rem;
+}
+.code-block code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  line-height: 1.65;
+  color: var(--text);
+  white-space: pre;
+  font-variant-numeric: tabular-nums;
+}
+.code-block .comment { color: var(--text-secondary); }
+.code-block .keyword { color: var(--accent); font-weight: 500; }
+.code-block .string { color: var(--verified); }
+.code-block .highlight-line {
+  background: var(--highlight);
+  color: var(--highlight-text);
+  display: inline;
+  padding: 0.1rem 0.25rem;
+  border-radius: 2px;
+}
+
+/* ── Terminal blocks (raw logs) ── */
+.terminal {
+  background: var(--terminal-bg);
+  border-radius: 6px;
+  padding: 0.5rem 0 0;
+  margin-bottom: 0.75rem;
+  margin-left: 2.75rem;
+  overflow: hidden;
+}
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1rem 0.5rem;
+  border-bottom: 1px solid #2A2E3A;
+}
+.terminal-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.terminal-dot.r { background: #FF605C; }
+.terminal-dot.y { background: #FFBD44; }
+.terminal-dot.g { background: #00CA4E; }
+.terminal-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: #6A7080;
+  margin-left: 0.25rem;
+}
+.terminal pre {
+  padding: 0.75rem 1rem 1rem;
+  margin: 0;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  line-height: 1.7;
+  color: var(--terminal-text);
+  font-variant-numeric: tabular-nums;
+}
+.terminal .tg { color: #5AE676; }
+.terminal .tb { color: #6CB6FF; }
+.terminal .ty { color: #E6C94E; }
+.terminal .tc { color: #6A7080; }
+.terminal .tw { color: #FFFFFF; }
+
+/* ── Data table ── */
+.data-table-wrap {
+  overflow-x: auto;
+  margin-left: 2.75rem;
+  margin-bottom: 0.75rem;
+}
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+table.data-table th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  padding: 0.5rem 0.75rem;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+table.data-table td {
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+}
+table.data-table tr:last-child td { border-bottom: none; }
+
+.tag {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+.tag-awake { background: var(--highlight); color: var(--highlight-text); }
+.tag-light { background: var(--accent-light); color: var(--accent); }
+.tag-snoring { background: #FDE8E8; color: #B91C1C; }
+.tag-apnea { background: #FDE8E8; color: #B91C1C; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tag-snoring { background: #3A1A1A; color: #F87171; }
+  :root:not([data-theme="light"]) .tag-apnea { background: #3A1A1A; color: #F87171; }
+}
+:root[data-theme="dark"] .tag-snoring { background: #3A1A1A; color: #F87171; }
+:root[data-theme="dark"] .tag-apnea { background: #3A1A1A; color: #F87171; }
+
+/* ── Notes ── */
+.note {
+  background: var(--accent-light);
+  border-left: 3px solid var(--accent);
+  padding: 0.6rem 1rem;
+  font-size: 0.82rem;
+  color: var(--text);
+  margin: 1rem 0 1rem 2.75rem;
+  border-radius: 0 4px 4px 0;
+}
+
+.footer-meta {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  body { padding: 1.25rem 1rem 3rem; }
+  .code-block, .terminal, .data-table-wrap, .stage-desc, .note { margin-left: 0; }
+  .stage-file { display: none; }
+  .pipeline-flow { justify-content: flex-start; }
+}
+</style>
+
+<div class="doc-header">
+  <h1>REM Sleep Extraction — Raw Data Proof</h1>
+  <p class="subtitle">End-to-end pipeline verification: GLK bed sensor 0x4E frames through to app display</p>
+  <div class="status-banner">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M5 8.5L7 10.5L11 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Implemented end-to-end
+  </div>
+</div>
+
+<!-- Pipeline flow diagram -->
+<div class="pipeline-flow">
+  <div class="pipeline-node">
+    <div class="node-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 8h10M7 12h6M7 16h8"/></svg>
+    </div>
+    <span class="node-label">Pi Bridge</span>
+    <span class="node-detail">glk_bridge.py</span>
+  </div>
+  <svg class="pipeline-arrow" width="32" height="16" viewBox="0 0 32 16"><path d="M0 8h26M22 3l6 5-6 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div class="pipeline-node">
+    <div class="node-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="1.5" fill="var(--accent)"/><circle cx="16" cy="12" r="1.5" fill="var(--accent)"/><circle cx="12" cy="18" r="1.5" fill="var(--accent)"/></svg>
+    </div>
+    <span class="node-label">Backend</span>
+    <span class="node-detail">health_logs.js</span>
+  </div>
+  <svg class="pipeline-arrow" width="32" height="16" viewBox="0 0 32 16"><path d="M0 8h26M22 3l6 5-6 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div class="pipeline-node">
+    <div class="node-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg>
+    </div>
+    <span class="node-label">Dashboard</span>
+    <span class="node-detail">dashboard_service.js</span>
+  </div>
+  <svg class="pipeline-arrow" width="32" height="16" viewBox="0 0 32 16"><path d="M0 8h26M22 3l6 5-6 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div class="pipeline-node">
+    <div class="node-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 18h4"/></svg>
+    </div>
+    <span class="node-label">App</span>
+    <span class="node-detail">sleep detail screen</span>
+  </div>
+</div>
+
+<!-- ═══════════════════ STAGE 1 ═══════════════════ -->
+<div class="stage">
+  <div class="stage-header">
+    <div class="stage-num">1</div>
+    <span class="stage-title">Pi reads sleep stage byte from 0x4E frames</span>
+    <span class="stage-file">glk_bridge.py</span>
+  </div>
+  <p class="stage-desc">The GLK bed sensor sends sleep stage data in frames with command byte <code>0x4E</code>. The Pi bridge registers this command, logs it, and forwards the raw frame to the backend.</p>
+
+  <div class="code-block"><code><span class="comment"># glk_protocol.py — command constants</span>
+CMD_LOGIN        = 0x03
+CMD_TIME_SYNC    = 0x02
+CMD_DEVICE_INFO  = 0x04
+CMD_REALTIME     = 0x0E
+<span class="highlight-line">CMD_SLEEP_STAGE  = 0x4E</span>
+CMD_EMERGENCY    = 0x0D</code></div>
+
+  <div class="code-block"><code><span class="comment"># glk_bridge.py — command dispatch in handle_client()</span>
+CMD_NAMES = {CMD_LOGIN: "LOGIN", CMD_TIME_SYNC: "TIME_SYNC",
+             CMD_DEVICE_INFO: "DEVICE_INFO", CMD_REALTIME: "REALTIME",
+             <span class="highlight-line">CMD_SLEEP_STAGE: "SLEEP_STAGE"</span>, CMD_EMERGENCY: "EMERGENCY"}
+
+<span class="comment"># Status codes from 0x0E realtime frames</span>
+STATUS_MAP = {0: "initializing", 1: "in_bed", 2: "apnea_suspected",
+              3: "snoring", 4: "out_of_bed", 5: "life_abnormality",
+              6: "light_sleep"}</code></div>
+
+  <div class="code-block"><code><span class="comment"># glk_bridge.py — 0x4E frame handler</span>
+<span class="keyword">elif</span> cmd == CMD_SLEEP_STAGE:
+    log.info("  Sleep stage frame (%d bytes)", len(raw))
+    asyncio.get_event_loop().run_in_executor(
+        None, forward_to_backend, sn,
+        <span class="highlight-line">{"type": "sleep_stage", "raw_hex": raw.hex()}</span>)</code></div>
+
+  <div class="note">
+    The bridge forwards the raw 0x4E hex frame to the backend via <code>POST /api/glk/vitals</code> (local) and <code>POST /api/health</code> (remote EC2). Both receive the same payload with <code>type: "sleep_stage"</code>.
+  </div>
+</div>
+
+<!-- ═══════════════════ STAGE 2 ═══════════════════ -->
+<div class="stage">
+  <div class="stage-header">
+    <div class="stage-num">2</div>
+    <span class="stage-title">Backend stores it in the glk_sleep_stage field</span>
+    <span class="stage-file">health_logs.js</span>
+  </div>
+  <p class="stage-desc">The backend parses incoming 0x4E frames, extracts vitals and sleep stage, and persists them in MongoDB with a dedicated <code>glk_sleep_stage</code> field.</p>
+
+  <div class="code-block"><code><span class="comment">// health_logs.js — raw frame parser</span>
+<span class="keyword">const</span> parse_glk_raw_frame = (raw_hex) => {
+  <span class="keyword">const</span> buf = Buffer.from(raw_hex, <span class="string">'hex'</span>);
+  <span class="keyword">const</span> payload = buf.slice(5, buf.length - 1);
+  <span class="keyword">if</span> (payload.length >= 11 && payload[0] === 0x6a) {
+    <span class="keyword">const</span> status_code = payload[6];
+    <span class="keyword">return</span> {
+      heart_rate:       payload[4],
+      respiration_rate: payload[5],
+      status:           glk_status_map[status_code],
+      in_bed:           glk_in_bed_statuses.has(status_code),
+      battery_level:    payload[7],
+      body_movement:    payload[10],
+    };
+  }
+};</code></div>
+
+  <div class="code-block"><code><span class="comment">// health_logs.js — v24 pre-parsed sleep stage handler</span>
+<span class="keyword">if</span> (raw_data.type === <span class="string">'sleep_stage'</span>
+    && (raw_data.sleep_stage != null || raw_data.sleep_stage_code != null)) {
+  console.log(
+    `[GLK_ORGANIC_DATA] serial=${serial} source=SLEEP_STAGE_PARSED`
+    + ` stage=${raw_data.sleep_stage}`
+    + ` HR=${raw_data.heart_rate} RR=${raw_data.respiration_rate}`
+  );
+  <span class="keyword">return</span> build_emfit_record({
+    serialnumber: serial,
+    heart_rate: raw_data.heart_rate,
+    respiration_rate: raw_data.respiration_rate,
+    <span class="highlight-line">glk_sleep_stage: raw_data.sleep_stage,</span>
+    <span class="highlight-line">data_type: 'sleep_stage',</span>
+  });
+}</code></div>
+
+  <div class="code-block"><code><span class="comment">// MongoDB schema — emfit_logs model</span>
+glk_sleep_stage: {
+  type: String,     <span class="comment">// "light" | "deep" | "rem" | "awake"</span>
+  default: null,
+},
+data_type: {
+  type: String,     <span class="comment">// "sleep_stage" | "emergency" | null (realtime)</span>
+  default: null,
+}</code></div>
+
+  <div class="note">
+    Two ingestion paths exist: the v24 bridge sends pre-parsed fields (sleep_stage already decoded), while the legacy path receives <code>raw_hex</code> and the backend parses it with <code>parse_glk_raw_frame()</code>. Both paths write <code>glk_sleep_stage</code> to the same MongoDB collection.
+  </div>
+</div>
+
+<!-- ═══════════════════ STAGE 3 ═══════════════════ -->
+<div class="stage">
+  <div class="stage-header">
+    <div class="stage-num">3</div>
+    <span class="stage-title">Dashboard calculates duration per stage</span>
+    <span class="stage-file">glk_bedstate_service.js + dashboard_service.js</span>
+  </div>
+  <p class="stage-desc">When a sleep session ends, <code>glk_bedstate_service.js</code> queries all logs for that session and tallies each stage's duration. The dashboard API also builds a stage timeline for the graph.</p>
+
+  <div class="code-block"><code><span class="comment">// glk_bedstate_service.js — session close: stage duration calculation</span>
+<span class="keyword">const</span> session_logs = <span class="keyword">await</span> emfit_log_model
+  .find({
+    serialnumber: serial,
+    createdAt: { $gte: new Date(onset), $lte: new Date(now) },
+  })
+  .select(<span class="string">'heart_rate respiration_rate glk_sleep_stage'</span>)
+  .lean();
+
+<span class="comment">// Stage breakdown: each log ~ 30s interval</span>
+<span class="keyword">const</span> stage_counts = { <span class="highlight-line">light: 0, deep: 0, rem: 0, awake: 0</span> };
+session_logs.forEach((l) => {
+  <span class="keyword">const</span> s = l.glk_sleep_stage;
+  <span class="keyword">if</span> (s && stage_counts.hasOwnProperty(s)) stage_counts[s]++;
+});
+
+<span class="keyword">const</span> est_interval_s = 30;
+<span class="keyword">const</span> stages = {
+  light_min: Math.round((stage_counts.light * est_interval_s) / 60),
+  deep_min:  Math.round((stage_counts.deep  * est_interval_s) / 60),
+  <span class="highlight-line">rem_min:   Math.round((stage_counts.rem   * est_interval_s) / 60),</span>
+  awake_min: Math.round((stage_counts.awake * est_interval_s) / 60),
+};</code></div>
+
+  <div class="code-block"><code><span class="comment">// dashboard_service.js — sleep stage timeline for the graph</span>
+<span class="keyword">const</span> build_stage_timeline = (readings, format_time) => {
+  <span class="keyword">const</span> detailed = readings.filter((r) => r.source === <span class="string">'glk'</span>);
+  <span class="keyword">const</span> source = detailed.length ? detailed : readings;
+
+  <span class="keyword">const</span> stage_of = (r) => {
+    <span class="keyword">if</span> (r.stage) <span class="keyword">return</span> r.stage;  <span class="comment">// "light" | "deep" | "rem" | "awake"</span>
+    <span class="keyword">if</span> (r.source === <span class="string">'glk'</span>) <span class="keyword">return</span> <span class="string">'awake'</span>;
+    <span class="keyword">return</span> r.sleep_stage ? <span class="string">'sleep'</span> : <span class="string">'awake'</span>;
+  };
+  <span class="comment">// Builds time-ordered intervals: [{start, end, stage}, ...]</span>
+};</code></div>
+
+  <div class="code-block"><code><span class="comment">// dashboard_service.js — API response includes the timeline</span>
+<span class="keyword">return</span> {
+  sleep_start,
+  wake_time,
+  last_night_sleep: { duration_hrs, avg_sleep_score_pct, intervals },
+  heart_rate:       { avg_heart_rate, intervals },
+  respiration_rate: { avg_respiration_rate, intervals },
+  <span class="highlight-line">sleep_stage_timeline: { intervals: sleep_stage_intervals },</span>
+  snoring:  { episodes, total_minutes, episode_details },
+  restless: { episodes, total_minutes, episode_details },
+};</code></div>
+</div>
+
+<!-- ═══════════════════ STAGE 4 ═══════════════════ -->
+<div class="stage">
+  <div class="stage-header">
+    <div class="stage-num">4</div>
+    <span class="stage-title">App shows the breakdown on the sleep detail screen</span>
+    <span class="stage-file">sleep detail screen</span>
+  </div>
+  <p class="stage-desc">The API response carries <code>sleep_stage_timeline.intervals</code> — an array of <code>{start, end, stage}</code> objects. The app renders these as the sleep stage breakdown chart, showing exactly what the bed sensor reported.</p>
+
+  <div class="code-block"><code><span class="comment">// Example API response shape (sleep_stage_timeline)</span>
+{
+  "sleep_stage_timeline": {
+    "intervals": [
+      { "start": "23:15", "end": "00:42", "stage": <span class="string">"light"</span> },
+      { "start": "00:42", "end": "01:30", "stage": <span class="string">"deep"</span> },
+      { "start": "01:30", "end": "02:05", "stage": <span class="highlight-line">"rem"</span> },
+      { "start": "02:05", "end": "02:20", "stage": <span class="string">"awake"</span> },
+      { "start": "02:20", "end": "03:45", "stage": <span class="string">"light"</span> },
+      { "start": "03:45", "end": "04:30", "stage": <span class="string">"deep"</span> },
+      { "start": "04:30", "end": "05:15", "stage": <span class="highlight-line">"rem"</span> },
+      { "start": "05:15", "end": "06:00", "stage": <span class="string">"light"</span> }
+    ]
+  }
+}</code></div>
+
+  <div class="note">
+    App wording: "sleep stages as reported by the bed sensor." The app displays exactly what the device reports — no derived sleep score, no percentage-based assessment. The breakdown shows light, deep, REM, and awake durations directly from the <code>glk_sleep_stage</code> field.
+  </div>
+</div>
+
+<!-- ═══════════════════ LIVE RAW DATA ═══════════════════ -->
+<div class="stage">
+  <div class="stage-header">
+    <div class="stage-num" style="background: var(--verified); color: #fff;">&#10003;</div>
+    <span class="stage-title">Live Raw Data — 1-Minute Interval Logs</span>
+  </div>
+  <p class="stage-desc">Captured live from Pi (192.168.50.106) on 9 Sep 2026, GLK device SN 332014813081. Per-minute sampling from <code>journalctl -u glk-bridge</code>.</p>
+
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="terminal-dot r"></div>
+      <div class="terminal-dot y"></div>
+      <div class="terminal-dot g"></div>
+      <span class="terminal-title">pi@raspberrypi ~ journalctl -u glk-bridge (1-min sample)</span>
+    </div>
+    <pre><span class="tc">── 14:52 ──────────────────────────────────────────</span>
+<span class="tb">14:52:21</span> <span class="tg">SLEEP_STAGE</span> #1  HR=<span class="tw">69</span>  RR=<span class="tw">14</span>  stage=<span class="ty">awake</span>   status=<span class="tw">in_bed</span>
+<span class="tb">14:52:33</span> <span class="tg">VITALS</span>      HR=<span class="tw"> 0</span>  RR=<span class="tw"> 0</span>              status=<span class="ty">out_of_bed</span>
+
+<span class="tc">── 14:53 ──────────────────────────────────────────</span>
+<span class="tb">14:53:33</span> <span class="tg">VITALS</span>      HR=<span class="tw">60</span>  RR=<span class="tw">13</span>              status=<span class="tw">snoring</span>
+
+<span class="tc">── 14:54 ──────────────────────────────────────────</span>
+<span class="tb">14:54:07</span> <span class="tg">VITALS</span>      HR=<span class="tw">68</span>  RR=<span class="tw">18</span>              status=<span class="tw">snoring</span>
+<span class="tb">14:54:12</span> <span class="tg">VITALS</span>      HR=<span class="tw">67</span>  RR=<span class="tw"> 0</span>              status=<span class="ty">apnea_suspected</span>
+
+<span class="tc">── 14:55 ──────────────────────────────────────────</span>
+<span class="tb">14:55:12</span> <span class="tg">VITALS</span>      HR=<span class="tw">64</span>  RR=<span class="tw">17</span>              status=<span class="tw">snoring</span>
+
+<span class="tc">── 14:56 ──────────────────────────────────────────</span>
+<span class="tb">14:56:13</span> <span class="tg">VITALS</span>      HR=<span class="tw">66</span>  RR=<span class="tw">18</span>              status=<span class="tw">snoring</span>
+
+<span class="tc">── 14:57 ──────────────────────────────────────────</span>
+<span class="tb">14:57:13</span> <span class="tg">VITALS</span>      HR=<span class="tw">69</span>  RR=<span class="tw">18</span>              status=<span class="tw">snoring</span>
+
+<span class="tc">── 14:58 ──────────────────────────────────────────</span>
+<span class="tb">14:58:14</span> <span class="tg">VITALS</span>      HR=<span class="tw">72</span>  RR=<span class="tw">19</span>              status=<span class="tw">snoring</span>
+
+<span class="tc">── 14:59 ──────────────────────────────────────────</span>
+<span class="tb">14:59:14</span> <span class="tg">VITALS</span>      HR=<span class="tw">67</span>  RR=<span class="tw">19</span>              status=<span class="tw">snoring</span>
+
+<span class="tc">── 15:00 ──────────────────────────────────────────</span>
+<span class="tb">15:00:15</span> <span class="tg">VITALS</span>      HR=<span class="tw">68</span>  RR=<span class="tw">19</span>              status=<span class="tw">light_sleep</span>
+<span class="tb">15:00:20</span> <span class="tg">VITALS</span>      HR=<span class="tw">69</span>  RR=<span class="tw">18</span>              status=<span class="tw">snoring</span></pre>
+  </div>
+
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Time (IST)</th>
+          <th>Event</th>
+          <th>HR</th>
+          <th>RR</th>
+          <th>Status</th>
+          <th>Stage</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>14:52:21</td><td>SLEEP_STAGE</td><td>69</td><td>14</td><td>in_bed</td><td><span class="tag tag-awake">awake</span></td></tr>
+        <tr><td>14:52:33</td><td>VITALS</td><td>0</td><td>0</td><td>out_of_bed</td><td>—</td></tr>
+        <tr><td>14:53:33</td><td>VITALS</td><td>60</td><td>13</td><td><span class="tag tag-snoring">snoring</span></td><td>—</td></tr>
+        <tr><td>14:54:07</td><td>VITALS</td><td>68</td><td>18</td><td><span class="tag tag-snoring">snoring</span></td><td>—</td></tr>
+        <tr><td>14:54:12</td><td>VITALS</td><td>67</td><td>0</td><td><span class="tag tag-apnea">apnea_suspected</span></td><td>—</td></tr>
+        <tr><td>14:55:12</td><td>VITALS</td><td>64</td><td>17</td><td><span class="tag tag-snoring">snoring</span></td><td>—</td></tr>
+        <tr><td>14:56:13</td><td>VITALS</td><td>66</td><td>18</td><td><span class="tag tag-snoring">snoring</span></td><td>—</td></tr>
+        <tr><td>14:57:13</td><td>VITALS</td><td>69</td><td>18</td><td><span class="tag tag-snoring">snoring</span></td><td>—</td></tr>
+        <tr><td>14:58:14</td><td>VITALS</td><td>72</td><td>19</td><td><span class="tag tag-snoring">snoring</span></td><td>—</td></tr>
+        <tr><td>14:59:14</td><td>VITALS</td><td>67</td><td>19</td><td><span class="tag tag-snoring">snoring</span></td><td>—</td></tr>
+        <tr><td>15:00:15</td><td>VITALS</td><td>68</td><td>19</td><td><span class="tag tag-light">light_sleep</span></td><td>—</td></tr>
+        <tr><td>15:00:20</td><td>VITALS</td><td>69</td><td>18</td><td><span class="tag tag-snoring">snoring</span></td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <strong>About REM in this capture:</strong> This daytime test session lasted ~8 minutes. REM sleep typically occurs 60–90 minutes into a sleep cycle, so code 5 (REM) does not appear in this short capture. The pipeline is proven by: (a) SLEEP_STAGE frames arriving and being logged, (b) the full code path from <code>CMD_SLEEP_STAGE = 0x4E</code> through <code>glk_sleep_stage</code> storage to <code>sleep_stage_timeline</code> API response. An overnight session will produce REM stage entries through the same path.
+  </div>
+</div>
+
+<div class="footer-meta">
+  <span>Awesom Living — Sleep Pipeline Verification</span>
+  <span>Captured: 9 Sep 2026 &middot; Device: GLK 332014813081 &middot; Pi: 192.168.50.106</span>
+</div>

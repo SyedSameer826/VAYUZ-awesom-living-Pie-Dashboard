@@ -7,7 +7,11 @@ const DeviceForm = ({
   onChange,
   onClose,
   onSubmit,
+  unmapped_motion_devices,
+  unmapped_contact_devices,
 }) => {
+  const is_motion = form.type === "motion";
+
   return (
     <div className="device-form-modal">
       <div className="modal-backdrop" onClick={onClose}>
@@ -42,6 +46,44 @@ const DeviceForm = ({
               <option value="presence">Presence</option>
             </select>
           </label>
+
+          {is_motion && (
+            <>
+              <label className="form-field">
+                <span>Pair with 2nd Motion Sensor</span>
+                <select
+                  name="paired_motion_ieee"
+                  value={form.paired_motion_ieee || ""}
+                  onChange={onChange}
+                >
+                  <option value="">Select unmapped motion sensor</option>
+                  {(unmapped_motion_devices || [])
+                    .filter((d) => d.ieee_address !== form.ieee_address)
+                    .map((d) => (
+                      <option key={d.ieee_address} value={d.ieee_address}>
+                        {d.device || d.name || "Unnamed"} ({d.ieee_address})
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label className="form-field">
+                <span>Pair with Window Sensor</span>
+                <select
+                  name="paired_window_ieee"
+                  value={form.paired_window_ieee || ""}
+                  onChange={onChange}
+                >
+                  <option value="">Select unmapped window sensor</option>
+                  {(unmapped_contact_devices || []).map((d) => (
+                    <option key={d.ieee_address} value={d.ieee_address}>
+                      {d.device || d.name || "Unnamed"} ({d.ieee_address})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          )}
+
           <label className="form-field">
             <span>Resident</span>
 

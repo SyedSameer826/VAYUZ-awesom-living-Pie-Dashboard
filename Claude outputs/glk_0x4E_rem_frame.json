@@ -1,0 +1,21 @@
+{
+  "encoded": {
+    "serial_number": "332014813081",
+    "timestamp": "2025-09-09T02:00:00.000+05:30",
+    "raw_hex": "8217017D4E6AA11E523C0F016405000000000000000000000000A3",
+    "type": "sleep_stage"
+  },
+  "decoded": {
+    "serial_number": "332014813081",
+    "timestamp": "2025-09-09T02:00:00.000+05:30",
+    "command": "0x4E (SLEEP_STAGE)",
+    "heart_rate": 60,
+    "respiratory_rate": 15,
+    "body_status": "in_bed",
+    "battery": 100,
+    "sleep_stage_code": 5,
+    "sleep_stage": "REM",
+    "movement": 0,
+    "data_type": "sleep_stage"
+  }
+}

@@ -226,7 +226,10 @@ app.get("/api/devices", (req, res) => {
 
 app.post("/api/assign-name", async (req, res) => {
   try {
-    const { zigbee_ieee, zigbee_name, home_id, zigbee_type, room, resident } = req.body;
+    const {
+      zigbee_ieee, zigbee_name, home_id, zigbee_type, room, resident,
+      paired_motion_ieee, paired_window_ieee,
+    } = req.body;
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ error: "Authorization token missing" });
@@ -236,40 +239,57 @@ app.post("/api/assign-name", async (req, res) => {
     const detectedType =
       zigbee_type === "door & window" ? "contact" : zigbee_type;
 
-    // Step 1: Update devices.json
-    upsertDevice({
-      ieee_address: zigbee_ieee,
-      name: zigbee_name,
-      type: detectedType,
-      home_id,
-      status: "mapped",
-      is_unassigned: false,
-    });
+    // Derive a room name from the device name or default to "bathroom"
+    const resolved_room = room || "bathroom";
+    const resolved_home = home_id || readHubConfig().home_id || undefined;
 
-    // Step 2: Read Z2M config and rename if device is known there.
-    // The device may exist in devices.json (discovered via MQTT bridge) but NOT
-    // yet in Z2M's configuration.yaml (e.g. devices section missing on fresh
-    // installs). Handle gracefully — skip the rename, still forward to backend.
-    let currentFriendlyName = zigbee_ieee;
-    try {
-      const config = yaml.load(fs.readFileSync(CONFIG_PATH, "utf8"));
-      if (config.devices && config.devices[zigbee_ieee]) {
-        currentFriendlyName =
-          config.devices[zigbee_ieee].friendly_name || zigbee_ieee;
+    // Helper: rename a single device in Z2M and devices.json
+    const mapSingleDevice = (ieee, name, type) => {
+      upsertDevice({
+        ieee_address: ieee,
+        name: name,
+        type: type,
+        home_id,
+        status: "mapped",
+        is_unassigned: false,
+        paired_with: detectedType === "motion"
+          ? { motion_ieee: zigbee_ieee, paired_motion_ieee: paired_motion_ieee || undefined, window_ieee: paired_window_ieee || undefined }
+          : undefined,
+      });
 
-        // Step 3: Rename via Z2M MQTT API — updates Z2M in-memory + YAML instantly, no restart needed
-        mqttClient.publish(
-          "zigbee2mqtt/bridge/request/device/rename",
-          JSON.stringify({ from: currentFriendlyName, to: zigbee_name }),
-        );
-      } else {
-        console.log("⚠️ Device not in Z2M config — skipping rename, will still map to backend:", zigbee_ieee);
+      try {
+        const config = yaml.load(fs.readFileSync(CONFIG_PATH, "utf8"));
+        if (config.devices && config.devices[ieee]) {
+          const friendly = config.devices[ieee].friendly_name || ieee;
+          mqttClient.publish(
+            "zigbee2mqtt/bridge/request/device/rename",
+            JSON.stringify({ from: friendly, to: name }),
+          );
+        } else {
+          console.log("⚠️ Device not in Z2M config — skipping rename, will still map to backend:", ieee);
+        }
+      } catch (configErr) {
+        console.log("⚠️ Could not read Z2M config — skipping rename:", configErr.message);
       }
-    } catch (configErr) {
-      console.log("⚠️ Could not read Z2M config — skipping rename:", configErr.message);
+    };
+
+    // Step 1: Map the primary device
+    mapSingleDevice(zigbee_ieee, zigbee_name, detectedType);
+
+    // Step 2: If motion type with paired devices, also map them
+    if (detectedType === "motion" && paired_motion_ieee) {
+      const motion2_name = zigbee_name.replace(/motion/i, "motion_2") ||
+        `${zigbee_name}_motion_2`;
+      mapSingleDevice(paired_motion_ieee, motion2_name, "motion");
     }
 
-    // Step 4: Send to remote backend
+    if (detectedType === "motion" && paired_window_ieee) {
+      const window_name = zigbee_name.replace(/motion/i, "window") ||
+        `${zigbee_name}_window`;
+      mapSingleDevice(paired_window_ieee, window_name, "contact");
+    }
+
+    // Step 3: Send primary device to remote backend
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     const response = await axios.post(
       `${REMOTE_BACKEND}/api/user/devices`,
@@ -279,13 +299,59 @@ app.post("/api/assign-name", async (req, res) => {
         id: zigbee_name,
         ieee: zigbee_ieee,
         sensor_type: detectedType,
-        room: room || "bathroom",
-        home: home_id || readHubConfig().home_id || undefined,
+        room: resolved_room,
+        home: resolved_home,
         resident: resident || undefined,
+        paired_motion_ieee: paired_motion_ieee || undefined,
+        paired_window_ieee: paired_window_ieee || undefined,
       },
     );
 
-    res.json({ success: true, backend_response: response.data });
+    // Step 4: Send paired devices to remote backend too
+    const paired_results = [];
+    if (detectedType === "motion" && paired_motion_ieee) {
+      const motion2_name = zigbee_name.replace(/motion/i, "motion_2") ||
+        `${zigbee_name}_motion_2`;
+      try {
+        const r = await axios.post(`${REMOTE_BACKEND}/api/user/devices`, {
+          type: "Zigbee",
+          name: motion2_name,
+          id: motion2_name,
+          ieee: paired_motion_ieee,
+          sensor_type: "motion",
+          room: resolved_room,
+          home: resolved_home,
+          resident: resident || undefined,
+        });
+        paired_results.push({ ieee: paired_motion_ieee, success: true, data: r.data });
+      } catch (err2) {
+        console.error("Failed to map paired motion to remote:", err2.response?.data || err2.message);
+        paired_results.push({ ieee: paired_motion_ieee, success: false, error: err2.message });
+      }
+    }
+
+    if (detectedType === "motion" && paired_window_ieee) {
+      const window_name = zigbee_name.replace(/motion/i, "window") ||
+        `${zigbee_name}_window`;
+      try {
+        const r = await axios.post(`${REMOTE_BACKEND}/api/user/devices`, {
+          type: "Zigbee",
+          name: window_name,
+          id: window_name,
+          ieee: paired_window_ieee,
+          sensor_type: "contact",
+          room: resolved_room,
+          home: resolved_home,
+          resident: resident || undefined,
+        });
+        paired_results.push({ ieee: paired_window_ieee, success: true, data: r.data });
+      } catch (err3) {
+        console.error("Failed to map paired window to remote:", err3.response?.data || err3.message);
+        paired_results.push({ ieee: paired_window_ieee, success: false, error: err3.message });
+      }
+    }
+
+    res.json({ success: true, backend_response: response.data, paired_results });
   } catch (err) {
     const remoteMsg = err.response?.data?.error_message || err.response?.data?.message || err.message;
     console.error("assign-name remote error:", remoteMsg, err.response?.data);

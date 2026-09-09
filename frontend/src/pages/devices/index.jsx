@@ -60,6 +60,19 @@ function Devices() {
   const [isBpPairing, setIsBpPairing] = useState(false);
   const [bpError, setBpError] = useState("");
   const tableRows = useMemo(() => mapDeviceRows(devices), [devices]);
+
+  // Unmapped motion sensors — for the "Pair with 2nd Motion Sensor" dropdown
+  const unmapped_motion_devices = useMemo(
+    () => tableRows.filter((d) => d.type === "motion" && d.status === "unmapped"),
+    [tableRows],
+  );
+
+  // Unmapped contact sensors — for the "Pair with Window Sensor" dropdown
+  const unmapped_contact_devices = useMemo(
+    () => tableRows.filter((d) => d.type === "contact" && d.status === "unmapped"),
+    [tableRows],
+  );
+
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
 
@@ -133,6 +146,8 @@ function Devices() {
       ieee_address: device.ieee_address === "-" ? "" : device.ieee_address,
       type: device.type === "unknown" ? "" : device.type,
       resident: device.resident || "",
+      paired_motion_ieee: "",
+      paired_window_ieee: "",
     });
 
     setEditingId(device.id);
@@ -359,6 +374,18 @@ function Devices() {
       return;
     }
 
+    // For motion sensors: both paired fields are required
+    if (form.type === "motion") {
+      if (!form.paired_motion_ieee) {
+        setError("Please select the 2nd motion sensor to pair with");
+        return;
+      }
+      if (!form.paired_window_ieee) {
+        setError("Please select a window sensor to pair with");
+        return;
+      }
+    }
+
     setIsSaving(true);
     setError("");
 
@@ -380,19 +407,43 @@ function Devices() {
           zigbee_type:
             nextDevice.type == "contact" ? "door & window" : nextDevice.type,
           resident: nextDevice.resident,
+          paired_motion_ieee: form.paired_motion_ieee || undefined,
+          paired_window_ieee: form.paired_window_ieee || undefined,
         });
-        setDevices((current) =>
-          current.map((device, index) => {
-            const id = getDeviceId(device, index);
 
+        // Update UI state — mark primary device as mapped
+        setDevices((current) => {
+          let updated = current.map((device, index) => {
+            const id = getDeviceId(device, index);
             return id === editingId ? { ...device, ...nextDevice } : device;
-          }),
-        );
+          });
+
+          // Also mark paired motion + window sensors as mapped in the UI
+          if (form.paired_motion_ieee) {
+            updated = updated.map((device) =>
+              device.ieee_address === form.paired_motion_ieee
+                ? { ...device, status: "mapped", is_unassigned: false }
+                : device,
+            );
+          }
+          if (form.paired_window_ieee) {
+            updated = updated.map((device) =>
+              device.ieee_address === form.paired_window_ieee
+                ? { ...device, status: "mapped", is_unassigned: false }
+                : device,
+            );
+          }
+
+          return updated;
+        });
+
         closeForm();
+        // Reload to get fresh state from backend
+        await loadData();
       } catch {
         closeForm();
         alert(
-          "Something went wrong while saving the device.Please try again later or contact support.",
+          "Something went wrong while saving the device. Please try again later or contact support.",
         );
         // Keep the UI responsive when the local Zigbee API is unavailable.
       }
@@ -512,6 +563,8 @@ function Devices() {
           onChange={handleFormChange}
           onClose={closeForm}
           onSubmit={handleSave}
+          unmapped_motion_devices={unmapped_motion_devices}
+          unmapped_contact_devices={unmapped_contact_devices}
         />
       )}
 
