@@ -98,6 +98,18 @@ def build_device_info_ack(seq: int) -> bytes:
 
 
 def build_time_sync_ack(seq: int, when=None) -> bytes:
+    """4-byte big-endian Unix epoch — the correct format for this device.
+    The device sends a 4-byte payload and expects a 4-byte reply.
+    Length mismatch (e.g. 6-byte BCD) causes the device to reject
+    the ACK, retry 7x, and disconnect."""
+    when = when or datetime.now(timezone.utc)
+    epoch = int(when.timestamp())
+    payload = struct.pack(">I", epoch)
+    return build_frame(seq, CMD_TIME_SYNC, payload=payload)
+
+
+def build_time_sync_ack_bcd(seq: int, when=None) -> bytes:
+    """6-byte packed-BCD — BROKEN, causes disconnect loop. Debug only."""
     when = when or datetime.now(timezone.utc)
     bcd = lambda n: int(f"{n:02d}", 16)
     payload = bytes([
