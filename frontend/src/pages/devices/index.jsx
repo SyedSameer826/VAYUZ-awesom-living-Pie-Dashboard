@@ -13,10 +13,9 @@ import {
   openCameraSetup,
   scanGlk,
   pairGlk,
-  scanBp,
-  pairBp,
   getDeviceDetails,
   getResidents,
+  getHubSetup,
   deleteDevice,
 } from "../../services/deviceService";
 import { getDeviceId, mapDeviceRows } from "../../utils/devices";
@@ -24,7 +23,6 @@ import DeviceForm from "./DeviceForm";
 import CameraForm from "./CameraForm";
 import CameraPairModal from "./CameraPairModal";
 import GlkPairModal from "./GlkPairModal";
-import BpPairModal from "./BpPairModal";
 
 const emptyCameraForm = {
   stream_name: "",
@@ -53,26 +51,8 @@ function Devices() {
   const [glkDevices, setGlkDevices] = useState([]);
   const [isGlkScanning, setIsGlkScanning] = useState(false);
   const [isGlkPairing, setIsGlkPairing] = useState(false);
-  const [glkError, setGlkError] = useState("");
-  const [isBpOpen, setIsBpOpen] = useState(false);
-  const [bpDevices, setBpDevices] = useState([]);
-  const [isBpScanning, setIsBpScanning] = useState(false);
-  const [isBpPairing, setIsBpPairing] = useState(false);
-  const [bpError, setBpError] = useState("");
+  const [homeId, setHomeId] = useState("");
   const tableRows = useMemo(() => mapDeviceRows(devices), [devices]);
-
-  // Unmapped motion sensors — for the "Pair with 2nd Motion Sensor" dropdown
-  const unmapped_motion_devices = useMemo(
-    () => tableRows.filter((d) => d.type === "motion" && d.status === "unmapped"),
-    [tableRows],
-  );
-
-  // Unmapped contact sensors — for the "Pair with Window Sensor" dropdown
-  const unmapped_contact_devices = useMemo(
-    () => tableRows.filter((d) => d.type === "contact" && d.status === "unmapped"),
-    [tableRows],
-  );
-
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
 
@@ -112,10 +92,22 @@ function Devices() {
       );
     }
 
-    // Residents come from the remote backend (Render.com). They only populate
-    // the assignment dropdown, so a failure here must NOT touch the devices.
+    // Fetch the home_id mapped to this Pi hub (set during first-time setup).
+    // Used to automatically include home_id in device/camera mapping payloads
+    // and to filter the resident list for GLK pairing.
+    let hid = "";
     try {
-      const residentData = await getResidents();
+      const hubData = await getHubSetup();
+      hid = hubData.home_id || "";
+      if (hid) setHomeId(hid);
+    } catch {
+      // Hub setup endpoint may not be available in dev mode.
+    }
+
+    // Residents come from the remote backend. Only needed for the GLK pairing
+    // dropdown — device and camera forms use home_id automatically.
+    try {
+      const residentData = await getResidents({ home_id: hid });
       setResidents(residentData);
     } catch {
       // Keep whatever residents we already have — the dropdown may be stale.
@@ -144,10 +136,8 @@ function Devices() {
     setForm({
       device: device.device === "Unnamed Device" ? "" : device.device,
       ieee_address: device.ieee_address === "-" ? "" : device.ieee_address,
-      type: device.type === "unknown" ? "" : device.type,
+      type: device.type === "unknown" || !device.type ? "" : device.type,
       resident: device.resident || "",
-      paired_motion_ieee: "",
-      paired_window_ieee: "",
     });
 
     setEditingId(device.id);
@@ -180,8 +170,8 @@ function Devices() {
   const handleSaveCamera = async (event) => {
     event.preventDefault();
 
-    if (!cameraForm.stream_name.trim() || !cameraForm.resident) {
-      setError("Stream name and resident are required");
+    if (!cameraForm.stream_name.trim()) {
+      setError("Stream name is required");
       return;
     }
 
@@ -203,7 +193,7 @@ function Devices() {
         stream_name: cameraForm.stream_name.trim(),
         local_ip: ip,
         rtsp_url,
-        resident: cameraForm.resident,
+        home_id: homeId,
         room: cameraForm.room.trim() || "living_room",
       });
       closeCameraForm();
@@ -259,6 +249,42 @@ function Devices() {
     }
   };
 
+  // ---- GLK sleep monitor pairing ----
+  const runGlkScan = async () => {
+    setIsGlkScanning(true);
+    setError("");
+    try {
+      const result = await scanGlk();
+      setGlkDevices(result.devices || []);
+    } catch (glkError) {
+      setError(glkError.message || "GLK scan failed");
+      setGlkDevices([]);
+    } finally {
+      setIsGlkScanning(false);
+    }
+  };
+
+  const openGlkModal = () => {
+    setGlkDevices([]);
+    setError("");
+    setIsGlkOpen(true);
+    runGlkScan();
+  };
+
+  const handleGlkPair = async (payload) => {
+    setIsGlkPairing(true);
+    setError("");
+    try {
+      await pairGlk(payload);
+      setIsGlkOpen(false);
+      await loadData();
+    } catch (glkError) {
+      setError(glkError.message || "GLK pairing failed");
+    } finally {
+      setIsGlkPairing(false);
+    }
+  };
+
   // Open a stuck camera's own page THROUGH the Pi (reverse proxy), so the user
   // can flip DHCP on even though the laptop can't reach the camera's subnet.
   const handleOpenCameraSetup = async (cam) => {
@@ -285,78 +311,6 @@ function Devices() {
     setError("");
     setIsCameraOpen(true);
   };
-  // ---- GLK sleep monitor pairing ----
-  const runGlkScan = async () => {
-    setIsGlkScanning(true);
-    setGlkError("");
-    try {
-      const result = await scanGlk();
-      setGlkDevices(result.devices || []);
-    } catch (glkScanError) {
-      setGlkError(glkScanError.message || "GLK scan failed");
-      setGlkDevices([]);
-    } finally {
-      setIsGlkScanning(false);
-    }
-  };
-
-  const openGlkModal = () => {
-    setGlkDevices([]);
-    setGlkError("");
-    setIsGlkOpen(true);
-    runGlkScan();
-  };
-
-  const handleGlkPair = async ({ address, serial, ssid, password, resident, room }) => {
-    setIsGlkPairing(true);
-    setGlkError("");
-    try {
-      await pairGlk({ address, serial, ssid, password, resident, room });
-      setIsGlkOpen(false);
-      await loadData();
-    } catch (glkPairError) {
-      setGlkError(glkPairError.message || "GLK pairing failed");
-    } finally {
-      setIsGlkPairing(false);
-    }
-  };
-
-  // ---- BP monitor pairing ----
-  const runBpScan = async () => {
-    setIsBpScanning(true);
-    setBpError("");
-    try {
-      const result = await scanBp();
-      setBpDevices(result.devices || []);
-    } catch (bpScanError) {
-      setBpError(bpScanError.message || "BP scan failed");
-      setBpDevices([]);
-    } finally {
-      setIsBpScanning(false);
-    }
-  };
-
-  const openBpModal = () => {
-    setBpDevices([]);
-    setBpError("");
-    setIsBpOpen(true);
-    runBpScan();
-  };
-
-  const handleBpPair = async ({ address, name, resident }) => {
-    setIsBpPairing(true);
-    setBpError("");
-    try {
-      await pairBp({ address, name, resident });
-      setIsBpOpen(false);
-      await loadData();
-    } catch (bpPairError) {
-      setBpError(bpPairError.message || "BP pairing failed");
-    } finally {
-      setIsBpPairing(false);
-    }
-  };
-
   useEffect(() => {
     loadData(true);
   }, []);
@@ -374,18 +328,6 @@ function Devices() {
       return;
     }
 
-    // For motion sensors: both paired fields are required
-    if (form.type === "motion") {
-      if (!form.paired_motion_ieee) {
-        setError("Please select the 2nd motion sensor to pair with");
-        return;
-      }
-      if (!form.paired_window_ieee) {
-        setError("Please select a window sensor to pair with");
-        return;
-      }
-    }
-
     setIsSaving(true);
     setError("");
 
@@ -394,7 +336,6 @@ function Devices() {
       name: form.device.trim(),
       ieee_address: form.ieee_address.trim(),
       type: form.type.trim(),
-      resident: form.resident,
       status: "mapped",
       is_unassigned: false,
     };
@@ -406,44 +347,20 @@ function Devices() {
           zigbee_name: nextDevice.device,
           zigbee_type:
             nextDevice.type == "contact" ? "door & window" : nextDevice.type,
-          resident: nextDevice.resident,
-          paired_motion_ieee: form.paired_motion_ieee || undefined,
-          paired_window_ieee: form.paired_window_ieee || undefined,
+          home_id: homeId,
         });
-
-        // Update UI state — mark primary device as mapped
-        setDevices((current) => {
-          let updated = current.map((device, index) => {
+        setDevices((current) =>
+          current.map((device, index) => {
             const id = getDeviceId(device, index);
+
             return id === editingId ? { ...device, ...nextDevice } : device;
-          });
-
-          // Also mark paired motion + window sensors as mapped in the UI
-          if (form.paired_motion_ieee) {
-            updated = updated.map((device) =>
-              device.ieee_address === form.paired_motion_ieee
-                ? { ...device, status: "mapped", is_unassigned: false }
-                : device,
-            );
-          }
-          if (form.paired_window_ieee) {
-            updated = updated.map((device) =>
-              device.ieee_address === form.paired_window_ieee
-                ? { ...device, status: "mapped", is_unassigned: false }
-                : device,
-            );
-          }
-
-          return updated;
-        });
-
+          }),
+        );
         closeForm();
-        // Reload to get fresh state from backend
-        await loadData();
       } catch {
         closeForm();
         alert(
-          "Something went wrong while saving the device. Please try again later or contact support.",
+          "Something went wrong while saving the device.Please try again later or contact support.",
         );
         // Keep the UI responsive when the local Zigbee API is unavailable.
       }
@@ -528,9 +445,6 @@ function Devices() {
             <button className="submit-button" onClick={openGlkModal}>
               Pair GLK
             </button>
-            <button className="submit-button" onClick={openBpModal}>
-              Pair BP
-            </button>
           </div>
           <label className="table-search">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -558,20 +472,16 @@ function Devices() {
         <DeviceForm
           editingId={editingId}
           form={form}
-          residents={residents}
           isSaving={isSaving}
           onChange={handleFormChange}
           onClose={closeForm}
           onSubmit={handleSave}
-          unmapped_motion_devices={unmapped_motion_devices}
-          unmapped_contact_devices={unmapped_contact_devices}
         />
       )}
 
       {isCameraOpen && (
         <CameraForm
           form={cameraForm}
-          residents={residents}
           isSaving={isSaving}
           onChange={handleCameraChange}
           onClose={closeCameraForm}
@@ -597,23 +507,10 @@ function Devices() {
           isScanning={isGlkScanning}
           isPairing={isGlkPairing}
           residents={residents}
+          error={error}
           onScan={runGlkScan}
           onPair={handleGlkPair}
           onClose={() => setIsGlkOpen(false)}
-          error={glkError}
-        />
-      )}
-
-      {isBpOpen && (
-        <BpPairModal
-          devices={bpDevices}
-          isScanning={isBpScanning}
-          isPairing={isBpPairing}
-          residents={residents}
-          onScan={runBpScan}
-          onPair={handleBpPair}
-          onClose={() => setIsBpOpen(false)}
-          error={bpError}
         />
       )}
     </main>
