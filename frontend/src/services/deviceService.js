@@ -60,6 +60,7 @@ export const assignDeviceName = async ({
   zigbee_name,
   zigbee_type,
   resident,
+  home_id,
   paired_motion_ieee,
   paired_window_ieee,
 }) => {
@@ -68,6 +69,7 @@ export const assignDeviceName = async ({
     zigbee_name,
     zigbee_type,
     resident,
+    home_id,
   };
 
   if (paired_motion_ieee) {

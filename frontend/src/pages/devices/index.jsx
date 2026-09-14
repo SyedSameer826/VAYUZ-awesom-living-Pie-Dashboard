@@ -354,6 +354,7 @@ function Devices() {
           zigbee_type:
             nextDevice.type == "contact" ? "door & window" : nextDevice.type,
           home_id: homeId,
+          resident: form.resident,
         });
         setDevices((current) =>
           current.map((device, index) => {
@@ -478,6 +479,7 @@ function Devices() {
         <DeviceForm
           editingId={editingId}
           form={form}
+          residents={residents}
           isSaving={isSaving}
           onChange={handleFormChange}
           onClose={closeForm}
