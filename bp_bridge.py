@@ -1,72 +1,49 @@
 #!/usr/bin/env python3
 """
-bp_bridge.py  v14 — BLE bridge for Bluetooth Blood Pressure monitors.
+bp_bridge.py  v15 — A&D UA-656BLE BLE bridge daemon.
 
-Continuously scans for known (paired) BP monitors. The instant a monitor
-starts advertising (user pressed its Bluetooth button after taking a
-reading), the bridge spawns a **fresh subprocess** to connect, read any
-pending Blood Pressure Measurement indications (characteristic 0x2A35),
-and parse IEEE 11073-20601 SFLOAT values.  The parent process forwards
-the readings to the Pi's local backend (which relays to the cloud).
+Based on A&D's reference implementation (ad_bridge.py) and the official
+A&D BLE specification for the UA-656BLE.
 
-Architecture:
-    BP monitor ──BLE──▶  This bridge  ──HTTP──▶  Pi server.js (/api/bp/reading)
-                                                       │
-                                                       ▼
-                                              Cloud backend (/api/bp/log)
+Protocol (push, NOT poll):
+    - After each measurement the cuff advertises for ~60 s as
+      "A&D_UA-656BLE_xxxxxx".
+    - This bridge runs a continuous BLE scanner. On sighting the cuff,
+      it connects and MUST, within ~5 seconds of encryption:
+        (a) write Date Time (0x2A08)
+        (b) enable indications on Blood Pressure Measurement (0x2A35)
+    - The cuff then sends all buffered measurements as indications
+      (oldest first) and disconnects itself when done.
+    - If the 5-second window is missed, readings are stored in the cuff's
+      buffer (up to 200 if configured via ad_pair.py) and sent on the
+      next successful connection.
 
-Why subprocess?
-    bp_provision.py (one-shot CLI) connects to the A&D UA-656BLE reliably
-    every time, but the same BLE code running inside a long-lived pm2
-    process fails with 15-second connect timeouts.  The root cause is
-    stale BlueZ D-Bus session state that accumulates in a long-running
-    process.  By spawning a fresh Python process for each read, we get a
-    clean D-Bus session — the same advantage bp_provision.py has.
+Data pipeline:
+    A&D UA-656BLE ──BLE──> This bridge ──HTTP──> Pi server.js (/api/bp/reading)
+                                                        │
+                                                        v
+                                               Cloud backend (/api/bp/log)
 
-Two execution modes:
-    Normal  (pm2):   python3 bp_bridge.py
-                     → runs the event-driven scanner loop, spawns
-                       subprocesses to do actual BLE reads.
-
-    Read    (child): python3 bp_bridge.py --read <MAC_ADDRESS>
-                     → one-shot: connect to the device, read indications,
-                       print each reading as a JSON line to stdout, exit.
-
-A&D UA-656BLE behaviour:
-    - User takes a reading with the cuff
-    - Reading is stored in device memory (up to ~60 readings)
-    - User presses the Bluetooth button → device advertises for ~30s
-    - A BLE central that connects and subscribes to 0x2A35 receives ALL
-      stored (unsent) readings as indications, one per reading
-    - After successful transfer the device clears its "unsent" flag
-
-v14 changes — direct Bleak connect (same as bp_provision.py):
-    v13 used a pexpect/bluetoothctl auto-connect strategy that ran
-    'remove {address}' before every read attempt.  This DESTROYED the
-    BLE bond established during provisioning, leaving the device in
-    Paired: no, Bonded: no state.  Without a bond, the A&D cuff refused
-    GATT service access.
-
-    v14 fixes:
-    1. NO 'remove' command — the existing bond from provisioning is
-       preserved across all read attempts.
-    2. Child uses BleakScanner with detection_callback to grab a fresh
-       BLEDevice the instant the monitor advertises (same pattern as
-       bp_provision.py).
-    3. BleakClient(ble_device) direct connect — passes the live BLEDevice
-       object, not a stale MAC address string.
-    4. No pexpect dependency — pure Bleak for scan + connect + GATT reads.
-    5. Parent scanner unchanged — real-time async bluetoothctl scan.
+v15 changes (complete rewrite from A&D reference code):
+    - Replaced complex subprocess architecture with A&D's proven
+      single-process scanner-connect-read loop.
+    - Removed bluetoothctl scan — uses pure Bleak BleakScanner.
+    - Removed ghost connection cleanup, adapter reset, hciconfig calls.
+    - Added offline queue: readings persist to disk when backend is down,
+      flushed oldest-first on each successful connection.
+    - Added DateTime write on every connection (A&D spec requires it).
+    - Added NaN marker filter (SFLOAT 2047 = 0x07FF).
+    - No disconnected_callback — uses timeout to detect end of data.
 
 Run with pm2:
     pm2 start bp_bridge.py --name bp-bridge --interpreter python3
 
 Environment variables:
-    BP_READ_TIMEOUT    — seconds to wait for indications per device (default: 30)
     BP_BACKEND_URL     — local Pi backend URL (default: http://localhost:4000)
-    HUB_SECRET_KEY     — shared secret for Pi → cloud auth
+    HUB_SECRET_KEY     — shared secret for Pi -> cloud auth
     BP_LOG_LEVEL       — DEBUG/INFO/WARNING (default: INFO)
     BP_COOLDOWN        — seconds before re-reading same device (default: 60)
+    BP_QUEUE_DIR       — offline queue directory (default: ~/awesomliving-data/bp-queue)
 """
 
 from __future__ import annotations
@@ -75,24 +52,27 @@ import asyncio
 import json
 import logging
 import os
+import pathlib
 import signal
 import struct
-import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-READ_TIMEOUT = int(os.environ.get("BP_READ_TIMEOUT", "30"))
 LOCAL_BACKEND_URL = os.environ.get("BP_BACKEND_URL", "http://localhost:4000")
 READING_ENDPOINT = LOCAL_BACKEND_URL.rstrip("/") + "/api/bp/reading"
 SECRET_KEY = os.environ.get("HUB_SECRET_KEY", "jwt_secret_of_awesomliving_app")
 LOG_LEVEL = os.environ.get("BP_LOG_LEVEL", "INFO").upper()
 COOLDOWN = int(os.environ.get("BP_COOLDOWN", "60"))
+QUEUE_DIR = pathlib.Path(os.environ.get(
+    "BP_QUEUE_DIR",
+    os.path.join(os.path.expanduser("~"), "awesomliving-data", "bp-queue"),
+))
 
 # Path to the local device store (same as deviceStore.js uses)
 DEVICES_PATH = os.environ.get(
@@ -100,13 +80,17 @@ DEVICES_PATH = os.environ.get(
     os.path.join(os.path.expanduser("~"), "awesomliving-data", "devices.json"),
 )
 
-# Blood Pressure Service UUID (0x1810)
-BP_SERVICE_UUID = "00001810-0000-1000-8000-00805f9b34fb"
-# Blood Pressure Measurement characteristic (0x2A35) — indicate
-BP_MEASUREMENT_CHAR = "00002a35-0000-1000-8000-00805f9b34fb"
+# A&D device name prefix
+DEVICE_NAME_PREFIX = "A&D_UA-656BLE"
 
-# Subprocess timeout
-SUBPROCESS_TIMEOUT = 90
+# BLE UUIDs
+BP_SERVICE_UUID = "00001810-0000-1000-8000-00805f9b34fb"
+BPM_CHAR = "00002a35-0000-1000-8000-00805f9b34fb"   # Blood Pressure Measurement
+DATETIME_CHAR = "00002a08-0000-1000-8000-00805f9b34fb"  # Date Time (R/W)
+BATTERY_CHAR = "00002a19-0000-1000-8000-00805f9b34fb"   # Battery Level
+
+# IST timezone for measured_at timestamps
+IST = timezone(timedelta(hours=5, minutes=30))
 
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL, logging.INFO),
@@ -119,82 +103,100 @@ log = logging.getLogger("bp-bridge")
 # ---------------------------------------------------------------------------
 # IEEE 11073-20601 SFLOAT decoder
 # ---------------------------------------------------------------------------
-def decode_sfloat(raw: int) -> float | None:
-    """Decode a 16-bit IEEE 11073-20601 SFLOAT value."""
+def decode_sfloat(b0: int, b1: int) -> float:
+    """IEEE-11073 16-bit SFLOAT, little endian bytes b0 (LSB) b1 (MSB)."""
+    raw = b0 | (b1 << 8)
+    # NaN, NRes, +INF, -INF, Reserved
     if raw in (0x07FF, 0x0800, 0x07FE, 0x0802, 0x0801):
-        return None
-    exponent = raw >> 12
-    if exponent >= 8:
-        exponent -= 16
-    mantissa = raw & 0x0FFF
-    if mantissa >= 0x0800:
-        mantissa -= 0x1000
-    return mantissa * (10.0 ** exponent)
+        return float("nan")
+    mant = raw & 0x0FFF
+    if mant >= 0x0800:
+        mant -= 0x1000
+    exp = raw >> 12
+    if exp >= 0x8:
+        exp -= 0x10
+    return mant * (10 ** exp)
 
 
 # ---------------------------------------------------------------------------
-# Parse Blood Pressure Measurement (0x2A35) indication payload
+# Parse Blood Pressure Measurement (0x2A35) per A&D spec section 2.1.1
 # ---------------------------------------------------------------------------
-def parse_bp_measurement(data: bytes) -> dict:
-    """Parse a Blood Pressure Measurement characteristic value."""
+def parse_bpm(data: bytes) -> dict | None:
+    """Parse a BPM indication payload. Returns None for NaN/error frames."""
     if len(data) < 7:
-        return {}
+        return None
 
     flags = data[0]
-    unit_kpa = bool(flags & 0x01)
-    has_timestamp = bool(flags & 0x02)
-    has_pulse = bool(flags & 0x04)
-    has_user_id = bool(flags & 0x08)
-    has_status = bool(flags & 0x10)
+    unit_kpa = flags & 0x01
+    has_ts = flags & 0x02
+    has_pulse = flags & 0x04
+    has_uid = flags & 0x08
+    has_status = flags & 0x10
 
-    systolic_raw = struct.unpack_from("<H", data, 1)[0]
-    diastolic_raw = struct.unpack_from("<H", data, 3)[0]
-    map_raw = struct.unpack_from("<H", data, 5)[0]
+    i = 1
+    sys_v = decode_sfloat(data[i], data[i + 1])
+    dia_v = decode_sfloat(data[i + 2], data[i + 3])
+    map_v = decode_sfloat(data[i + 4], data[i + 5])
+    i += 6
 
-    systolic = decode_sfloat(systolic_raw)
-    diastolic = decode_sfloat(diastolic_raw)
-    mean_arterial = decode_sfloat(map_raw)
+    # Filter NaN marker frames (SFLOAT 2047 = cuff header before real data)
+    import math
+    if math.isnan(sys_v) and math.isnan(dia_v) and math.isnan(map_v):
+        log.debug("NaN marker frame — skipped")
+        return None
 
-    result = {
-        "systolic": round(systolic, 1) if systolic is not None else None,
-        "diastolic": round(diastolic, 1) if diastolic is not None else None,
-        "mean_arterial_pressure": round(mean_arterial, 1) if mean_arterial is not None else None,
-        "unit": "kPa" if unit_kpa else "mmHg",
+    # Convert kPa -> mmHg if needed
+    if unit_kpa:
+        k = 7.50062
+        sys_v, dia_v, map_v = sys_v * k, dia_v * k, map_v * k
+
+    # Measurement error check (sys=0xFF07 per A&D convention)
+    if (data[1], data[2]) == (0xFF, 0x07):
+        log.warning("Device reported measurement error frame — skipped")
+        return None
+
+    ts = None
+    if has_ts and len(data) >= i + 7:
+        year = data[i] | (data[i + 1] << 8)
+        month, day, hour, minute, sec = data[i + 2:i + 7]
+        i += 7
+        if year and month and day:
+            try:
+                ts = datetime(year, month, day, hour, minute, sec)
+            except (ValueError, OverflowError):
+                ts = None
+
+    pulse = None
+    if has_pulse and len(data) >= i + 2:
+        pulse = decode_sfloat(data[i], data[i + 1])
+        if math.isnan(pulse):
+            pulse = None
+        i += 2
+
+    if has_uid and len(data) >= i + 1:
+        i += 1  # skip user_id byte
+
+    irregular_heartbeat = False
+    if has_status and len(data) >= i + 2:
+        status_bits = data[i] | (data[i + 1] << 8)
+        irregular_heartbeat = bool(status_bits & 0x0004)
+
+    return {
+        "systolic": round(sys_v) if not math.isnan(sys_v) else None,
+        "diastolic": round(dia_v) if not math.isnan(dia_v) else None,
+        "mean_arterial_pressure": round(map_v) if not math.isnan(map_v) else None,
+        "pulse_rate": round(pulse) if pulse is not None else None,
+        "measured_at": ts.isoformat() if ts else None,
+        "unit": "mmHg",
+        "irregular_heartbeat": irregular_heartbeat,
     }
 
-    offset = 7
 
-    if has_timestamp and len(data) >= offset + 7:
-        year = struct.unpack_from("<H", data, offset)[0]
-        month = data[offset + 2]
-        day = data[offset + 3]
-        hour = data[offset + 4]
-        minute = data[offset + 5]
-        second = data[offset + 6]
-        try:
-            result["measured_at"] = datetime(
-                year, month, day, hour, minute, second
-            ).isoformat()
-        except (ValueError, OverflowError):
-            result["measured_at"] = None
-        offset += 7
-
-    if has_pulse and len(data) >= offset + 2:
-        pulse_raw = struct.unpack_from("<H", data, offset)[0]
-        pulse = decode_sfloat(pulse_raw)
-        result["pulse_rate"] = round(pulse, 1) if pulse is not None else None
-        offset += 2
-
-    if has_user_id and len(data) >= offset + 1:
-        result["user_id"] = data[offset]
-        offset += 1
-
-    if has_status and len(data) >= offset + 2:
-        status_bits = struct.unpack_from("<H", data, offset)[0]
-        result["irregular_heartbeat"] = bool(status_bits & 0x0004)
-        offset += 2
-
-    return result
+def datetime_payload() -> bytes:
+    """Date Time (0x2A08): year uint16 LE, month, day, hour, min, sec."""
+    now = datetime.now()
+    return struct.pack("<HBBBBB", now.year, now.month, now.day,
+                       now.hour, now.minute, now.second)
 
 
 # ---------------------------------------------------------------------------
@@ -217,9 +219,9 @@ def get_paired_bp_devices() -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Forward a reading to the Pi backend
+# Backend HTTP POST
 # ---------------------------------------------------------------------------
-def forward_reading(mac_address: str, reading: dict) -> bool:
+def post_reading(mac_address: str, reading: dict) -> bool:
     """POST a BP reading to the Pi's local backend."""
     payload = json.dumps({
         "mac_address": mac_address,
@@ -244,471 +246,222 @@ def forward_reading(mac_address: str, reading: dict) -> bool:
         with urlopen(req, timeout=10) as resp:
             ok = 200 <= resp.status < 300
             if ok:
-                log.info("  Forwarded reading to backend (status %d)", resp.status)
+                log.info("  -> reading forwarded to backend (status %d)", resp.status)
             else:
-                log.warning("  Backend returned status %d", resp.status)
+                log.warning("  -> backend returned status %d", resp.status)
             return ok
     except (URLError, OSError) as e:
         log.warning("Backend POST failed: %s", e)
         return False
 
 
-# ===================================================================
-#  SUBPROCESS READ MODE  (--read <MAC>)
-#  Runs in a fresh process — clean BlueZ D-Bus session every time.
-# ===================================================================
-
 # ---------------------------------------------------------------------------
-# BlueZ diagnostic helpers
+# Offline queue — disk persistence when backend is down
 # ---------------------------------------------------------------------------
-
-def _check_ghost_connections() -> list[str]:
-    """Check for existing BLE connections that might block new ones."""
-    try:
-        result = subprocess.run(
-            ["hcitool", "con"],
-            capture_output=True, timeout=5, text=True, check=False,
-        )
-        lines = result.stdout.strip().splitlines()
-        connected = []
-        for line in lines:
-            parts = line.strip().split()
-            if len(parts) >= 3 and ":" in parts[2]:
-                connected.append(parts[2].upper())
-        if connected:
-            print(f"  Ghost connections found: {connected}", file=sys.stderr, flush=True)
-        return connected
-    except Exception as e:
-        print(f"  hcitool con check failed: {e}", file=sys.stderr, flush=True)
-        return []
+def queue_reading(mac_address: str, reading: dict):
+    """Save a reading to the disk queue for later retry."""
+    QUEUE_DIR.mkdir(parents=True, exist_ok=True)
+    ts = (reading.get("measured_at") or
+          datetime.now().strftime("%Y%m%dT%H%M%S"))
+    # Use timestamp + mac for a unique filename
+    safe_ts = str(ts).replace(":", "").replace("-", "")[:15]
+    safe_mac = mac_address.replace(":", "")
+    fname = f"{safe_ts}_{safe_mac}.json"
+    (QUEUE_DIR / fname).write_text(json.dumps({
+        "mac_address": mac_address,
+        **reading,
+    }, default=str))
+    log.info("  -> reading queued to disk: %s", fname)
 
 
-def _disconnect_device(address: str):
-    """Force-disconnect a specific device via bluetoothctl."""
-    try:
-        subprocess.run(
-            ["bluetoothctl", "disconnect", address],
-            capture_output=True, timeout=5, text=True, check=False,
-        )
-    except Exception:
-        pass
-
-
-def _reset_adapter():
-    """Reset the BLE adapter to clear all state."""
-    print("  Resetting BLE adapter ...", file=sys.stderr, flush=True)
-    try:
-        r = subprocess.run(
-            ["hciconfig", "hci0", "reset"],
-            capture_output=True, timeout=5, text=True, check=False,
-        )
-        if r.returncode == 0:
-            print("  Adapter reset via hciconfig", file=sys.stderr, flush=True)
-            time.sleep(1.5)
-        else:
-            subprocess.run(["bluetoothctl", "power", "off"],
-                           capture_output=True, timeout=5, check=False)
-            time.sleep(0.5)
-            subprocess.run(["bluetoothctl", "power", "on"],
-                           capture_output=True, timeout=5, check=False)
-            time.sleep(1.0)
-            print("  Adapter power-cycled via bluetoothctl", file=sys.stderr, flush=True)
-    except Exception as e:
-        print(f"  Adapter reset failed: {e}", file=sys.stderr, flush=True)
-
-
-def _check_adapter_state():
-    """Print adapter diagnostic info."""
-    try:
-        result = subprocess.run(
-            ["bluetoothctl", "show"],
-            capture_output=True, timeout=5, text=True, check=False,
-        )
-        for line in result.stdout.strip().splitlines():
-            line = line.strip()
-            if any(k in line for k in ["Powered", "Discovering", "Address"]):
-                print(f"  Adapter: {line}", file=sys.stderr, flush=True)
-    except Exception:
-        pass
-
-
-def _check_device_state(address: str):
-    """Print device diagnostic info from BlueZ."""
-    try:
-        result = subprocess.run(
-            ["bluetoothctl", "info", address],
-            capture_output=True, timeout=5, text=True, check=False,
-        )
-        output = result.stdout.strip()
-        if "not available" in output.lower():
-            print(f"  Device {address}: not in BlueZ cache", file=sys.stderr, flush=True)
-        else:
-            for line in output.splitlines():
-                line = line.strip()
-                if any(k in line for k in ["Connected", "Paired", "Trusted", "Bonded", "Name"]):
-                    print(f"  Device: {line}", file=sys.stderr, flush=True)
-    except Exception:
-        pass
-
-
-# ---------------------------------------------------------------------------
-# Bleak GATT read (subscribe to indications on already-connected device)
-# ---------------------------------------------------------------------------
-
-async def _read_indications(client, readings: list[dict]):
-    """Subscribe to BP measurement indications and collect readings."""
-    bp_char = None
-    for service in client.services:
-        for char in service.characteristics:
-            if BP_MEASUREMENT_CHAR.lower() in char.uuid.lower():
-                bp_char = char
-                break
-
-    if not bp_char:
-        print("  BP characteristic 0x2A35 not found", file=sys.stderr, flush=True)
+def flush_queue():
+    """Retry queued readings oldest-first. Stop on first failure."""
+    if not QUEUE_DIR.is_dir():
         return
-
-    print(f"  Subscribing to indications on {bp_char.uuid} ...", file=sys.stderr, flush=True)
-
-    def on_indicate(_char, data: bytearray):
-        reading = parse_bp_measurement(bytes(data))
-        if reading and reading.get("systolic") is not None:
-            readings.append(reading)
-            print(f"  Reading: sys={reading.get('systolic')} "
-                  f"dia={reading.get('diastolic')} "
-                  f"pulse={reading.get('pulse_rate')}",
-                  file=sys.stderr, flush=True)
-
-    await client.start_notify(bp_char.uuid, on_indicate)
-
-    elapsed = 0.0
-    while elapsed < READ_TIMEOUT:
-        await asyncio.sleep(0.5)
-        elapsed += 0.5
-        if readings and elapsed > 5.0:
-            remaining = min(5.0, READ_TIMEOUT - elapsed)
-            await asyncio.sleep(remaining)
+    queued = sorted(QUEUE_DIR.glob("*.json"))
+    if not queued:
+        return
+    log.info("Flushing offline queue (%d pending) ...", len(queued))
+    for f in queued:
+        try:
+            data = json.loads(f.read_text())
+        except (json.JSONDecodeError, OSError):
+            log.warning("Corrupt queue file %s — removing", f.name)
+            f.unlink(missing_ok=True)
+            continue
+        mac = data.pop("mac_address", "unknown")
+        if post_reading(mac, data):
+            f.unlink(missing_ok=True)
+        else:
+            log.info("Queue flush stopped — backend still unreachable")
             break
 
-    print(f"  Got {len(readings)} reading(s)", file=sys.stderr, flush=True)
-
-    try:
-        await client.stop_notify(bp_char.uuid)
-    except Exception:
-        pass
-
 
 # ---------------------------------------------------------------------------
-# v14: Direct Bleak connect — same proven strategy as bp_provision.py
+# BLE session — one connection cycle (based on A&D ad_bridge.py)
 # ---------------------------------------------------------------------------
+async def handle_device(mac_address: str, device):
+    """Connect to cuff, sync time, receive all buffered readings.
 
-async def _attempt_bleak_connect(address: str, readings: list[dict]) -> bool:
-    """Connect via Bleak using detection callback, then read indications.
+    Per the A&D spec, after encryption we have ~5 seconds to:
+    1. Write DateTime to 0x2A08
+    2. Enable indications on BPM 0x2A35 (CCCD -> 0x0002)
 
-    Same proven strategy as bp_provision.py:
-    1. BleakScanner with detection_callback to grab a fresh BLEDevice
-       the instant the monitor advertises.
-    2. BleakClient(ble_device) direct connect — passes the live BLEDevice
-       object so Bleak has the correct D-Bus object path.
-    3. Subscribe to 0x2A35 indications and collect readings.
+    The cuff then sends all stored readings as indications, oldest first,
+    then disconnects itself after a 5-second idle timeout.
 
-    IMPORTANT: No 'remove' command is issued — the existing BLE bond
-    from provisioning (bp_provision.py pair_device) is preserved.
+    We do NOT use disconnected_callback — the integration doc warns it
+    fires repeatedly from background threads with this cuff on Bleak 3.x.
+    Instead we use a simple timeout: after receiving at least one reading,
+    if 8 seconds pass with no new indication, we assume the cuff is done.
     """
-    from bleak import BleakScanner, BleakClient
+    from bleak import BleakClient
 
-    # Step 1: Scan for the device to get a fresh BLEDevice object.
-    # The parent scanner already detected it, so the monitor should still
-    # be advertising (it advertises for ~30s after pressing Bluetooth).
-    ble_device = None
-    found_event = asyncio.Event()
+    received = []
+    last_indication_time = [0.0]
 
-    def _on_detect(device, adv_data):
-        nonlocal ble_device
-        if device.address.upper() == address.upper():
-            ble_device = device
-            print(f"  TARGET DETECTED: {device.name or address} RSSI={adv_data.rssi}",
-                  file=sys.stderr, flush=True)
-            found_event.set()
+    def on_indication(_char, data: bytearray):
+        try:
+            rec = parse_bpm(bytes(data))
+            if rec is None:
+                return  # NaN marker or error frame — skip
+            if rec.get("systolic") is None:
+                return
+            received.append(rec)
+            last_indication_time[0] = time.monotonic()
+            log.info("  reading: %s/%s pulse=%s at %s",
+                     rec["systolic"], rec["diastolic"],
+                     rec["pulse_rate"], rec["measured_at"])
+        except Exception:
+            log.exception("Failed to parse indication: %s", data.hex())
 
-    scan_timeout = 15.0
-    print(f"  Scanning for {address} (up to {scan_timeout}s) ...", file=sys.stderr, flush=True)
-    scanner = BleakScanner(detection_callback=_on_detect)
-    await scanner.start()
     try:
-        await asyncio.wait_for(found_event.wait(), timeout=scan_timeout)
-    except asyncio.TimeoutError:
-        print(f"  Device {address} not found in {scan_timeout}s", file=sys.stderr, flush=True)
-    finally:
-        await scanner.stop()
+        async with BleakClient(device, timeout=10.0) as client:
+            # ---- 5-second window: time write + CCCD ----
+            # DateTime FIRST (device requires sync every connection)
+            await client.write_gatt_char(
+                DATETIME_CHAR, datetime_payload(), response=True)
+            log.info("  DateTime synced")
 
-    if ble_device is None:
-        print(f"  Device {address} not advertising — cannot connect", file=sys.stderr, flush=True)
-        return False
+            # Enable indications on BPM characteristic
+            await client.start_notify(BPM_CHAR, on_indication)
+            log.info("  indications enabled — awaiting data")
 
-    # Step 2: Connect immediately using the fresh BLEDevice.
-    # This is the EXACT same approach bp_provision.py uses successfully.
-    client = None
-    try:
-        print(f"  Connecting to {address} with fresh BLEDevice ...", file=sys.stderr, flush=True)
-        client = BleakClient(ble_device, timeout=15.0)
-        await client.connect()
+            # ---- Wait for readings ----
+            # The cuff sends buffered data then idles for 5s before
+            # disconnecting. We use a timeout-based approach:
+            # - Wait up to 30s total
+            # - After first reading, wait up to 8s of silence = done
+            start = time.monotonic()
+            last_indication_time[0] = start
+            while (time.monotonic() - start) < 30.0:
+                await asyncio.sleep(0.5)
+                if received and (time.monotonic() - last_indication_time[0]) > 8.0:
+                    log.info("  8s silence after %d reading(s) — session done",
+                             len(received))
+                    break
 
-        if not client.is_connected:
-            print(f"  connect() returned but not connected", file=sys.stderr, flush=True)
-            return False
-
-        print(f"  CONNECTED — reading indications", file=sys.stderr, flush=True)
-
-        # Step 3: Read BP measurement indications
-        await _read_indications(client, readings)
+            # Try to cleanly stop notifications
+            try:
+                await client.stop_notify(BPM_CHAR)
+            except Exception:
+                pass
 
     except Exception as e:
-        print(f"  BLE error: {type(e).__name__}: {e}", file=sys.stderr, flush=True)
-    finally:
-        if client:
-            try:
-                await client.disconnect()
-            except Exception:
-                pass
+        log.warning("BLE session failed: %s", e)
 
-    return len(readings) > 0
+    # ---- Forward readings ----
+    log.info("=== %d reading(s) received from %s ===", len(received), mac_address)
+    for rec in received:
+        if not post_reading(mac_address, rec):
+            queue_reading(mac_address, rec)
 
 
 # ---------------------------------------------------------------------------
-# Main oneshot read orchestrator
+# Main scanner loop (based on A&D ad_bridge.py)
 # ---------------------------------------------------------------------------
-
-async def _oneshot_read(address: str) -> list[dict]:
-    """One-shot BLE read — subprocess mode.
-
-    v14: Direct Bleak connect — same proven approach as bp_provision.py.
-    Uses BleakScanner detection callback to grab a fresh BLEDevice the
-    instant the monitor advertises, then connects immediately via
-    BleakClient(ble_device).
-
-    Key difference from v13: NO 'remove {address}' command.  v13 destroyed
-    the BLE bond before every read, leaving the device Paired: no,
-    Bonded: no.  v14 preserves the bond established during provisioning.
-
-    Attempt 1: BleakScanner detection → BleakClient direct connect
-    Attempt 2: adapter reset + retry
-    """
-    address = address.upper()
-    readings: list[dict] = []
-
-    # --- Diagnostics ---
-    _check_adapter_state()
-    _check_device_state(address)
-
-    # --- Pre-flight: clear ghost connections ---
-    ghosts = _check_ghost_connections()
-    for ghost_mac in ghosts:
-        _disconnect_device(ghost_mac)
-    if ghosts:
-        await asyncio.sleep(1.0)
-
-    # =================================================================
-    #  ATTEMPT 1: Direct Bleak connect (same as bp_provision.py)
-    # =================================================================
-    print("ATTEMPT 1/2 — direct Bleak connect", file=sys.stderr, flush=True)
-
-    if await _attempt_bleak_connect(address, readings):
-        return readings
-    print("  Attempt 1 failed", file=sys.stderr, flush=True)
-
-    # =================================================================
-    #  ATTEMPT 2: Adapter reset + retry
-    # =================================================================
-    print("ATTEMPT 2/2 — adapter reset + direct Bleak connect", file=sys.stderr, flush=True)
-    _reset_adapter()
-    await asyncio.sleep(2.0)
-
-    if await _attempt_bleak_connect(address, readings):
-        return readings
-    print("  Attempt 2 failed", file=sys.stderr, flush=True)
-
-    return readings
-
-
-def run_oneshot_read(address: str):
-    """Entry point for --read mode. Prints readings as JSON lines to stdout."""
-    readings = asyncio.run(_oneshot_read(address))
-    for r in readings:
-        print(json.dumps(r), flush=True)
-    sys.exit(0 if readings else 1)
-
-
-# ===================================================================
-#  PARENT BRIDGE MODE  (default — runs as pm2 service)
-# ===================================================================
-
-def read_device_subprocess(address: str) -> list[dict]:
-    """Spawn a fresh subprocess to do the BLE read."""
-    address = address.upper()
-    log.info("=== BP READ START for %s (subprocess) ===", address)
-
-    script_path = os.path.abspath(__file__)
-    cmd = [sys.executable, script_path, "--read", address]
-
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=SUBPROCESS_TIMEOUT,
-            env={**os.environ, "BP_LOG_LEVEL": LOG_LEVEL},
-        )
-    except subprocess.TimeoutExpired:
-        log.warning("  Subprocess timed out after %ds for %s", SUBPROCESS_TIMEOUT, address)
-        log.info("=== BP READ DONE for %s: 0 collected, 0 forwarded (timeout) ===", address)
-        return []
-
-    if result.stderr:
-        for line in result.stderr.strip().splitlines():
-            log.info("  [child] %s", line)
-
-    readings = []
-    for line in result.stdout.strip().splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            reading = json.loads(line)
-            if reading.get("systolic") is not None:
-                readings.append(reading)
-        except json.JSONDecodeError:
-            log.debug("  Non-JSON stdout line: %s", line)
-
-    forwarded = 0
-    for reading in readings:
-        if forward_reading(address, reading):
-            forwarded += 1
-
-    log.info("=== BP READ DONE for %s: %d collected, %d forwarded (exit=%d) ===",
-             address, len(readings), forwarded, result.returncode)
-    return readings
-
-
-# ---------------------------------------------------------------------------
-# Parent scanner — REAL-TIME: returns immediately when target MAC found
-# ---------------------------------------------------------------------------
-
-async def _btctl_scan_realtime(known_macs: set[str], timeout: int = 20) -> str | None:
-    """Real-time BLE scan that returns IMMEDIATELY when a target MAC is found.
-
-    Instead of waiting the full scan duration and then parsing output,
-    this reads bluetoothctl output line-by-line and returns the instant
-    a known MAC appears.  This saves ~12 seconds on average — critical
-    because the cuff only advertises for ~30 seconds.
-    """
-    proc = await asyncio.create_subprocess_exec(
-        "bluetoothctl",
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,
-    )
-
-    found_mac = None
-    try:
-        # Power on and start LE scan
-        proc.stdin.write(b"power on\n")
-        await proc.stdin.drain()
-        await asyncio.sleep(0.3)
-        proc.stdin.write(b"scan le\n")
-        await proc.stdin.drain()
-
-        deadline = asyncio.get_event_loop().time() + timeout
-        while asyncio.get_event_loop().time() < deadline:
-            remaining = deadline - asyncio.get_event_loop().time()
-            if remaining <= 0:
-                break
-            try:
-                line_bytes = await asyncio.wait_for(
-                    proc.stdout.readline(),
-                    timeout=min(remaining, 2.0),
-                )
-                if not line_bytes:
-                    break
-                line = line_bytes.decode("utf-8", errors="replace")
-                # Check for any known MAC in the line
-                line_upper = line.upper()
-                for mac in known_macs:
-                    if mac in line_upper:
-                        found_mac = mac
-                        log.info("FOUND %s in scan (real-time match)", mac)
-                        break
-                if found_mac:
-                    break
-            except asyncio.TimeoutError:
-                continue
-    finally:
-        # Stop scan and quit — ensure adapter is idle before child spawns
-        try:
-            proc.stdin.write(b"scan off\n")
-            await proc.stdin.drain()
-            await asyncio.sleep(0.5)
-            proc.stdin.write(b"quit\n")
-            await proc.stdin.drain()
-        except Exception:
-            pass
-        try:
-            await asyncio.wait_for(proc.wait(), timeout=3)
-        except (asyncio.TimeoutError, Exception):
-            proc.kill()
-            try:
-                await proc.wait()
-            except Exception:
-                pass
-
-    return found_mac
-
-
 async def scanner_loop():
-    """Continuously scan for known BP monitors and read when detected.
+    """Continuously scan for known BP monitors and handle connections.
 
-    v14: Simplified — no pre-trust step needed. The bond from provisioning
-    is preserved, and the child subprocess uses direct Bleak connect
-    (same approach as bp_provision.py).
+    Uses Bleak's detection_callback for instant response when the cuff
+    starts advertising. On detection:
+    1. Stop scanner (free the adapter).
+    2. Connect and read (handle_device).
+    3. Flush offline queue.
+    4. Resume scanning.
     """
+    from bleak import BleakScanner
+
     last_read: dict[str, float] = {}
-    log.info("Scanner loop started (read_timeout=%ds, cooldown=%ds)", READ_TIMEOUT, COOLDOWN)
+
+    log.info("Scanner loop started (cooldown=%ds, backend=%s)",
+             COOLDOWN, READING_ENDPOINT)
 
     while True:
+        # Get the list of known BP monitors from devices.json
         bp_devices = get_paired_bp_devices()
         if not bp_devices:
-            log.debug("No paired BP monitors, sleeping 30s ...")
+            log.debug("No paired BP monitors — sleeping 30s")
             await asyncio.sleep(30)
             continue
 
         known_macs = {d.get("ieee_address", "").upper() for d in bp_devices}
         known_macs.discard("")
+        log.info("Scanning for %d BP monitor(s): %s",
+                 len(known_macs), ", ".join(known_macs))
 
-        log.info("Scanning for %d BP monitor(s): %s", len(known_macs), ", ".join(known_macs))
+        # ---- Detection callback — fires instantly on advertisement ----
+        found = asyncio.Queue()
 
-        # Real-time scan — returns immediately on first match
-        detected_address = await _btctl_scan_realtime(known_macs, timeout=20)
+        def on_detection(device, adv_data):
+            name = adv_data.local_name or device.name or ""
+            mac = device.address.upper()
 
-        if detected_address:
-            if time.time() - last_read.get(detected_address, 0) < COOLDOWN:
-                log.info("Cooldown active for %s, skipping", detected_address)
-                await asyncio.sleep(5)
-                continue
+            # Match by MAC (known device) or by name prefix
+            if mac in known_macs or name.startswith(DEVICE_NAME_PREFIX):
+                try:
+                    found.put_nowait((mac, device))
+                except asyncio.QueueFull:
+                    pass
 
-            log.info("BP MONITOR DETECTED: %s", detected_address)
+        scanner = BleakScanner(detection_callback=on_detection)
+        await scanner.start()
 
-            # Settle delay — let adapter fully stop scanning before
-            # the child subprocess starts its own BleakScanner
-            log.info("Settling adapter (1.5s) before spawning reader ...")
-            await asyncio.sleep(1.5)
-
-            readings = read_device_subprocess(detected_address)
-            if readings:
-                last_read[detected_address] = time.time()
-                log.info("Cooldown active for %s (%ds)", detected_address, COOLDOWN)
-            await asyncio.sleep(2.0)
-        else:
+        try:
+            # Wait for a detection (blocks until cuff advertises)
+            mac_address, device = await asyncio.wait_for(
+                found.get(), timeout=30.0)
+        except asyncio.TimeoutError:
+            await scanner.stop()
+            # No device seen — loop and re-check devices.json
             await asyncio.sleep(1.0)
+            continue
+
+        await scanner.stop()  # Free the adapter before connecting
+
+        # ---- Cooldown check ----
+        if time.time() - last_read.get(mac_address, 0) < COOLDOWN:
+            log.info("Cooldown active for %s — skipping", mac_address)
+            # Drain any duplicate sightings
+            while not found.empty():
+                found.get_nowait()
+            await asyncio.sleep(5)
+            continue
+
+        log.info("=== BP CUFF DETECTED: %s — connecting ===", mac_address)
+
+        await handle_device(mac_address, device)
+        last_read[mac_address] = time.time()
+
+        # Flush any queued readings while backend is reachable
+        flush_queue()
+
+        # Drain duplicate sightings from the queue
+        while not found.empty():
+            found.get_nowait()
+
+        # Brief pause before resuming scan
+        await asyncio.sleep(2.0)
 
 
 # ---------------------------------------------------------------------------
@@ -737,12 +490,10 @@ async def run():
 
 
 def main():
-    log.info("Starting BP bridge v14 (direct Bleak connect, backend=%s)", READING_ENDPOINT)
+    log.info("Starting BP bridge v15 (A&D reference pattern, backend=%s)",
+             READING_ENDPOINT)
     asyncio.run(run())
 
 
 if __name__ == "__main__":
-    if len(sys.argv) >= 3 and sys.argv[1] == "--read":
-        run_oneshot_read(sys.argv[2])
-    else:
-        main()
+    main()

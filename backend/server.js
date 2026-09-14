@@ -742,11 +742,27 @@ app.post("/api/bp/pair", async (req, res) => {
       });
     }
 
-    // 1) BLE pair (bond) with retries
+    // 1) BLE pair (bond) with retries.
+    //    Stop bp-bridge first — it scans for known BP monitors and will
+    //    grab the BLE connection before bp_provision.py can.
     const MAX_BLE_RETRIES = 3;
     const BLE_RETRY_DELAY_MS = 3000;
     let pairResult = null;
     let pairStderr = "";
+
+    const _exec_quiet = (cmd) =>
+      new Promise((resolve) => {
+        exec(cmd, { timeout: 8000 }, (err, stdout, stderr) => {
+          if (err) console.warn(`[BP pair] ${cmd}: ${stderr || err.message}`);
+          resolve();
+        });
+      });
+
+    // Stop bp-bridge so it doesn't race with the pairing scan
+    console.log("[BP pair] stopping bp-bridge to avoid BLE race ...");
+    await _exec_quiet("pm2 stop bp-bridge");
+    // Brief pause so BlueZ releases any active connection
+    await new Promise((r) => setTimeout(r, 1500));
 
     const run_pair = () =>
       new Promise((resolve, reject) => {
@@ -769,26 +785,32 @@ app.post("/api/bp/pair", async (req, res) => {
         );
       });
 
-    for (let attempt = 1; attempt <= MAX_BLE_RETRIES; attempt++) {
-      try {
-        pairResult = await run_pair();
-        if (pairResult.success) {
-          if (attempt > 1) console.log(`[BP pair] succeeded on attempt ${attempt}/${MAX_BLE_RETRIES}`);
-          break;
+    try {
+      for (let attempt = 1; attempt <= MAX_BLE_RETRIES; attempt++) {
+        try {
+          pairResult = await run_pair();
+          if (pairResult.success) {
+            if (attempt > 1) console.log(`[BP pair] succeeded on attempt ${attempt}/${MAX_BLE_RETRIES}`);
+            break;
+          }
+          console.warn(
+            `[BP pair] attempt ${attempt}/${MAX_BLE_RETRIES} failed: ${pairResult.detail || "no ack"}`,
+          );
+        } catch (err) {
+          console.warn(
+            `[BP pair] attempt ${attempt}/${MAX_BLE_RETRIES} error: ${err.message}`,
+          );
+          pairResult = { success: false, detail: err.message };
         }
-        console.warn(
-          `[BP pair] attempt ${attempt}/${MAX_BLE_RETRIES} failed: ${pairResult.detail || "no ack"}`,
-        );
-      } catch (err) {
-        console.warn(
-          `[BP pair] attempt ${attempt}/${MAX_BLE_RETRIES} error: ${err.message}`,
-        );
-        pairResult = { success: false, detail: err.message };
+        if (attempt < MAX_BLE_RETRIES) {
+          console.log(`[BP pair] waiting ${BLE_RETRY_DELAY_MS}ms before retry...`);
+          await new Promise((r) => setTimeout(r, BLE_RETRY_DELAY_MS));
+        }
       }
-      if (attempt < MAX_BLE_RETRIES) {
-        console.log(`[BP pair] waiting ${BLE_RETRY_DELAY_MS}ms before retry...`);
-        await new Promise((r) => setTimeout(r, BLE_RETRY_DELAY_MS));
-      }
+    } finally {
+      // Always restart bp-bridge, whether pairing succeeded or failed
+      console.log("[BP pair] restarting bp-bridge ...");
+      await _exec_quiet("pm2 restart bp-bridge");
     }
 
     if (!pairResult || !pairResult.success) {
