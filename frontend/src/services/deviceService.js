@@ -231,6 +231,18 @@ export const pairBp = async ({ address, name, resident }) => {
   return data;
 };
 
+export const getHubSetup = async () => {
+  const response = await fetch(`${API_BASE_URL}setup`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to load hub setup");
+  }
+
+  return response.json();
+};
+
 export const deleteDevice = async (ieee_address) => {
   const response = await fetch(`${API_BASE_URL}devices/${ieee_address}`, {
     method: "DELETE",
