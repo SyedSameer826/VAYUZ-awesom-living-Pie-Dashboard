@@ -26,7 +26,8 @@ const CameraPairModal = ({
   onRescan,
   onClose,
 }) => {
-  const hasUnmapped = cameras.some(
+  const safe_cameras = Array.isArray(cameras) ? cameras : [];
+  const hasUnmapped = safe_cameras.some(
     (c) => !(c.already_known && c.status === "mapped"),
   );
 
@@ -59,7 +60,7 @@ const CameraPairModal = ({
           )}
 
           {/* 1) Instructions first */}
-          {!isScanning && hasUnmapped && (
+          {!isScanning && safe_cameras.length > 0 && hasUnmapped && (
             <div
               style={{
                 marginBottom: 14,
@@ -105,12 +106,12 @@ const CameraPairModal = ({
           )}
 
           {/* 2) Then the found-cameras list */}
-          {!isScanning && cameras.length > 0 && (
+          {!isScanning && safe_cameras.length > 0 && (
             <>
               <p style={{ margin: "0 0 8px", color: "#555" }}>
                 Cameras found on the network:
               </p>
-              {cameras.some((c) => isOnDefaultSubnet(c.ip)) && (
+              {safe_cameras.some((c) => isOnDefaultSubnet(c.ip)) && (
                 <p
                   style={{
                     margin: "0 0 8px",
@@ -126,7 +127,7 @@ const CameraPairModal = ({
                 </p>
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {cameras.map((cam) => {
+                {safe_cameras.map((cam) => {
                   const isMapped =
                     cam.already_known && cam.status === "mapped";
                   return (
@@ -177,7 +178,7 @@ const CameraPairModal = ({
             </>
           )}
 
-          {!isScanning && cameras.length === 0 && (
+          {!isScanning && safe_cameras.length === 0 && (
             <p style={{ margin: "0 0 12px", color: "#555" }}>
               No cameras found. Make sure the camera is powered and connected,
               then rescan.

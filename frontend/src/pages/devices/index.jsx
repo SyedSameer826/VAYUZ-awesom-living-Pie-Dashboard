@@ -482,6 +482,7 @@ function Devices() {
       {isCameraOpen && (
         <CameraForm
           form={cameraForm}
+          residents={residents}
           isSaving={isSaving}
           onChange={handleCameraChange}
           onClose={closeCameraForm}
