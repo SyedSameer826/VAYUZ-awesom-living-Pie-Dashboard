@@ -187,11 +187,11 @@ async def pair_device(address: str, timeout: float = 30.0) -> dict:
                      f"RSSI={adv.rssi}")
                 found.set()
 
-        _dbg(f"Scanning for {address} (30s) ...")
+        _dbg(f"Scanning for {address} ({timeout}s) ...")
         scanner = BleakScanner(detection_callback=_on_detect)
         await scanner.start()
         try:
-            await asyncio.wait_for(found.wait(), timeout=30.0)
+            await asyncio.wait_for(found.wait(), timeout=timeout)
         except asyncio.TimeoutError:
             pass
         finally:
@@ -279,7 +279,7 @@ async def pair_device(address: str, timeout: float = 30.0) -> dict:
 # ---------------------------------------------------------------------------
 # Combined Scan + Pair — eliminates Pr-mode timing gap
 # ---------------------------------------------------------------------------
-async def scan_and_pair(address: str, scan_timeout: float = 15.0) -> dict:
+async def scan_and_pair(address: str, scan_timeout: float = 10.0) -> dict:
     """
     Combined scan-and-pair in a single operation.
 
@@ -473,7 +473,7 @@ def main():
 
     scan_pair_p = sub.add_parser("scan_pair")
     scan_pair_p.add_argument("--address", required=True)
-    scan_pair_p.add_argument("--timeout", type=float, default=30.0)
+    scan_pair_p.add_argument("--timeout", type=float, default=10.0)
 
     args = parser.parse_args()
 

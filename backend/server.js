@@ -798,7 +798,7 @@ app.post("/api/bp/pair", async (req, res) => {
       new Promise((resolve, reject) => {
         execFile(
           BP_PYTHON,
-          [BP_SCRIPT, "scan_pair", "--address", address],
+          [BP_SCRIPT, "scan_pair", "--address", address, "--timeout", "10"],
           { timeout: 90000, cwd: path.join(__dirname, "bp") },
           (err, stdout, stderr) => {
             pairStderr = stderr || "";
