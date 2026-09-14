@@ -13,6 +13,8 @@ import {
   openCameraSetup,
   scanGlk,
   pairGlk,
+  scanBp,
+  pairBp,
   getDeviceDetails,
   getResidents,
   getHubSetup,
@@ -23,6 +25,7 @@ import DeviceForm from "./DeviceForm";
 import CameraForm from "./CameraForm";
 import CameraPairModal from "./CameraPairModal";
 import GlkPairModal from "./GlkPairModal";
+import BpPairModal from "./BpPairModal";
 
 const emptyCameraForm = {
   stream_name: "",
@@ -51,6 +54,10 @@ function Devices() {
   const [glkDevices, setGlkDevices] = useState([]);
   const [isGlkScanning, setIsGlkScanning] = useState(false);
   const [isGlkPairing, setIsGlkPairing] = useState(false);
+  const [isBpOpen, setIsBpOpen] = useState(false);
+  const [bpDevices, setBpDevices] = useState([]);
+  const [isBpScanning, setIsBpScanning] = useState(false);
+  const [isBpPairing, setIsBpPairing] = useState(false);
   const [homeId, setHomeId] = useState("");
   const tableRows = useMemo(() => mapDeviceRows(devices), [devices]);
   const filteredRows = useMemo(() => {
@@ -291,6 +298,42 @@ function Devices() {
     }
   };
 
+  // ---- BP monitor pairing ----
+  const runBpScan = async () => {
+    setIsBpScanning(true);
+    setError("");
+    try {
+      const result = await scanBp();
+      setBpDevices(result.devices || []);
+    } catch (bpError) {
+      setError(bpError.message || "BP scan failed");
+      setBpDevices([]);
+    } finally {
+      setIsBpScanning(false);
+    }
+  };
+
+  const openBpModal = () => {
+    setBpDevices([]);
+    setError("");
+    setIsBpOpen(true);
+    runBpScan();
+  };
+
+  const handleBpPair = async (payload) => {
+    setIsBpPairing(true);
+    setError("");
+    try {
+      await pairBp(payload);
+      setIsBpOpen(false);
+      await loadData();
+    } catch (bpError) {
+      setError(bpError.message || "BP pairing failed");
+    } finally {
+      setIsBpPairing(false);
+    }
+  };
+
   // Open a stuck camera's own page THROUGH the Pi (reverse proxy), so the user
   // can flip DHCP on even though the laptop can't reach the camera's subnet.
   const handleOpenCameraSetup = async (cam) => {
@@ -452,6 +495,9 @@ function Devices() {
             <button className="submit-button" onClick={openGlkModal}>
               Pair GLK
             </button>
+            <button className="submit-button" onClick={openBpModal}>
+              Pair BP
+            </button>
           </div>
           <label className="table-search">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -520,6 +566,19 @@ function Devices() {
           onScan={runGlkScan}
           onPair={handleGlkPair}
           onClose={() => setIsGlkOpen(false)}
+        />
+      )}
+
+      {isBpOpen && (
+        <BpPairModal
+          devices={bpDevices}
+          isScanning={isBpScanning}
+          isPairing={isBpPairing}
+          residents={residents}
+          error={error}
+          onScan={runBpScan}
+          onPair={handleBpPair}
+          onClose={() => setIsBpOpen(false)}
         />
       )}
     </main>
