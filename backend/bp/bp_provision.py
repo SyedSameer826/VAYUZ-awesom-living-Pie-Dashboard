@@ -136,6 +136,28 @@ async def pair_device(address: str, timeout: float = 15.0) -> dict:
     _dbg(f"=== PAIR START for {address} ===")
 
     # -------------------------------------------------------------------
+    # Step 0: Clear stale BlueZ bond BEFORE scanning.
+    # If the Pi has leftover bond keys from a previous pairing attempt
+    # (or from the old provisioning code), BlueZ will try to reuse them
+    # on connect. The cuff rejects the mismatched keys → ERR 10 → timeout.
+    #
+    # This is safe here because we haven't scanned yet — no BLEDevice
+    # object exists to be destroyed. The targeted scan below picks up a
+    # fresh device handle regardless of cache state.
+    # -------------------------------------------------------------------
+    _dbg(f"Clearing stale BlueZ state for {address} ...")
+    subprocess.run(
+        ["bluetoothctl", "untrust", address],
+        capture_output=True, timeout=5, text=True, check=False,
+    )
+    subprocess.run(
+        ["bluetoothctl", "remove", address],
+        capture_output=True, timeout=5, text=True, check=False,
+    )
+    _dbg("Stale bond cleared (if any existed)")
+    time.sleep(0.5)  # Let BlueZ settle
+
+    # -------------------------------------------------------------------
     # Step 1: Targeted scan — find the device while it's advertising.
     # Uses a detection callback for instant response.
     # -------------------------------------------------------------------
