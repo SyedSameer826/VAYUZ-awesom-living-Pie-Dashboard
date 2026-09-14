@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "../../components/buttons";
 
 // Pairing flow for BLE Blood Pressure monitors. We scan for devices
@@ -22,6 +22,13 @@ const BpPairModal = ({
 
   const change = (e) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+
+  // Auto-select the first device when scan results arrive
+  useEffect(() => {
+    if (devices.length > 0 && !selected) {
+      setSelected(devices[0]);
+    }
+  }, [devices]);
 
   const canPair = selected && form.resident;
 
@@ -131,7 +138,6 @@ const BpPairModal = ({
               name="resident"
               value={form.resident}
               onChange={change}
-              disabled={!selected}
             >
               <option value="">Select Resident</option>
               {residents.map((r) => (

@@ -308,6 +308,20 @@ async def scan_and_pair(address: str, scan_timeout: float = 30.0) -> dict:
     )
     _dbg("Pi-side bond cleared")
 
+    # --- 1b. Reset BLE adapter to clear stale state from prior attempts ---
+    _dbg("Resetting BLE adapter ...")
+    subprocess.run(
+        ["bluetoothctl", "power", "off"],
+        capture_output=True, timeout=5, text=True, check=False,
+    )
+    time.sleep(1)
+    subprocess.run(
+        ["bluetoothctl", "power", "on"],
+        capture_output=True, timeout=5, text=True, check=False,
+    )
+    time.sleep(1)
+    _dbg("BLE adapter reset")
+
     # --- 2. Register D-Bus agent ---
     agent = _start_agent()
 
@@ -346,68 +360,106 @@ async def scan_and_pair(address: str, scan_timeout: float = 30.0) -> dict:
                 ),
             }
 
-        # --- 4. IMMEDIATELY connect + pair (no second scan) ---
-        _dbg(f"Connecting to {address} (30s timeout) ...")
-        try:
-            async with BleakClient(ble_device, timeout=30.0) as client:
-                _dbg(f"CONNECTED to {address}")
+        # --- 4. Connect + pair (with one retry after adapter reset) ---
+        MAX_CONNECT_TRIES = 2
+        last_err = None
 
-                # --- 5. Bond ---
-                try:
-                    paired = await client.pair()
-                    _dbg(f"pair(): {'OK' if paired else 'already bonded'}")
-                except Exception as pe:
-                    _dbg(f"pair() note: {_exc_detail(pe)} (often benign)")
+        for attempt in range(1, MAX_CONNECT_TRIES + 1):
+            _dbg(f"Connect attempt {attempt}/{MAX_CONNECT_TRIES} "
+                 f"to {address} (30s timeout) ...")
+            try:
+                async with BleakClient(ble_device, timeout=30.0) as client:
+                    _dbg(f"CONNECTED to {address}")
 
-                # --- 6. Write DateTime ---
-                await client.write_gatt_char(
-                    DATETIME_CHAR, _datetime_payload(), response=True)
-                _dbg("DateTime written to 0x2A08")
+                    # --- 5. Bond ---
+                    try:
+                        paired = await client.pair()
+                        _dbg(f"pair(): {'OK' if paired else 'already bonded'}")
+                    except Exception as pe:
+                        _dbg(f"pair() note: {_exc_detail(pe)} (often benign)")
 
-                # --- 7. Set buffer to 200 readings ---
-                buf_ok = False
-                try:
+                    # --- 6. Write DateTime ---
                     await client.write_gatt_char(
-                        CUSTOM_CHAR, CMD_SET_BUFFER_200, response=True)
-                    _dbg("Buffer set to 200 (cmd 0xA6)")
-                    await client.write_gatt_char(
-                        CUSTOM_CHAR, CMD_READ_BUFFER, response=True)
-                    val = await client.read_gatt_char(CUSTOM_CHAR)
-                    _dbg(f"Buffer readback: {val.hex()}")
-                    buf_ok = True
-                except Exception as be:
-                    _dbg(f"Buffer config failed: {_exc_detail(be)}")
+                        DATETIME_CHAR, _datetime_payload(), response=True)
+                    _dbg("DateTime written to 0x2A08")
 
-                # --- 8. Trust ---
-                subprocess.run(
-                    ["bluetoothctl", "trust", address],
-                    capture_output=True, timeout=5, text=True, check=False,
-                )
-                _dbg("Device trusted")
+                    # --- 7. Set buffer to 200 readings ---
+                    buf_ok = False
+                    try:
+                        await client.write_gatt_char(
+                            CUSTOM_CHAR, CMD_SET_BUFFER_200, response=True)
+                        _dbg("Buffer set to 200 (cmd 0xA6)")
+                        await client.write_gatt_char(
+                            CUSTOM_CHAR, CMD_READ_BUFFER, response=True)
+                        val = await client.read_gatt_char(CUSTOM_CHAR)
+                        _dbg(f"Buffer readback: {val.hex()}")
+                        buf_ok = True
+                    except Exception as be:
+                        _dbg(f"Buffer config failed: {_exc_detail(be)}")
 
-                _dbg("*** PAIRING COMPLETE ***")
-                return {
-                    "success": True,
-                    "address": address,
-                    "detail": "paired",
-                    "buffer_configured": buf_ok,
-                    "bp_service": True,
-                }
+                    # --- 8. Trust ---
+                    subprocess.run(
+                        ["bluetoothctl", "trust", address],
+                        capture_output=True, timeout=5, text=True, check=False,
+                    )
+                    _dbg("Device trusted")
 
-        except Exception as e:
-            detail = _exc_detail(e)
-            _dbg(f"BLE error: {detail}")
-            if "timeout" in detail.lower():
-                return {
-                    "success": False,
-                    "detail": (
-                        "Connection timed out — the cuff may have stale "
-                        "bond keys (ERR 10). Remove the cuff batteries for "
-                        "30 seconds to clear its bond memory, reinsert, "
-                        "hold START until 'Pr' blinks, then retry."
-                    ),
-                }
-            return {"success": False, "detail": f"BLE error: {detail}"}
+                    _dbg("*** PAIRING COMPLETE ***")
+                    return {
+                        "success": True,
+                        "address": address,
+                        "detail": "paired",
+                        "buffer_configured": buf_ok,
+                        "bp_service": True,
+                    }
+
+            except Exception as e:
+                last_err = _exc_detail(e)
+                _dbg(f"Connect attempt {attempt} failed: {last_err}")
+
+                if attempt < MAX_CONNECT_TRIES:
+                    # Reset adapter and re-scan briefly before retrying
+                    _dbg("Resetting adapter before retry ...")
+                    subprocess.run(
+                        ["bluetoothctl", "power", "off"],
+                        capture_output=True, timeout=5, text=True, check=False,
+                    )
+                    time.sleep(1)
+                    subprocess.run(
+                        ["bluetoothctl", "power", "on"],
+                        capture_output=True, timeout=5, text=True, check=False,
+                    )
+                    time.sleep(1)
+
+                    # Brief re-scan to re-acquire the device
+                    ble_device = None
+                    found = asyncio.Event()
+                    _dbg("Re-scanning (10s) ...")
+                    scanner2 = BleakScanner(detection_callback=_on_detect)
+                    await scanner2.start()
+                    try:
+                        await asyncio.wait_for(found.wait(), timeout=10.0)
+                    except asyncio.TimeoutError:
+                        pass
+                    finally:
+                        await scanner2.stop()
+
+                    if ble_device is None:
+                        _dbg("Device lost after adapter reset")
+                        break
+
+        # All connect attempts exhausted
+        if "timeout" in (last_err or "").lower():
+            return {
+                "success": False,
+                "detail": (
+                    "Connection timed out — the cuff may have stale "
+                    "bond keys (ERR 10). Remove the cuff batteries for "
+                    "30 seconds to clear its bond memory, reinsert, "
+                    "hold START until 'Pr' blinks, then retry."
+                ),
+            }
+        return {"success": False, "detail": f"BLE error: {last_err}"}
 
     finally:
         _stop_agent(agent)
