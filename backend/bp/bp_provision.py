@@ -241,12 +241,13 @@ async def pair_device(address: str, timeout: float = 15.0) -> dict:
     _dbg(f"=== PAIR START for {address} ===")
 
     # ---------------------------------------------------------------
-    # Step 0: Clear stale BlueZ cache for this device.
-    # Previous failed pair attempts leave a cached D-Bus object that
-    # can block new connections. Removing it forces BlueZ to start
-    # fresh from the advertisement we're about to receive.
+    # Step 0 (REMOVED): We no longer call _remove_cached_device()
+    # here. Removing a bonded/trusted device from BlueZ destroys the
+    # BLE bond, which causes re-pairing to fail — the monitor shows
+    # ERR 10 and Bleak gets "device not found" because the D-Bus
+    # object is wiped. The fresh targeted scan below picks up a live
+    # BLEDevice regardless of cache state.
     # ---------------------------------------------------------------
-    _remove_cached_device(address)
 
     # ---------------------------------------------------------------
     # Step 1: Targeted scan — wait for the device to advertise.
@@ -314,7 +315,9 @@ async def pair_device(address: str, timeout: float = 15.0) -> dict:
                 pass
             client = None
             if attempt < 3:
-                _remove_cached_device(address)
+                # Do NOT call _remove_cached_device here — it destroys
+                # the D-Bus object that ble_device references, causing
+                # the next attempt to fail with "device not found".
                 await asyncio.sleep(1.0)
 
     if last_connect_err is not None:
