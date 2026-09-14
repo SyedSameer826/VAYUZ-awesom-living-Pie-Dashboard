@@ -279,18 +279,18 @@ async def pair_device(address: str, timeout: float = 30.0) -> dict:
 # ---------------------------------------------------------------------------
 # Combined Scan + Pair — eliminates Pr-mode timing gap
 # ---------------------------------------------------------------------------
-async def scan_and_pair(address: str, scan_timeout: float = 30.0) -> dict:
+async def scan_and_pair(address: str, scan_timeout: float = 15.0) -> dict:
     """
     Combined scan-and-pair in a single operation.
 
-    The cuff's Pr advertising window is short (~30-60 s). When scan and pair
-    run as separate subprocess calls, the gap between them (user reaction
-    time + bond clearing + agent setup) can exhaust the window before the
-    pair's own scan starts.
+    The UI scan endpoint already found this device, so the BlueZ daemon has
+    it cached.  We do a short re-scan (15 s default) to re-acquire the
+    advertisement, then connect the instant we see it.
 
-    This function clears bonds, registers the agent, then starts scanning.
-    The MOMENT the cuff is detected, it stops the scanner and immediately
-    connects + pairs — zero wasted time.
+    IMPORTANT: Do NOT reset the BLE adapter before the first scan — that
+    wipes the BlueZ device cache built by the earlier scan endpoint and
+    wastes the cuff's short Pr advertising window.  Adapter reset is only
+    used as a recovery step between retry attempts.
     """
     from bleak import BleakScanner, BleakClient
 
@@ -308,19 +308,9 @@ async def scan_and_pair(address: str, scan_timeout: float = 30.0) -> dict:
     )
     _dbg("Pi-side bond cleared")
 
-    # --- 1b. Reset BLE adapter to clear stale state from prior attempts ---
-    _dbg("Resetting BLE adapter ...")
-    subprocess.run(
-        ["bluetoothctl", "power", "off"],
-        capture_output=True, timeout=5, text=True, check=False,
-    )
-    time.sleep(1)
-    subprocess.run(
-        ["bluetoothctl", "power", "on"],
-        capture_output=True, timeout=5, text=True, check=False,
-    )
-    time.sleep(1)
-    _dbg("BLE adapter reset")
+    # NOTE: No adapter reset here — the scan endpoint already found this
+    # device and BlueZ has it cached.  Resetting now would clear that
+    # cache and waste the Pr window on a redundant discovery.
 
     # --- 2. Register D-Bus agent ---
     agent = _start_agent()
@@ -353,10 +343,12 @@ async def scan_and_pair(address: str, scan_timeout: float = 30.0) -> dict:
             return {
                 "success": False,
                 "detail": (
-                    f"BP monitor {address} not found. "
-                    "Make sure the cuff display shows 'Pr' (blinking). "
+                    f"BP monitor {address} not found during pairing scan. "
+                    "The cuff may have exited Pr mode. "
+                    "Put the cuff in Pr mode (hold START ~3s until 'Pr' "
+                    "blinks) and click Pair & Map IMMEDIATELY. "
                     "If you see ERR 10, remove batteries for 30 seconds, "
-                    "reinsert, hold START ~3s until 'Pr', then try again."
+                    "reinsert, then try again."
                 ),
             }
 

@@ -67,10 +67,11 @@ const BpPairModal = ({
           >
             <b>Instructions:</b>
             <ol style={{ margin: "6px 0 0", paddingLeft: 18 }}>
-              <li>Turn on the BP monitor and put it in <b>pairing mode</b> (hold the Bluetooth button until it blinks).</li>
-              <li>Keep it <b>within 1 meter</b> of the Pi during the entire process.</li>
-              <li>Click <b>Pair &amp; Map</b> immediately after selecting the device — do not wait, the monitor stops advertising after a short time.</li>
-              <li>If pairing fails, put the monitor back in pairing mode and try again.</li>
+              <li>Keep the BP monitor <b>within 1 meter</b> of the Pi and <b>take a measurement</b> (or press START) so it appears in the scan below.</li>
+              <li>Select the device and choose a <b>Resident</b>.</li>
+              <li><b>Now</b> put the cuff in pairing mode: hold <b>START ~3 seconds</b> until <b>Pr</b> blinks on the display.</li>
+              <li>Click <b>Pair &amp; Map</b> <b>immediately</b> — the cuff only advertises for ~30 seconds.</li>
+              <li>If you see <b>ERR 10</b>, remove batteries for 30 seconds, reinsert, and repeat from step 3.</li>
             </ol>
           </div>
 
