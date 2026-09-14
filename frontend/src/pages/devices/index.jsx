@@ -175,6 +175,11 @@ function Devices() {
       return;
     }
 
+    if (!cameraForm.resident) {
+      setError("Resident is required");
+      return;
+    }
+
     setIsSaving(true);
     setError("");
 
@@ -194,6 +199,7 @@ function Devices() {
         local_ip: ip,
         rtsp_url,
         home_id: homeId,
+        resident: cameraForm.resident,
         room: cameraForm.room.trim() || "living_room",
       });
       closeCameraForm();
