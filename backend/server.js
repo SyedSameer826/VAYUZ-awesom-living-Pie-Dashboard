@@ -770,11 +770,13 @@ app.post("/api/bp/pair", async (req, res) => {
       });
     }
 
-    // 1) BLE pair (bond) with retries.
+    // 1) BLE scan_pair (combined scan + bond) with retries.
     //    Stop bp-bridge first — it scans for known BP monitors and will
     //    grab the BLE connection before bp_provision.py can.
-    const MAX_BLE_RETRIES = 3;
-    const BLE_RETRY_DELAY_MS = 3000;
+    //    scan_pair eliminates the Pr-mode timing gap — it scans and
+    //    connects the instant the cuff is detected.
+    const MAX_BLE_RETRIES = 2;
+    const BLE_RETRY_DELAY_MS = 2000;
     let pairResult = null;
     let pairStderr = "";
 
@@ -796,8 +798,8 @@ app.post("/api/bp/pair", async (req, res) => {
       new Promise((resolve, reject) => {
         execFile(
           BP_PYTHON,
-          [BP_SCRIPT, "pair", "--address", address],
-          { timeout: 60000, cwd: path.join(__dirname, "bp") },
+          [BP_SCRIPT, "scan_pair", "--address", address],
+          { timeout: 90000, cwd: path.join(__dirname, "bp") },
           (err, stdout, stderr) => {
             pairStderr = stderr || "";
             if (pairStderr) console.error("[BP pair] stderr:\n" + pairStderr);
@@ -844,7 +846,7 @@ app.post("/api/bp/pair", async (req, res) => {
     if (!pairResult || !pairResult.success) {
       return res
         .status(422)
-        .json({ error: "BP pairing failed after 3 attempts", detail: pairResult, stderr: pairStderr });
+        .json({ error: "BP pairing failed — cuff may have exited Pr mode. Hold START ~3s until 'Pr' blinks, then try again immediately.", detail: pairResult, stderr: pairStderr });
     }
 
     // 2) Record locally so the device shows in the Pie device list.

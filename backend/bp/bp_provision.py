@@ -277,6 +277,143 @@ async def pair_device(address: str, timeout: float = 30.0) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Combined Scan + Pair — eliminates Pr-mode timing gap
+# ---------------------------------------------------------------------------
+async def scan_and_pair(address: str, scan_timeout: float = 30.0) -> dict:
+    """
+    Combined scan-and-pair in a single operation.
+
+    The cuff's Pr advertising window is short (~30-60 s). When scan and pair
+    run as separate subprocess calls, the gap between them (user reaction
+    time + bond clearing + agent setup) can exhaust the window before the
+    pair's own scan starts.
+
+    This function clears bonds, registers the agent, then starts scanning.
+    The MOMENT the cuff is detected, it stops the scanner and immediately
+    connects + pairs — zero wasted time.
+    """
+    from bleak import BleakScanner, BleakClient
+
+    _dbg(f"=== SCAN+PAIR for {address} ===")
+
+    # --- 1. Clear Pi-side stale bond (fast, no service restart) ---
+    _dbg("Clearing Pi-side bond ...")
+    subprocess.run(
+        ["bluetoothctl", "untrust", address],
+        capture_output=True, timeout=5, text=True, check=False,
+    )
+    subprocess.run(
+        ["bluetoothctl", "remove", address],
+        capture_output=True, timeout=5, text=True, check=False,
+    )
+    _dbg("Pi-side bond cleared")
+
+    # --- 2. Register D-Bus agent ---
+    agent = _start_agent()
+
+    try:
+        # --- 3. Targeted scan — callback fires the instant cuff is seen ---
+        ble_device = None
+        found = asyncio.Event()
+
+        def _on_detect(dev, adv):
+            nonlocal ble_device
+            if dev.address.upper() == address.upper():
+                ble_device = dev
+                _dbg(f"TARGET FOUND: {adv.local_name or dev.name or address} "
+                     f"RSSI={adv.rssi}")
+                found.set()
+
+        _dbg(f"Scanning for {address} ({scan_timeout}s) ...")
+        scanner = BleakScanner(detection_callback=_on_detect)
+        await scanner.start()
+        try:
+            await asyncio.wait_for(found.wait(), timeout=scan_timeout)
+        except asyncio.TimeoutError:
+            pass
+        finally:
+            await scanner.stop()
+
+        if ble_device is None:
+            _dbg("Device not found during scan")
+            return {
+                "success": False,
+                "detail": (
+                    f"BP monitor {address} not found. "
+                    "Make sure the cuff display shows 'Pr' (blinking). "
+                    "If you see ERR 10, remove batteries for 30 seconds, "
+                    "reinsert, hold START ~3s until 'Pr', then try again."
+                ),
+            }
+
+        # --- 4. IMMEDIATELY connect + pair (no second scan) ---
+        _dbg(f"Connecting to {address} (30s timeout) ...")
+        try:
+            async with BleakClient(ble_device, timeout=30.0) as client:
+                _dbg(f"CONNECTED to {address}")
+
+                # --- 5. Bond ---
+                try:
+                    paired = await client.pair()
+                    _dbg(f"pair(): {'OK' if paired else 'already bonded'}")
+                except Exception as pe:
+                    _dbg(f"pair() note: {_exc_detail(pe)} (often benign)")
+
+                # --- 6. Write DateTime ---
+                await client.write_gatt_char(
+                    DATETIME_CHAR, _datetime_payload(), response=True)
+                _dbg("DateTime written to 0x2A08")
+
+                # --- 7. Set buffer to 200 readings ---
+                buf_ok = False
+                try:
+                    await client.write_gatt_char(
+                        CUSTOM_CHAR, CMD_SET_BUFFER_200, response=True)
+                    _dbg("Buffer set to 200 (cmd 0xA6)")
+                    await client.write_gatt_char(
+                        CUSTOM_CHAR, CMD_READ_BUFFER, response=True)
+                    val = await client.read_gatt_char(CUSTOM_CHAR)
+                    _dbg(f"Buffer readback: {val.hex()}")
+                    buf_ok = True
+                except Exception as be:
+                    _dbg(f"Buffer config failed: {_exc_detail(be)}")
+
+                # --- 8. Trust ---
+                subprocess.run(
+                    ["bluetoothctl", "trust", address],
+                    capture_output=True, timeout=5, text=True, check=False,
+                )
+                _dbg("Device trusted")
+
+                _dbg("*** PAIRING COMPLETE ***")
+                return {
+                    "success": True,
+                    "address": address,
+                    "detail": "paired",
+                    "buffer_configured": buf_ok,
+                    "bp_service": True,
+                }
+
+        except Exception as e:
+            detail = _exc_detail(e)
+            _dbg(f"BLE error: {detail}")
+            if "timeout" in detail.lower():
+                return {
+                    "success": False,
+                    "detail": (
+                        "Connection timed out — the cuff may have stale "
+                        "bond keys (ERR 10). Remove the cuff batteries for "
+                        "30 seconds to clear its bond memory, reinsert, "
+                        "hold START until 'Pr' blinks, then retry."
+                    ),
+                }
+            return {"success": False, "detail": f"BLE error: {detail}"}
+
+    finally:
+        _stop_agent(agent)
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 def main():
@@ -289,6 +426,10 @@ def main():
     pair_p = sub.add_parser("pair")
     pair_p.add_argument("--address", required=True)
     pair_p.add_argument("--timeout", type=float, default=30.0)
+
+    scan_pair_p = sub.add_parser("scan_pair")
+    scan_pair_p.add_argument("--address", required=True)
+    scan_pair_p.add_argument("--timeout", type=float, default=30.0)
 
     args = parser.parse_args()
 
@@ -311,6 +452,17 @@ def main():
             _dbg(f"Pair exception: {_exc_detail(e)}")
             print(json.dumps({
                 "success": False, "detail": f"pair error: {_exc_detail(e)}",
+            }))
+
+    elif args.command == "scan_pair":
+        try:
+            result = asyncio.run(scan_and_pair(
+                address=args.address, scan_timeout=args.timeout))
+            print(json.dumps(result))
+        except Exception as e:
+            _dbg(f"scan_pair exception: {_exc_detail(e)}")
+            print(json.dumps({
+                "success": False, "detail": f"scan_pair error: {_exc_detail(e)}",
             }))
 
     else:
