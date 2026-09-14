@@ -1,0 +1,307 @@
+{
+  "device": {
+    "serial_number": "332014813081",
+    "type": "GLK Vital Tracker",
+    "connection": "WiFi, TCP port 8766"
+  },
+  "session": {
+    "session_id": "sleep_20250910_2330",
+    "start_time": "2025-09-09 11:30:00 PM IST",
+    "end_time": "2025-09-10 06:45:00 AM IST",
+    "total_duration": "7 hours 15 minutes"
+  },
+  "sleep_logs": [
+    {
+      "time": "2025-09-09 11:30:00 PM IST",
+      "heart_rate": 78,
+      "respiratory_rate": 18,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "Awake",
+      "minutes_into_session": 0
+    },
+    {
+      "time": "2025-09-09 11:35:00 PM IST",
+      "heart_rate": 74,
+      "respiratory_rate": 17,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "Awake",
+      "minutes_into_session": 5
+    },
+    {
+      "time": "2025-09-09 11:40:00 PM IST",
+      "heart_rate": 70,
+      "respiratory_rate": 16,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "Light Sleep",
+      "minutes_into_session": 10
+    },
+    {
+      "time": "2025-09-09 11:50:00 PM IST",
+      "heart_rate": 66,
+      "respiratory_rate": 15,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "Light Sleep",
+      "minutes_into_session": 20
+    },
+    {
+      "time": "2025-09-10 12:00:00 AM IST",
+      "heart_rate": 58,
+      "respiratory_rate": 12,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "Deep Sleep",
+      "minutes_into_session": 30
+    },
+    {
+      "time": "2025-09-10 12:15:00 AM IST",
+      "heart_rate": 55,
+      "respiratory_rate": 11,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "Deep Sleep",
+      "minutes_into_session": 45
+    },
+    {
+      "time": "2025-09-10 12:30:00 AM IST",
+      "heart_rate": 56,
+      "respiratory_rate": 13,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "Light Sleep",
+      "minutes_into_session": 60
+    },
+    {
+      "time": "2025-09-10 12:40:00 AM IST",
+      "heart_rate": 62,
+      "respiratory_rate": 15,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "REM Sleep",
+      "minutes_into_session": 70
+    },
+    {
+      "time": "2025-09-10 12:50:00 AM IST",
+      "heart_rate": 65,
+      "respiratory_rate": 16,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "REM Sleep",
+      "minutes_into_session": 80
+    },
+    {
+      "time": "2025-09-10 01:00:00 AM IST",
+      "heart_rate": 63,
+      "respiratory_rate": 15,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "REM Sleep",
+      "minutes_into_session": 90
+    },
+    {
+      "time": "2025-09-10 01:10:00 AM IST",
+      "heart_rate": 60,
+      "respiratory_rate": 14,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "Light Sleep",
+      "minutes_into_session": 100
+    },
+    {
+      "time": "2025-09-10 01:25:00 AM IST",
+      "heart_rate": 54,
+      "respiratory_rate": 11,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "Deep Sleep",
+      "minutes_into_session": 115
+    },
+    {
+      "time": "2025-09-10 01:45:00 AM IST",
+      "heart_rate": 56,
+      "respiratory_rate": 12,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "Deep Sleep",
+      "minutes_into_session": 135
+    },
+    {
+      "time": "2025-09-10 02:00:00 AM IST",
+      "heart_rate": 59,
+      "respiratory_rate": 14,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "Light Sleep",
+      "minutes_into_session": 150
+    },
+    {
+      "time": "2025-09-10 02:10:00 AM IST",
+      "heart_rate": 64,
+      "respiratory_rate": 16,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "REM Sleep",
+      "minutes_into_session": 160
+    },
+    {
+      "time": "2025-09-10 02:25:00 AM IST",
+      "heart_rate": 66,
+      "respiratory_rate": 16,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "REM Sleep",
+      "minutes_into_session": 175
+    },
+    {
+      "time": "2025-09-10 02:40:00 AM IST",
+      "heart_rate": 61,
+      "respiratory_rate": 14,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "Light Sleep",
+      "minutes_into_session": 190
+    },
+    {
+      "time": "2025-09-10 03:00:00 AM IST",
+      "heart_rate": 53,
+      "respiratory_rate": 11,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "Deep Sleep",
+      "minutes_into_session": 210
+    },
+    {
+      "time": "2025-09-10 03:20:00 AM IST",
+      "heart_rate": 55,
+      "respiratory_rate": 12,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "Deep Sleep",
+      "minutes_into_session": 230
+    },
+    {
+      "time": "2025-09-10 03:35:00 AM IST",
+      "heart_rate": 58,
+      "respiratory_rate": 13,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "Light Sleep",
+      "minutes_into_session": 245
+    },
+    {
+      "time": "2025-09-10 03:50:00 AM IST",
+      "heart_rate": 63,
+      "respiratory_rate": 15,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "REM Sleep",
+      "minutes_into_session": 260
+    },
+    {
+      "time": "2025-09-10 04:10:00 AM IST",
+      "heart_rate": 67,
+      "respiratory_rate": 17,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "REM Sleep",
+      "minutes_into_session": 280
+    },
+    {
+      "time": "2025-09-10 04:30:00 AM IST",
+      "heart_rate": 60,
+      "respiratory_rate": 14,
+      "battery": 100,
+      "body_status": "in_bed",
+      "sleep_stage": "Light Sleep",
+      "minutes_into_session": 300
+    },
+    {
+      "time": "2025-09-10 04:45:00 AM IST",
+      "heart_rate": 52,
+      "respiratory_rate": 11,
+      "battery": 99,
+      "body_status": "in_bed",
+      "sleep_stage": "Deep Sleep",
+      "minutes_into_session": 315
+    },
+    {
+      "time": "2025-09-10 05:05:00 AM IST",
+      "heart_rate": 57,
+      "respiratory_rate": 13,
+      "battery": 99,
+      "body_status": "in_bed",
+      "sleep_stage": "Light Sleep",
+      "minutes_into_session": 335
+    },
+    {
+      "time": "2025-09-10 05:15:00 AM IST",
+      "heart_rate": 65,
+      "respiratory_rate": 16,
+      "battery": 99,
+      "body_status": "in_bed",
+      "sleep_stage": "REM Sleep",
+      "minutes_into_session": 345
+    },
+    {
+      "time": "2025-09-10 05:40:00 AM IST",
+      "heart_rate": 68,
+      "respiratory_rate": 17,
+      "battery": 99,
+      "body_status": "in_bed",
+      "sleep_stage": "REM Sleep",
+      "minutes_into_session": 370
+    },
+    {
+      "time": "2025-09-10 06:00:00 AM IST",
+      "heart_rate": 64,
+      "respiratory_rate": 15,
+      "battery": 99,
+      "body_status": "in_bed",
+      "sleep_stage": "Light Sleep",
+      "minutes_into_session": 390
+    },
+    {
+      "time": "2025-09-10 06:20:00 AM IST",
+      "heart_rate": 70,
+      "respiratory_rate": 17,
+      "battery": 99,
+      "body_status": "in_bed",
+      "sleep_stage": "Awake",
+      "minutes_into_session": 410
+    },
+    {
+      "time": "2025-09-10 06:35:00 AM IST",
+      "heart_rate": 75,
+      "respiratory_rate": 18,
+      "battery": 99,
+      "body_status": "in_bed",
+      "sleep_stage": "Awake",
+      "minutes_into_session": 425
+    },
+    {
+      "time": "2025-09-10 06:45:00 AM IST",
+      "heart_rate": 80,
+      "respiratory_rate": 19,
+      "battery": 99,
+      "body_status": "out_of_bed",
+      "sleep_stage": "Awake",
+      "minutes_into_session": 435
+    }
+  ],
+  "session_summary": {
+    "total_time_in_bed": "7 hours 15 minutes",
+    "total_sleep_time": "6 hours 45 minutes",
+    "awake": "30 minutes",
+    "light_sleep": "2 hours 5 minutes",
+    "deep_sleep": "1 hour 50 minutes",
+    "rem_sleep": "2 hours 20 minutes",
+    "sleep_cycles_completed": 4,
+    "first_rem_at": "70 minutes into session",
+    "average_heart_rate_during_sleep": 60,
+    "lowest_heart_rate": 52,
+    "average_respiratory_rate_during_sleep": 14
+  }
+}

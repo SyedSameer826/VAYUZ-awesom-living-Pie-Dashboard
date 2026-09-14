@@ -1,8 +1,6 @@
 import { BASE_URL } from "../constants/auth";
 const API_BASE_URL = "/api/";
-// Main backend (EC2). Overridable at build time via VITE_BACKEND_URL.
-// const REMOTE_BACKEND =
-//   import.meta.env.VITE_BACKEND_URL || "http://51.20.102.125";
+
 const getAuthHeaders = () => {
   const token = JSON.parse(window.localStorage.getItem("token"));
 
@@ -62,17 +60,31 @@ export const assignDeviceName = async ({
   zigbee_ieee,
   zigbee_name,
   zigbee_type,
+  resident,
   home_id,
+  paired_motion_ieee,
+  paired_window_ieee,
 }) => {
+  const payload = {
+    zigbee_ieee,
+    zigbee_name,
+    zigbee_type,
+    resident,
+    home_id,
+  };
+
+  if (paired_motion_ieee) {
+    payload.paired_motion_ieee = paired_motion_ieee;
+  }
+
+  if (paired_window_ieee) {
+    payload.paired_window_ieee = paired_window_ieee;
+  }
+
   const response = await fetch(`${API_BASE_URL}assign-name`, {
     method: "POST",
     headers: getAuthHeaders(),
-    body: JSON.stringify({
-      zigbee_ieee,
-      zigbee_name,
-      zigbee_type,
-      home_id,
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -187,6 +199,35 @@ export const pairGlk = async ({
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     throw new Error(data.error || "GLK pairing failed");
+  }
+  return data;
+};
+
+// Scan (over BLE) for Blood Pressure monitors advertising service 0x1810.
+export const scanBp = async () => {
+  const response = await fetch(`${API_BASE_URL}bp/scan`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "BP scan failed");
+  }
+  return data; // { success, devices: [{ name, address, rssi }] }
+};
+
+// Bond with a BP monitor and map it to a resident on the cloud backend.
+export const pairBp = async ({ address, name, resident }) => {
+  const response = await fetch(`${API_BASE_URL}bp/pair`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ address, name, resident }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "BP pairing failed");
   }
   return data;
 };

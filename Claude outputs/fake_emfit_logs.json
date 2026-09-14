@@ -1,0 +1,6122 @@
+[
+  {
+    "_id": {
+      "$oid": "221c0cb1faaff0d81039805d"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T02:00:00.776320+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "66",
+    "respiration_rate": "14",
+    "activity": 9,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618460,
+    "createdAt": {
+      "$date": "2026-09-04T20:30:00.071Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T20:30:00.071Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "98f91166c79635c4c0f62a06"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T02:05:00.177188+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "70",
+    "respiration_rate": "14",
+    "activity": 15,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618470,
+    "createdAt": {
+      "$date": "2026-09-04T20:35:00.094Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T20:35:00.094Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "4dae44d64acf048408e1e0c0"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T02:10:00.158181+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "68",
+    "respiration_rate": "16",
+    "activity": 12,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618480,
+    "createdAt": {
+      "$date": "2026-09-04T20:40:00.112Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T20:40:00.112Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "16b09bbdf313b07a4fa438d5"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T02:15:00.829016+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "66",
+    "respiration_rate": "15",
+    "activity": 9,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618490,
+    "createdAt": {
+      "$date": "2026-09-04T20:45:00.131Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T20:45:00.131Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "fb4e1592b5ff76678716950a"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T02:20:00.811214+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "53",
+    "respiration_rate": "11",
+    "activity": 2,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618500,
+    "createdAt": {
+      "$date": "2026-09-04T20:50:00.192Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T20:50:00.192Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "9a84d2c6de6ef7091ba9c680"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T02:25:00.715656+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "56",
+    "respiration_rate": "12",
+    "activity": 4,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618510,
+    "createdAt": {
+      "$date": "2026-09-04T20:55:00.072Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T20:55:00.072Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "a9434606061a3b8a3b1afaf4"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T02:30:00.920040+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "58",
+    "respiration_rate": "11",
+    "activity": 5,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618520,
+    "createdAt": {
+      "$date": "2026-09-04T21:00:00.094Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T21:00:00.094Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "3bcc266fa935b391848ca857"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T02:35:00.276861+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "55",
+    "respiration_rate": "13",
+    "activity": 4,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618530,
+    "createdAt": {
+      "$date": "2026-09-04T21:05:00.121Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T21:05:00.121Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "2d9cc9850808040ae0f2b058"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T02:40:00.307134+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "54",
+    "respiration_rate": "13",
+    "activity": 4,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618540,
+    "createdAt": {
+      "$date": "2026-09-04T21:10:00.099Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T21:10:00.099Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "465d6b6df0408e042f8ca898"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T02:45:00.416230+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "58",
+    "respiration_rate": "14",
+    "activity": 2,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618550,
+    "createdAt": {
+      "$date": "2026-09-04T21:15:00.064Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T21:15:00.064Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "cce71e5712ed27012101b510"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T02:50:00.629834+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "66",
+    "respiration_rate": "14",
+    "activity": 5,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618560,
+    "createdAt": {
+      "$date": "2026-09-04T21:20:00.134Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T21:20:00.134Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "f5be92141720a77a9afa7f5b"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T02:55:00.403332+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "66",
+    "respiration_rate": "16",
+    "activity": 18,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618570,
+    "createdAt": {
+      "$date": "2026-09-04T21:25:00.190Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T21:25:00.190Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "c0f4c86c915f6577e65a124f"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T03:00:00.321470+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "62",
+    "respiration_rate": "14",
+    "activity": 9,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618580,
+    "createdAt": {
+      "$date": "2026-09-04T21:30:00.063Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T21:30:00.063Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "2b194c673d9e8e6f162ca0da"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T03:05:00.204511+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "68",
+    "respiration_rate": "17",
+    "activity": 17,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618590,
+    "createdAt": {
+      "$date": "2026-09-04T21:35:00.084Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T21:35:00.084Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "ef228210a5b615696b15bb3a"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T03:10:00.980860+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "17",
+    "activity": 14,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618600,
+    "createdAt": {
+      "$date": "2026-09-04T21:40:00.103Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T21:40:00.103Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "4e3c44d8815d758db90ccb66"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T03:15:00.626084+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "70",
+    "respiration_rate": "16",
+    "activity": 8,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618610,
+    "createdAt": {
+      "$date": "2026-09-04T21:45:00.142Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T21:45:00.142Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "9bc8a8079915ae9deb5be40f"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T03:20:00.982894+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "69",
+    "respiration_rate": "16",
+    "activity": 11,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618620,
+    "createdAt": {
+      "$date": "2026-09-04T21:50:00.090Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T21:50:00.090Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "f6d81296926bff9162711897"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T03:25:00.805332+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "64",
+    "respiration_rate": "15",
+    "activity": 19,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618630,
+    "createdAt": {
+      "$date": "2026-09-04T21:55:00.069Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T21:55:00.069Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "2dba9dc57e25374c8ad5934c"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T03:30:00.553487+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "70",
+    "respiration_rate": "15",
+    "activity": 12,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618640,
+    "createdAt": {
+      "$date": "2026-09-04T22:00:00.090Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T22:00:00.090Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "90645d5c3506682ba7a086cc"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T03:35:00.324519+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "63",
+    "respiration_rate": "15",
+    "activity": 11,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618650,
+    "createdAt": {
+      "$date": "2026-09-04T22:05:00.180Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T22:05:00.180Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "123a538f3ae313bcc9e07743"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T03:40:00.320800+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "68",
+    "respiration_rate": "14",
+    "activity": 5,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618660,
+    "createdAt": {
+      "$date": "2026-09-04T22:10:00.086Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T22:10:00.086Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "993efd3081e124f60695037f"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T03:45:00.105601+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "66",
+    "respiration_rate": "14",
+    "activity": 8,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618670,
+    "createdAt": {
+      "$date": "2026-09-04T22:15:00.062Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T22:15:00.062Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "492d82178a91aefc394a26ad"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T03:50:00.325039+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "54",
+    "respiration_rate": "14",
+    "activity": 1,
+    "ii_heart_beat": null,
+    "snoring": true,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618680,
+    "createdAt": {
+      "$date": "2026-09-04T22:20:00.184Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T22:20:00.184Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "dcf14b6a63edbe79c83e24dc"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T03:55:00.730166+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "58",
+    "respiration_rate": "11",
+    "activity": 3,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618690,
+    "createdAt": {
+      "$date": "2026-09-04T22:25:00.054Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T22:25:00.054Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "c1af0ae6ac13906f962b0e17"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T04:00:00.725774+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "52",
+    "respiration_rate": "12",
+    "activity": 5,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618700,
+    "createdAt": {
+      "$date": "2026-09-04T22:30:00.142Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T22:30:00.142Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "c835c394a6d6b16d01de1014"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T04:05:00.379297+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "53",
+    "respiration_rate": "14",
+    "activity": 5,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618710,
+    "createdAt": {
+      "$date": "2026-09-04T22:35:00.120Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T22:35:00.120Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "ec36b16979ad590ee6869918"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T04:10:00.686445+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "68",
+    "respiration_rate": "15",
+    "activity": 6,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618720,
+    "createdAt": {
+      "$date": "2026-09-04T22:40:00.168Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T22:40:00.168Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "2fd42bb8175588dc98be674d"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T04:15:00.519794+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "67",
+    "respiration_rate": "16",
+    "activity": 12,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618730,
+    "createdAt": {
+      "$date": "2026-09-04T22:45:00.081Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T22:45:00.081Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "9d70eca23198ca7080bd6adf"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T04:20:00.831079+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "66",
+    "respiration_rate": "17",
+    "activity": 16,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618740,
+    "createdAt": {
+      "$date": "2026-09-04T22:50:00.185Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T22:50:00.185Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "cbd1d268371da507c05ada1c"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T04:25:00.440361+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "63",
+    "respiration_rate": "17",
+    "activity": 12,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618750,
+    "createdAt": {
+      "$date": "2026-09-04T22:55:00.107Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T22:55:00.107Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "c83be598af3adc38ab3de982"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T04:30:00.449721+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "64",
+    "respiration_rate": "15",
+    "activity": 12,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618760,
+    "createdAt": {
+      "$date": "2026-09-04T23:00:00.110Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T23:00:00.110Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "07600733265ec591765244ed"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T04:35:00.906841+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "66",
+    "respiration_rate": "16",
+    "activity": 12,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618770,
+    "createdAt": {
+      "$date": "2026-09-04T23:05:00.148Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T23:05:00.148Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "5b9b1d2a74047e95d4345f60"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T04:40:00.608900+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "69",
+    "respiration_rate": "17",
+    "activity": 19,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618780,
+    "createdAt": {
+      "$date": "2026-09-04T23:10:00.167Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T23:10:00.167Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "645cd982815ae01f0c158d46"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T04:45:00.743498+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "17",
+    "activity": 13,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618790,
+    "createdAt": {
+      "$date": "2026-09-04T23:15:00.051Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T23:15:00.051Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "4fd0e877682717952245f682"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T04:50:00.579292+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "67",
+    "respiration_rate": "15",
+    "activity": 14,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618800,
+    "createdAt": {
+      "$date": "2026-09-04T23:20:00.142Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T23:20:00.142Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "080f71ba54b9021a0f85cee8"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T04:55:00.195000+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "69",
+    "respiration_rate": "17",
+    "activity": 8,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618810,
+    "createdAt": {
+      "$date": "2026-09-04T23:25:00.115Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T23:25:00.115Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "622c70f66aa4ceaed9062def"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T05:00:00.663083+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "15",
+    "activity": 8,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618820,
+    "createdAt": {
+      "$date": "2026-09-04T23:30:00.156Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T23:30:00.156Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "5a3027ebb76f76dc77dfbb75"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T05:05:00.601802+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "70",
+    "respiration_rate": "15",
+    "activity": 8,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618830,
+    "createdAt": {
+      "$date": "2026-09-04T23:35:00.158Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T23:35:00.158Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "e29b3416a418c7c01dcecf90"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T05:10:00.589992+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "14",
+    "activity": 17,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618840,
+    "createdAt": {
+      "$date": "2026-09-04T23:40:00.066Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T23:40:00.066Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "7861ddec7c452fa734ac2769"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T05:15:00.866482+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "15",
+    "activity": 6,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618850,
+    "createdAt": {
+      "$date": "2026-09-04T23:45:00.092Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T23:45:00.092Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "25e8db6082b128ad3dc9c33c"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T05:20:00.267164+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "52",
+    "respiration_rate": "13",
+    "activity": 3,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618860,
+    "createdAt": {
+      "$date": "2026-09-04T23:50:00.155Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T23:50:00.155Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "0bc9581b0610e7e089e71f73"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T05:25:00.742487+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "57",
+    "respiration_rate": "13",
+    "activity": 5,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618870,
+    "createdAt": {
+      "$date": "2026-09-04T23:55:00.149Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-04T23:55:00.149Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "669755501814be749728bc7b"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T05:30:00.137091+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "54",
+    "respiration_rate": "11",
+    "activity": 4,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618880,
+    "createdAt": {
+      "$date": "2026-09-05T00:00:00.180Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T00:00:00.180Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "418658a31f6e52ac5040c580"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T05:35:00.561646+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "52",
+    "respiration_rate": "12",
+    "activity": 5,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618890,
+    "createdAt": {
+      "$date": "2026-09-05T00:05:00.109Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T00:05:00.109Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "597b88ae7087c1a5a70fcf29"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T05:40:00.942045+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "62",
+    "respiration_rate": "17",
+    "activity": 12,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618900,
+    "createdAt": {
+      "$date": "2026-09-05T00:10:00.126Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T00:10:00.126Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "f23290db83c039a53469490f"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T05:45:00.270464+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "15",
+    "activity": 10,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618910,
+    "createdAt": {
+      "$date": "2026-09-05T00:15:00.063Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T00:15:00.063Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "8cd8c146e5d43374245fbfa8"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T05:50:00.889611+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "63",
+    "respiration_rate": "14",
+    "activity": 16,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618920,
+    "createdAt": {
+      "$date": "2026-09-05T00:20:00.138Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T00:20:00.138Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "3f98a3bd054a95cb5559706f"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T05:55:00.537631+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "69",
+    "respiration_rate": "15",
+    "activity": 20,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618930,
+    "createdAt": {
+      "$date": "2026-09-05T00:25:00.124Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T00:25:00.124Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "2be7e6ece0645c97bb61605f"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T06:00:00.435985+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "69",
+    "respiration_rate": "14",
+    "activity": 10,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618940,
+    "createdAt": {
+      "$date": "2026-09-05T00:30:00.178Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T00:30:00.178Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "66fa69cbaa1d45a24f72e86e"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T06:05:00.129516+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "69",
+    "respiration_rate": "17",
+    "activity": 17,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618950,
+    "createdAt": {
+      "$date": "2026-09-05T00:35:00.076Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T00:35:00.076Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "35c0bc2a8951df93359f96c1"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T06:10:00.536515+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "66",
+    "respiration_rate": "17",
+    "activity": 17,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618960,
+    "createdAt": {
+      "$date": "2026-09-05T00:40:00.136Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T00:40:00.136Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "b5a1c771694d65f4a4bb61a4"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T06:15:00.548088+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "64",
+    "respiration_rate": "14",
+    "activity": 12,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618970,
+    "createdAt": {
+      "$date": "2026-09-05T00:45:00.074Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T00:45:00.074Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "5e1021b3f954b9e503b7bb82"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T06:20:00.958105+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "68",
+    "respiration_rate": "16",
+    "activity": 12,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618980,
+    "createdAt": {
+      "$date": "2026-09-05T00:50:00.162Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T00:50:00.162Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "fef63930daa8a98776c81095"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T06:25:00.570497+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "64",
+    "respiration_rate": "14",
+    "activity": 12,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59618990,
+    "createdAt": {
+      "$date": "2026-09-05T00:55:00.146Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T00:55:00.146Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "5e1190cfeed65abdd2a44122"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T06:30:00.825543+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "69",
+    "respiration_rate": "17",
+    "activity": 16,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619000,
+    "createdAt": {
+      "$date": "2026-09-05T01:00:00.068Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T01:00:00.068Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "47b4123f687b62f1463b2905"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T06:35:00.647877+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "63",
+    "respiration_rate": "17",
+    "activity": 17,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619010,
+    "createdAt": {
+      "$date": "2026-09-05T01:05:00.080Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T01:05:00.080Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "bdb53c922400c7d67c2ef335"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T06:40:00.887848+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "69",
+    "respiration_rate": "14",
+    "activity": 5,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619020,
+    "createdAt": {
+      "$date": "2026-09-05T01:10:00.086Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T01:10:00.086Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "e7a85379711afbac170b17d9"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T06:45:00.342362+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "66",
+    "respiration_rate": "16",
+    "activity": 15,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619030,
+    "createdAt": {
+      "$date": "2026-09-05T01:15:00.090Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T01:15:00.090Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6229bc47fa742e17380be6a2"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T06:50:00.620108+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "57",
+    "respiration_rate": "14",
+    "activity": 1,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619040,
+    "createdAt": {
+      "$date": "2026-09-05T01:20:00.171Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T01:20:00.171Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "9835f58bdc9279b469d99f7f"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T06:55:00.292410+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "55",
+    "respiration_rate": "11",
+    "activity": 4,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619050,
+    "createdAt": {
+      "$date": "2026-09-05T01:25:00.146Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T01:25:00.146Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "c08f53ac129ca9a12f78bd6d"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T07:00:00.363376+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "57",
+    "respiration_rate": "13",
+    "activity": 0,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619060,
+    "createdAt": {
+      "$date": "2026-09-05T01:30:00.092Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T01:30:00.092Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "998ba56664ed1f0010a57f3e"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T07:05:00.169052+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "55",
+    "respiration_rate": "12",
+    "activity": 3,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619070,
+    "createdAt": {
+      "$date": "2026-09-05T01:35:00.151Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T01:35:00.151Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "39d914861eb68a9d525ff2e4"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T07:10:00.626755+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "67",
+    "respiration_rate": "16",
+    "activity": 6,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619080,
+    "createdAt": {
+      "$date": "2026-09-05T01:40:00.170Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T01:40:00.170Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "9e106fe1c33f4fe96b8c0d53"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T07:15:00.419349+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "62",
+    "respiration_rate": "15",
+    "activity": 5,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619090,
+    "createdAt": {
+      "$date": "2026-09-05T01:45:00.171Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T01:45:00.171Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "5ef58eece991d4eae1c8337a"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T07:20:00.706584+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "64",
+    "respiration_rate": "17",
+    "activity": 18,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619100,
+    "createdAt": {
+      "$date": "2026-09-05T01:50:00.197Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T01:50:00.197Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "e7c26ccdd8ad49d7694c99a7"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T07:25:00.656218+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "70",
+    "respiration_rate": "15",
+    "activity": 10,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619110,
+    "createdAt": {
+      "$date": "2026-09-05T01:55:00.173Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T01:55:00.173Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "5ee2ca6007837dfde803d20c"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T07:30:00.460304+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "69",
+    "respiration_rate": "15",
+    "activity": 15,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619120,
+    "createdAt": {
+      "$date": "2026-09-05T02:00:00.131Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T02:00:00.131Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "cf254d6a7d462d0253e75fac"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T07:35:00.762302+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "68",
+    "respiration_rate": "15",
+    "activity": 13,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619130,
+    "createdAt": {
+      "$date": "2026-09-05T02:05:00.174Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T02:05:00.174Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "e91691843c95f7d7652231e1"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T07:40:00.827235+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "68",
+    "respiration_rate": "16",
+    "activity": 20,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619140,
+    "createdAt": {
+      "$date": "2026-09-05T02:10:00.178Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T02:10:00.178Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "9693342a30e426e2afcea22b"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T07:45:00.303512+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "16",
+    "activity": 9,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619150,
+    "createdAt": {
+      "$date": "2026-09-05T02:15:00.145Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T02:15:00.145Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "d60d2dec8c600bd9ab7a644b"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T07:50:00.387784+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "68",
+    "respiration_rate": "15",
+    "activity": 14,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619160,
+    "createdAt": {
+      "$date": "2026-09-05T02:20:00.145Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T02:20:00.145Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "3374667d02853bdb385e64ed"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T07:55:00.791106+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "69",
+    "respiration_rate": "16",
+    "activity": 20,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619170,
+    "createdAt": {
+      "$date": "2026-09-05T02:25:00.153Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T02:25:00.153Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6ed3500809b6ef009570386d"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T08:00:00.762824+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "64",
+    "respiration_rate": "17",
+    "activity": 9,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619180,
+    "createdAt": {
+      "$date": "2026-09-05T02:30:00.087Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T02:30:00.087Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "abbaa1ffdc5ef04361e27821"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T08:05:00.632196+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "16",
+    "activity": 5,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619190,
+    "createdAt": {
+      "$date": "2026-09-05T02:35:00.065Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T02:35:00.065Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "13a18071c68dc7996a5eea97"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T08:10:00.550654+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "15",
+    "activity": 8,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619200,
+    "createdAt": {
+      "$date": "2026-09-05T02:40:00.063Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T02:40:00.063Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "2bef38a484356eb87aecc874"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T08:15:00.281968+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "14",
+    "activity": 7,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619210,
+    "createdAt": {
+      "$date": "2026-09-05T02:45:00.145Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T02:45:00.145Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "5e0f84ae761785d32a512bc0"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T08:20:00.694860+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "52",
+    "respiration_rate": "11",
+    "activity": 0,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619220,
+    "createdAt": {
+      "$date": "2026-09-05T02:50:00.071Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T02:50:00.071Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6cc4dcc9e69ac17ed7100905"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T08:25:00.237864+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "57",
+    "respiration_rate": "11",
+    "activity": 0,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619230,
+    "createdAt": {
+      "$date": "2026-09-05T02:55:00.060Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T02:55:00.060Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "a3e33cc9f9b8112ebc44c334"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T08:30:00.979995+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "58",
+    "respiration_rate": "11",
+    "activity": 4,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619240,
+    "createdAt": {
+      "$date": "2026-09-05T03:00:00.185Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T03:00:00.185Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "147a2d889f1ee41cb90b470a"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T08:35:00.390865+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "58",
+    "respiration_rate": "11",
+    "activity": 5,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619250,
+    "createdAt": {
+      "$date": "2026-09-05T03:05:00.140Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T03:05:00.140Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "0edf53d627d5d3e39a95b8ec"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T08:40:00.718904+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "67",
+    "respiration_rate": "14",
+    "activity": 10,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619260,
+    "createdAt": {
+      "$date": "2026-09-05T03:10:00.200Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T03:10:00.200Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "89c819f3cebca9674b7cf8f1"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T08:45:00.837833+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "66",
+    "respiration_rate": "14",
+    "activity": 16,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619270,
+    "createdAt": {
+      "$date": "2026-09-05T03:15:00.056Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T03:15:00.056Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "c09610d00977cafacd72866d"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T08:50:00.839955+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "62",
+    "respiration_rate": "17",
+    "activity": 16,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619280,
+    "createdAt": {
+      "$date": "2026-09-05T03:20:00.187Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T03:20:00.187Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "4fda37d3305517fc8a9ca47e"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T08:55:00.208219+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "68",
+    "respiration_rate": "16",
+    "activity": 20,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619290,
+    "createdAt": {
+      "$date": "2026-09-05T03:25:00.088Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T03:25:00.088Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "47aa2dcef1206c8c23801be3"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T09:00:00.231843+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "63",
+    "respiration_rate": "17",
+    "activity": 17,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619300,
+    "createdAt": {
+      "$date": "2026-09-05T03:30:00.198Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T03:30:00.198Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "28f7d7842b0e1fedaf2ce764"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T09:05:00.704781+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "67",
+    "respiration_rate": "15",
+    "activity": 17,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619310,
+    "createdAt": {
+      "$date": "2026-09-05T03:35:00.138Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T03:35:00.138Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "02d9ac27e151d1a1850b21d6"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T09:10:00.766292+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "64",
+    "respiration_rate": "17",
+    "activity": 11,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619320,
+    "createdAt": {
+      "$date": "2026-09-05T03:40:00.185Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T03:40:00.185Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "92eed919674b2bf9ce12ab78"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T09:15:00.689253+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "17",
+    "activity": 12,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619330,
+    "createdAt": {
+      "$date": "2026-09-05T03:45:00.073Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T03:45:00.073Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "d562d0f724c8a5a6e8c91443"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T09:20:00.631683+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "73",
+    "respiration_rate": "18",
+    "activity": 31,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619340,
+    "createdAt": {
+      "$date": "2026-09-05T03:50:00.099Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T03:50:00.099Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "b7e04cd4911c3739f51ec29e"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-05T09:25:00.234062+05:30",
+    "in_bed": false,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": true,
+    "heart_rate": "73",
+    "respiration_rate": "16",
+    "activity": 25,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "awake",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59619350,
+    "createdAt": {
+      "$date": "2026-09-05T03:55:00.111Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T03:55:00.111Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "4990a0c278526bf485d54a0a"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T01:00:00.331472+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "63",
+    "respiration_rate": "14",
+    "activity": 17,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621220,
+    "createdAt": {
+      "$date": "2026-09-05T19:30:00.148Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T19:30:00.148Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "f951b9f70436e4c9b50f94aa"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T01:05:00.670035+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "67",
+    "respiration_rate": "17",
+    "activity": 15,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621230,
+    "createdAt": {
+      "$date": "2026-09-05T19:35:00.054Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T19:35:00.054Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "4dd152e863bbdd945aa274e6"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T01:10:00.863894+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "63",
+    "respiration_rate": "16",
+    "activity": 7,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621240,
+    "createdAt": {
+      "$date": "2026-09-05T19:40:00.063Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T19:40:00.063Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "44ff3395794dea7d4a1efbdf"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T01:15:00.251266+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "69",
+    "respiration_rate": "14",
+    "activity": 6,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621250,
+    "createdAt": {
+      "$date": "2026-09-05T19:45:00.183Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T19:45:00.183Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "fa85e518f047fd51a6eb998e"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T01:20:00.498332+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "52",
+    "respiration_rate": "14",
+    "activity": 3,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621260,
+    "createdAt": {
+      "$date": "2026-09-05T19:50:00.096Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T19:50:00.096Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "10c8f67ad006e4a870801bf3"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T01:25:00.833273+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "56",
+    "respiration_rate": "13",
+    "activity": 5,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621270,
+    "createdAt": {
+      "$date": "2026-09-05T19:55:00.137Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T19:55:00.137Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "3241afe3f340ac22a9517f29"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T01:30:00.371965+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "53",
+    "respiration_rate": "11",
+    "activity": 1,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621280,
+    "createdAt": {
+      "$date": "2026-09-05T20:00:00.076Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T20:00:00.076Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "f3788c8acff704e76766db3d"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T01:35:00.826809+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "52",
+    "respiration_rate": "14",
+    "activity": 4,
+    "ii_heart_beat": null,
+    "snoring": true,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621290,
+    "createdAt": {
+      "$date": "2026-09-05T20:05:00.121Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T20:05:00.121Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "fbe77346afaaea73bb1db5e7"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T01:40:00.840767+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "52",
+    "respiration_rate": "13",
+    "activity": 1,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621300,
+    "createdAt": {
+      "$date": "2026-09-05T20:10:00.139Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T20:10:00.139Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "3b05921099963948b4e8f1b2"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T01:45:00.796794+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "56",
+    "respiration_rate": "13",
+    "activity": 4,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621310,
+    "createdAt": {
+      "$date": "2026-09-05T20:15:00.088Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T20:15:00.088Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "d72ea11fc480b14e5492e08b"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T01:50:00.673570+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "66",
+    "respiration_rate": "15",
+    "activity": 16,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621320,
+    "createdAt": {
+      "$date": "2026-09-05T20:20:00.185Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T20:20:00.185Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "d016b1107c08b3308f3e80b9"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T01:55:00.724552+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "68",
+    "respiration_rate": "15",
+    "activity": 16,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621330,
+    "createdAt": {
+      "$date": "2026-09-05T20:25:00.065Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T20:25:00.065Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "42547d339e6b1d31628e37dd"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T02:00:00.325662+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "64",
+    "respiration_rate": "17",
+    "activity": 6,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621340,
+    "createdAt": {
+      "$date": "2026-09-05T20:30:00.176Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T20:30:00.176Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "bab7a354c53ebfa4170ff059"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T02:05:00.837382+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "70",
+    "respiration_rate": "14",
+    "activity": 14,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621350,
+    "createdAt": {
+      "$date": "2026-09-05T20:35:00.157Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T20:35:00.157Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "26abdecb859c7ba89cb884bf"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T02:10:00.803629+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "63",
+    "respiration_rate": "16",
+    "activity": 10,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621360,
+    "createdAt": {
+      "$date": "2026-09-05T20:40:00.086Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T20:40:00.086Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "68ac39431a39057be662ddb1"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T02:15:00.463066+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "67",
+    "respiration_rate": "16",
+    "activity": 18,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621370,
+    "createdAt": {
+      "$date": "2026-09-05T20:45:00.128Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T20:45:00.128Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "8f7d07ad6866f97bcc38fb49"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T02:20:00.923952+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "68",
+    "respiration_rate": "15",
+    "activity": 10,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621380,
+    "createdAt": {
+      "$date": "2026-09-05T20:50:00.087Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T20:50:00.087Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "5fefdd2aa846d2edb3850281"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T02:25:00.629729+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "67",
+    "respiration_rate": "15",
+    "activity": 19,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621390,
+    "createdAt": {
+      "$date": "2026-09-05T20:55:00.153Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T20:55:00.153Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "7bb440611c0aba91a2522a6f"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T02:30:00.593079+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "63",
+    "respiration_rate": "14",
+    "activity": 18,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621400,
+    "createdAt": {
+      "$date": "2026-09-05T21:00:00.063Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T21:00:00.063Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "53191a3a8f184ca3b3995a5e"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T02:35:00.913206+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "67",
+    "respiration_rate": "17",
+    "activity": 15,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621410,
+    "createdAt": {
+      "$date": "2026-09-05T21:05:00.083Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T21:05:00.083Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "25058ec7af760c33bc7331ad"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T02:40:00.263885+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "62",
+    "respiration_rate": "17",
+    "activity": 14,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621420,
+    "createdAt": {
+      "$date": "2026-09-05T21:10:00.105Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T21:10:00.105Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "1aea4b3052ff726b2464272e"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T02:45:00.917995+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "64",
+    "respiration_rate": "15",
+    "activity": 18,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621430,
+    "createdAt": {
+      "$date": "2026-09-05T21:15:00.087Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T21:15:00.087Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "632b5cfde26815a43a27022c"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T02:50:00.533814+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "53",
+    "respiration_rate": "12",
+    "activity": 2,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621440,
+    "createdAt": {
+      "$date": "2026-09-05T21:20:00.116Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T21:20:00.116Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "bdd83bdeb925b81898bb2899"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T02:55:00.213630+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "54",
+    "respiration_rate": "13",
+    "activity": 2,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621450,
+    "createdAt": {
+      "$date": "2026-09-05T21:25:00.158Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T21:25:00.158Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "5c763ae2a848b772a8e3ed24"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T03:00:00.883259+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "53",
+    "respiration_rate": "12",
+    "activity": 3,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621460,
+    "createdAt": {
+      "$date": "2026-09-05T21:30:00.121Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T21:30:00.121Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "7491b1581ae99b1d1dfb4893"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T03:05:00.158161+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "52",
+    "respiration_rate": "13",
+    "activity": 2,
+    "ii_heart_beat": null,
+    "snoring": true,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621470,
+    "createdAt": {
+      "$date": "2026-09-05T21:35:00.190Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T21:35:00.190Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "dbb794950b1c5ad8cf732c10"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T03:10:00.944434+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "66",
+    "respiration_rate": "17",
+    "activity": 17,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621480,
+    "createdAt": {
+      "$date": "2026-09-05T21:40:00.066Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T21:40:00.066Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "2c1eda3f3ad0655800b94c12"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T03:15:00.342604+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "14",
+    "activity": 10,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621490,
+    "createdAt": {
+      "$date": "2026-09-05T21:45:00.108Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T21:45:00.108Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "fc1f4b1c0e194436b0c1b2e3"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T03:20:00.208689+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "17",
+    "activity": 8,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621500,
+    "createdAt": {
+      "$date": "2026-09-05T21:50:00.164Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T21:50:00.164Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "e940de228841ef22d4fcc9d1"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T03:25:00.527218+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "70",
+    "respiration_rate": "14",
+    "activity": 16,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621510,
+    "createdAt": {
+      "$date": "2026-09-05T21:55:00.176Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T21:55:00.176Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "3107e344589c93507c9bfc66"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T03:30:00.392955+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "63",
+    "respiration_rate": "17",
+    "activity": 19,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621520,
+    "createdAt": {
+      "$date": "2026-09-05T22:00:00.161Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T22:00:00.161Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "4742744951c559a1a23e5df9"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T03:35:00.725027+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "64",
+    "respiration_rate": "16",
+    "activity": 20,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621530,
+    "createdAt": {
+      "$date": "2026-09-05T22:05:00.078Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T22:05:00.078Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "fa6271640c6cc1c60f5a68d3"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T03:40:00.780092+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "64",
+    "respiration_rate": "15",
+    "activity": 16,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621540,
+    "createdAt": {
+      "$date": "2026-09-05T22:10:00.079Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T22:10:00.079Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "a4973c4de75e410e6e2f7914"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T03:45:00.342167+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "16",
+    "activity": 16,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621550,
+    "createdAt": {
+      "$date": "2026-09-05T22:15:00.199Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T22:15:00.199Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "44f3eafa6e2e30fb47ffcaa3"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T03:50:00.191005+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "68",
+    "respiration_rate": "14",
+    "activity": 8,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621560,
+    "createdAt": {
+      "$date": "2026-09-05T22:20:00.078Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T22:20:00.078Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "37bb319487b84b695537fda9"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T03:55:00.506051+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "63",
+    "respiration_rate": "16",
+    "activity": 13,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621570,
+    "createdAt": {
+      "$date": "2026-09-05T22:25:00.139Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T22:25:00.139Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "80c26517f637485771fc5bc3"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T04:00:00.231570+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "62",
+    "respiration_rate": "17",
+    "activity": 17,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621580,
+    "createdAt": {
+      "$date": "2026-09-05T22:30:00.073Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T22:30:00.073Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "993edbce04c78e437abb97cc"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T04:05:00.158354+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "66",
+    "respiration_rate": "16",
+    "activity": 17,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621590,
+    "createdAt": {
+      "$date": "2026-09-05T22:35:00.196Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T22:35:00.196Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "45bff282c644d7c17848ebf9"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T04:10:00.377743+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "70",
+    "respiration_rate": "15",
+    "activity": 13,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621600,
+    "createdAt": {
+      "$date": "2026-09-05T22:40:00.163Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T22:40:00.163Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "796e9537f05fb3e608feaa7a"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T04:15:00.524624+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "14",
+    "activity": 7,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621610,
+    "createdAt": {
+      "$date": "2026-09-05T22:45:00.185Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T22:45:00.185Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "fb18b41e2a4b988fe9bda630"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T04:20:00.284006+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "53",
+    "respiration_rate": "12",
+    "activity": 3,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621620,
+    "createdAt": {
+      "$date": "2026-09-05T22:50:00.133Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T22:50:00.133Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "71bd93d9f74d84f2ccd1c5c9"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T04:25:00.169802+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "58",
+    "respiration_rate": "11",
+    "activity": 5,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621630,
+    "createdAt": {
+      "$date": "2026-09-05T22:55:00.112Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T22:55:00.112Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "d2f60b383b63e82e8d5a3f23"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T04:30:00.545576+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "52",
+    "respiration_rate": "12",
+    "activity": 2,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621640,
+    "createdAt": {
+      "$date": "2026-09-05T23:00:00.179Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T23:00:00.179Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "cb41efceb805e370d4f8096c"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T04:35:00.654856+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "53",
+    "respiration_rate": "14",
+    "activity": 1,
+    "ii_heart_beat": null,
+    "snoring": true,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621650,
+    "createdAt": {
+      "$date": "2026-09-05T23:05:00.107Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T23:05:00.107Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "f90cd77879f6276ce953988c"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T04:40:00.426649+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "62",
+    "respiration_rate": "15",
+    "activity": 12,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621660,
+    "createdAt": {
+      "$date": "2026-09-05T23:10:00.114Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T23:10:00.114Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "c093913aeebb7fe3c3dc2679"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T04:45:00.632187+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "62",
+    "respiration_rate": "17",
+    "activity": 12,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621670,
+    "createdAt": {
+      "$date": "2026-09-05T23:15:00.132Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T23:15:00.132Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "faceae0b218f55f4091adbda"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T04:50:00.341381+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "68",
+    "respiration_rate": "14",
+    "activity": 18,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621680,
+    "createdAt": {
+      "$date": "2026-09-05T23:20:00.182Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T23:20:00.182Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "f6ec3670e75c7204137816bf"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T04:55:00.542089+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "15",
+    "activity": 19,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621690,
+    "createdAt": {
+      "$date": "2026-09-05T23:25:00.132Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T23:25:00.132Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "fd1443f7853119919346d7cf"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T05:00:00.528995+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "63",
+    "respiration_rate": "16",
+    "activity": 11,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621700,
+    "createdAt": {
+      "$date": "2026-09-05T23:30:00.061Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T23:30:00.061Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "cdbe83461110bb0009605f5d"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T05:05:00.879165+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "63",
+    "respiration_rate": "15",
+    "activity": 10,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621710,
+    "createdAt": {
+      "$date": "2026-09-05T23:35:00.171Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T23:35:00.171Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "4c7fab59d54f54a6dc443968"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T05:10:00.683040+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "66",
+    "respiration_rate": "16",
+    "activity": 12,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621720,
+    "createdAt": {
+      "$date": "2026-09-05T23:40:00.133Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T23:40:00.133Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "44606d3302462170e96b049a"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T05:15:00.698142+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "69",
+    "respiration_rate": "15",
+    "activity": 8,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621730,
+    "createdAt": {
+      "$date": "2026-09-05T23:45:00.076Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T23:45:00.076Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "334fa779db288a51fa261d8d"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T05:20:00.559838+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "70",
+    "respiration_rate": "14",
+    "activity": 16,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621740,
+    "createdAt": {
+      "$date": "2026-09-05T23:50:00.084Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T23:50:00.084Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "a82a1132c77f430088f3b2b5"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T05:25:00.574426+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "66",
+    "respiration_rate": "15",
+    "activity": 18,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621750,
+    "createdAt": {
+      "$date": "2026-09-05T23:55:00.107Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-05T23:55:00.107Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "804170c1021736eafb363916"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T05:30:00.580291+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "68",
+    "respiration_rate": "17",
+    "activity": 13,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621760,
+    "createdAt": {
+      "$date": "2026-09-06T00:00:00.124Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T00:00:00.124Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "07647ef62833ddc0318849bd"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T05:35:00.846007+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "66",
+    "respiration_rate": "17",
+    "activity": 12,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621770,
+    "createdAt": {
+      "$date": "2026-09-06T00:05:00.165Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T00:05:00.165Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "4d7717c68638776ce34248d5"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T05:40:00.602520+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "67",
+    "respiration_rate": "16",
+    "activity": 17,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621780,
+    "createdAt": {
+      "$date": "2026-09-06T00:10:00.188Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T00:10:00.188Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "69918788bc2d1727dc488661"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T05:45:00.368519+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "63",
+    "respiration_rate": "16",
+    "activity": 7,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621790,
+    "createdAt": {
+      "$date": "2026-09-06T00:15:00.140Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T00:15:00.140Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "a28144061312c74704f988f5"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T05:50:00.834725+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "53",
+    "respiration_rate": "11",
+    "activity": 3,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621800,
+    "createdAt": {
+      "$date": "2026-09-06T00:20:00.129Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T00:20:00.129Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "933cd1d7b724d178a38a9831"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T05:55:00.868484+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "53",
+    "respiration_rate": "13",
+    "activity": 4,
+    "ii_heart_beat": null,
+    "snoring": true,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621810,
+    "createdAt": {
+      "$date": "2026-09-06T00:25:00.083Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T00:25:00.083Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "d99a166ef14d06fb117423bb"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T06:00:00.301574+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "58",
+    "respiration_rate": "12",
+    "activity": 4,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621820,
+    "createdAt": {
+      "$date": "2026-09-06T00:30:00.183Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T00:30:00.183Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "2f8ef501bfa249d9d4366b79"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T06:05:00.228732+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "53",
+    "respiration_rate": "11",
+    "activity": 2,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621830,
+    "createdAt": {
+      "$date": "2026-09-06T00:35:00.133Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T00:35:00.133Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "cdb5b6f0eb74597c2b962bd4"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T06:10:00.329118+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "62",
+    "respiration_rate": "15",
+    "activity": 12,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621840,
+    "createdAt": {
+      "$date": "2026-09-06T00:40:00.092Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T00:40:00.092Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "194d56c2f425d4f29a151759"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T06:15:00.653925+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "68",
+    "respiration_rate": "16",
+    "activity": 14,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621850,
+    "createdAt": {
+      "$date": "2026-09-06T00:45:00.125Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T00:45:00.125Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "500e9bc63865062da8329932"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T06:20:00.983360+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "62",
+    "respiration_rate": "17",
+    "activity": 6,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621860,
+    "createdAt": {
+      "$date": "2026-09-06T00:50:00.107Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T00:50:00.107Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "a92d5e218ff0ee4008c0944d"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T06:25:00.834795+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "67",
+    "respiration_rate": "16",
+    "activity": 9,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621870,
+    "createdAt": {
+      "$date": "2026-09-06T00:55:00.111Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T00:55:00.111Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "4c4c963ced40bae836c347f4"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T06:30:00.977058+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "64",
+    "respiration_rate": "15",
+    "activity": 15,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621880,
+    "createdAt": {
+      "$date": "2026-09-06T01:00:00.058Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T01:00:00.058Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "bd6309a7d4518bb0d21fe3e5"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T06:35:00.937882+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "15",
+    "activity": 11,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621890,
+    "createdAt": {
+      "$date": "2026-09-06T01:05:00.126Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T01:05:00.126Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "83a0ac212ab82098fe850df9"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T06:40:00.726891+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "69",
+    "respiration_rate": "14",
+    "activity": 10,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621900,
+    "createdAt": {
+      "$date": "2026-09-06T01:10:00.102Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T01:10:00.102Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "9220aacc30589232a618b092"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T06:45:00.980207+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "68",
+    "respiration_rate": "16",
+    "activity": 12,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621910,
+    "createdAt": {
+      "$date": "2026-09-06T01:15:00.180Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T01:15:00.180Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "2f93550b510b00ec1185667c"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T06:50:00.819170+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "70",
+    "respiration_rate": "16",
+    "activity": 16,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621920,
+    "createdAt": {
+      "$date": "2026-09-06T01:20:00.156Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T01:20:00.156Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "3ca69edfbdff5247e9b3db5b"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T06:55:00.227776+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "16",
+    "activity": 9,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621930,
+    "createdAt": {
+      "$date": "2026-09-06T01:25:00.198Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T01:25:00.198Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "aa05868b122612509115bf1a"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T07:00:00.124377+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "68",
+    "respiration_rate": "15",
+    "activity": 14,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621940,
+    "createdAt": {
+      "$date": "2026-09-06T01:30:00.157Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T01:30:00.157Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "99a5440dbf4d65c7632b1337"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T07:05:00.179532+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "70",
+    "respiration_rate": "15",
+    "activity": 17,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621950,
+    "createdAt": {
+      "$date": "2026-09-06T01:35:00.067Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T01:35:00.067Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "2f831ba17be73a7bfa634e06"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T07:10:00.720811+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "68",
+    "respiration_rate": "15",
+    "activity": 18,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621960,
+    "createdAt": {
+      "$date": "2026-09-06T01:40:00.145Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T01:40:00.145Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "4a87f18f32b3ea28ef0d059c"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T07:15:00.123472+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "15",
+    "activity": 12,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621970,
+    "createdAt": {
+      "$date": "2026-09-06T01:45:00.161Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T01:45:00.161Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "76470f27cee0dcf4a6c3bbd1"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T07:20:00.454738+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "58",
+    "respiration_rate": "13",
+    "activity": 0,
+    "ii_heart_beat": null,
+    "snoring": true,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621980,
+    "createdAt": {
+      "$date": "2026-09-06T01:50:00.190Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T01:50:00.190Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "9fbfa254e90e06aabdef3728"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T07:25:00.952851+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "53",
+    "respiration_rate": "14",
+    "activity": 2,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59621990,
+    "createdAt": {
+      "$date": "2026-09-06T01:55:00.082Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T01:55:00.082Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "13c47acdc0abd16f8ec6f99e"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T07:30:00.694975+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "56",
+    "respiration_rate": "13",
+    "activity": 2,
+    "ii_heart_beat": null,
+    "snoring": true,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59622000,
+    "createdAt": {
+      "$date": "2026-09-06T02:00:00.156Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T02:00:00.156Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "5f74611525ded885de8aa02f"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T07:35:00.138587+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "58",
+    "respiration_rate": "12",
+    "activity": 2,
+    "ii_heart_beat": null,
+    "snoring": true,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59622010,
+    "createdAt": {
+      "$date": "2026-09-06T02:05:00.068Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T02:05:00.068Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "0a3e78f93e4d3d40bf8e7f59"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T07:40:00.493957+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "62",
+    "respiration_rate": "14",
+    "activity": 13,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59622020,
+    "createdAt": {
+      "$date": "2026-09-06T02:10:00.173Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T02:10:00.173Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "8eeb632f79ad0c282aa5134e"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T07:45:00.444265+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "14",
+    "activity": 12,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59622030,
+    "createdAt": {
+      "$date": "2026-09-06T02:15:00.161Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T02:15:00.161Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "ccddb10f59e037ffaf4284e6"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T07:50:00.623492+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "17",
+    "activity": 15,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59622040,
+    "createdAt": {
+      "$date": "2026-09-06T02:20:00.175Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T02:20:00.175Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "05fea30fd150fbdac31426b1"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T07:55:00.145548+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "70",
+    "respiration_rate": "16",
+    "activity": 16,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59622050,
+    "createdAt": {
+      "$date": "2026-09-06T02:25:00.186Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T02:25:00.186Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "f670a246a967165b8d199ef5"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T08:00:00.954590+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "70",
+    "respiration_rate": "15",
+    "activity": 8,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59622060,
+    "createdAt": {
+      "$date": "2026-09-06T02:30:00.115Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T02:30:00.115Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "12380c216bea66f219ec9820"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T08:05:00.631279+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "15",
+    "activity": 18,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59622070,
+    "createdAt": {
+      "$date": "2026-09-06T02:35:00.161Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T02:35:00.161Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "839366209ebe4b2ca298c11b"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T08:10:00.643908+05:30",
+    "in_bed": true,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "65",
+    "respiration_rate": "14",
+    "activity": 19,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59622080,
+    "createdAt": {
+      "$date": "2026-09-06T02:40:00.095Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T02:40:00.095Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "e76a82a2d7fdc2822b97c52b"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T08:15:00.420495+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "63",
+    "respiration_rate": "17",
+    "activity": 8,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59622090,
+    "createdAt": {
+      "$date": "2026-09-06T02:45:00.148Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T02:45:00.148Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "6d36b2bcebe44ead1fe8256b"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T08:20:00.655902+05:30",
+    "in_bed": true,
+    "restless": false,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": false,
+    "heart_rate": "68",
+    "respiration_rate": "17",
+    "activity": 15,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": false,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "sleeping",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59622100,
+    "createdAt": {
+      "$date": "2026-09-06T02:50:00.081Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T02:50:00.081Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "4551353374faa176c48717e4"
+    },
+    "device_id": "e_Aq3LYK4Die6XXc4IBKEAEWbzb2H",
+    "serialnumber": "332014813081",
+    "date_occurred": "2026-09-06T08:25:00.688839+05:30",
+    "in_bed": false,
+    "restless": true,
+    "fast_movement": null,
+    "sitting_in_bed": null,
+    "intention_to_leave_bed": true,
+    "heart_rate": "73",
+    "respiration_rate": "17",
+    "activity": 32,
+    "ii_heart_beat": null,
+    "snoring": false,
+    "breathing_disturbance": "false",
+    "tossnturn": true,
+    "turning_reminder": null,
+    "movement_in_room": null,
+    "may_have_fallen_from_bed": null,
+    "too_long_sitting": null,
+    "sleep_stage": "awake",
+    "too_long_staying_in_bed": null,
+    "time_bucket": 59622110,
+    "createdAt": {
+      "$date": "2026-09-06T02:55:00.184Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-06T02:55:00.184Z"
+    },
+    "__v": 0
+  }
+]

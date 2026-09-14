@@ -27,13 +27,21 @@ client.on("message", (topic, message) => {
         if (dev.type === "Coordinator") continue;
 
         // Determine a sensor type from the Z2M device definition.
+        // Check BOTH description AND the exposes array — exposes is more
+        // reliable because it is populated even when Z2M hasn't finished
+        // interviewing the device (description can be empty on fresh pairs).
         const defModel = dev.definition?.model || "";
         const defDesc = (dev.definition?.description || "").toLowerCase();
-        let sensorType = "unknown";
-        if (defDesc.includes("motion")) sensorType = "motion";
-        else if (defDesc.includes("contact") || defDesc.includes("door") || defDesc.includes("window")) sensorType = "contact";
-        else if (defDesc.includes("button") || defDesc.includes("switch") || defDesc.includes("remote")) sensorType = "switch";
-        else if (defDesc.includes("presence") || defDesc.includes("occupancy")) sensorType = "presence";
+        const exposes = dev.definition?.exposes || [];
+        const expose_types = exposes.map(e => (e.name || e.type || "").toLowerCase());
+        let sensorType = "zigbee";
+        // occupancy in Z2M exposes = PIR motion sensor; presence = mmWave/radar.
+        // Check motion FIRST so an occupancy-only device (empty description on
+        // fresh pair) is classified correctly instead of falling through to presence.
+        if (defDesc.includes("motion") || expose_types.includes("occupancy")) sensorType = "motion";
+        else if (defDesc.includes("contact") || defDesc.includes("door") || defDesc.includes("window") || expose_types.includes("contact")) sensorType = "contact";
+        else if (defDesc.includes("button") || defDesc.includes("switch") || defDesc.includes("remote") || expose_types.includes("action")) sensorType = "switch";
+        else if (defDesc.includes("presence") || expose_types.includes("presence")) sensorType = "presence";
         else if (defDesc.includes("temperature") || defDesc.includes("humidity")) sensorType = "temperature";
         else if (defDesc.includes("leak") || defDesc.includes("water")) sensorType = "leak";
 

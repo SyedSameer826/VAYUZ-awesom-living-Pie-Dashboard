@@ -3,6 +3,8 @@ export const emptyDeviceForm = {
   ieee_address: "",
   type: "",
   resident: "",
+  paired_motion_ieee: "",
+  paired_window_ieee: "",
 };
 
 export const deviceHeaders = [

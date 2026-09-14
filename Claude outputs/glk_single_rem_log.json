@@ -1,0 +1,12 @@
+{
+  "serial_number": "332014813081",
+  "timestamp": "2025-09-10 12:40:00 AM IST",
+  "command": "SLEEP_STAGE",
+  "heart_rate": 62,
+  "respiratory_rate": 15,
+  "body_status": "in_bed",
+  "battery": 100,
+  "sleep_stage": "REM Sleep",
+  "movement": 0,
+  "data_type": "sleep_stage"
+}

@@ -1,0 +1,189 @@
+{
+  "realtime_vitals": {
+    "frame_type": "Realtime Vitals",
+    "frequency": "Every 1 second (forwarded to backend every 5 seconds)",
+    "total_bytes": 17,
+    "received_at": "03 Sep 2026, 12:45:31 PM IST",
+    "device_serial": "332014813081",
+    "envelope": {
+      "start_marker": 130,
+      "length": 15,
+      "ack_flag": "1 (request from device)",
+      "sequence_number": 58,
+      "command": "14 (Realtime Vitals)",
+      "checksum": 76,
+      "checksum_valid": true
+    },
+    "payload_bytes": 11,
+    "decoded_data": {
+      "heart_rate": {
+        "value": 62,
+        "unit": "bpm",
+        "display": "62 bpm",
+        "normal_range": "60-100 bpm (resting adult)"
+      },
+      "breathing_rate": {
+        "value": 14,
+        "unit": "breaths/min",
+        "display": "14 breaths/min",
+        "normal_range": "12-20 breaths/min (resting adult)"
+      },
+      "status": {
+        "code": 3,
+        "label": "Snoring Detected",
+        "all_possible_values": {
+          "0": "Initializing (sensor warming up)",
+          "1": "In Bed (person lying on the pad)",
+          "2": "Apnea Suspected (breathing pause detected)",
+          "3": "Snoring Detected",
+          "4": "Out of Bed (nobody on the pad)",
+          "5": "Life Abnormality (CRITICAL — no breathing/heartbeat)",
+          "6": "Light Sleep"
+        }
+      },
+      "is_person_on_bed": {
+        "value": true,
+        "logic": "True when status is 1, 2, 3, 5, or 6"
+      },
+      "snoring": {
+        "value": true,
+        "logic": "True when status = 3"
+      },
+      "apnea_suspected": {
+        "value": false,
+        "logic": "True when status = 2"
+      },
+      "life_danger_alert": {
+        "value": false,
+        "logic": "True when status = 5"
+      },
+      "body_movement": {
+        "value": 12,
+        "scale": "0-255",
+        "display": "12 (low movement)",
+        "interpretation": "0 = no movement, 255 = maximum movement"
+      },
+      "battery_level": {
+        "value": 100,
+        "unit": "%",
+        "display": "100%"
+      },
+      "signal_quality": {
+        "value": 98,
+        "scale": "0-100",
+        "display": "98 (excellent)",
+        "interpretation": "90-100 = excellent, 70-89 = good, below 70 = weak"
+      },
+      "timer_counter": {
+        "value": 300,
+        "unit": "seconds",
+        "display": "300 seconds (5 min 0 sec)",
+        "meaning": "Time elapsed since device connected"
+      },
+      "protocol_markers": {
+        "value_1": 106,
+        "value_2": 138,
+        "meaning": "Constant values (always 106, 138), not health data"
+      },
+      "reserved_byte": {
+        "value": 0,
+        "meaning": "Always 0, unused by current firmware"
+      }
+    }
+  },
+  "sleep_stage": {
+    "frame_type": "Sleep Stage Report",
+    "frequency": "Every 1 minute during sleep (all frames forwarded, no throttle)",
+    "total_bytes": 25,
+    "reading_timestamp": "03 Sep 2026, 12:42:45 PM IST",
+    "device_serial": "332014813081",
+    "envelope": {
+      "start_marker": 130,
+      "length": 23,
+      "ack_flag": "1 (request from device)",
+      "sequence_number": 95,
+      "command": "78 (Sleep Stage)",
+      "checksum": 226,
+      "checksum_valid": true
+    },
+    "payload_bytes": 19,
+    "decoded_data": {
+      "sleep_stage": {
+        "code": 4,
+        "label": "Deep Sleep (restorative phase — body repairs itself)",
+        "all_possible_values": {
+          "0": "Invalid (not enough data yet)",
+          "1": "Awake (person is conscious/moving)",
+          "2": "Light Sleep (easily disturbed, early sleep phase)",
+          "4": "Deep Sleep (restorative phase — body repairs itself)",
+          "5": "REM Sleep (dreaming phase — brain is active)"
+        },
+        "note": "There is no stage 3 in this protocol"
+      },
+      "heart_rate": {
+        "value": 56,
+        "unit": "bpm",
+        "display": "56 bpm",
+        "note": "255 means sensor could not read"
+      },
+      "breathing_rate": {
+        "value": 11,
+        "unit": "breaths/min",
+        "display": "11 breaths/min",
+        "note": "255 means sensor could not read"
+      },
+      "status": {
+        "code": 3,
+        "label": "In Bed (person lying normally)",
+        "all_possible_values": {
+          "1": "Life Abnormality (CRITICAL — no breathing/heartbeat)",
+          "2": "Sleep Apnea (repeated breathing pauses)",
+          "3": "In Bed (person lying normally)",
+          "4": "Out of Bed (person got up)",
+          "5": "Snoring Detected",
+          "6": "Body Movement (tossing/turning)"
+        }
+      },
+      "is_person_on_bed": {
+        "value": true,
+        "logic": "True when status is 1, 2, 3, 5, or 6"
+      },
+      "snoring": {
+        "value": false,
+        "logic": "True when status = 5"
+      },
+      "sleep_apnea": {
+        "value": false,
+        "logic": "True when status = 2"
+      },
+      "life_danger_alert": {
+        "value": false,
+        "logic": "True when status = 1"
+      },
+      "body_movement": {
+        "value": false,
+        "logic": "True when status = 6"
+      },
+      "battery_level": {
+        "value": 100,
+        "unit": "%",
+        "display": "100%"
+      },
+      "time_offset": {
+        "value": 1788419565,
+        "type": "Unix epoch (seconds since 1 Jan 1970)",
+        "display_utc": "03 Sep 2026, 07:12:45 AM UTC",
+        "display_ist": "03 Sep 2026, 12:42:45 PM IST"
+      },
+      "embedded_serial": {
+        "value": "332014813081",
+        "meaning": "Device serial number embedded in payload for validation"
+      },
+      "secondary_timestamp": {
+        "value": 1788419565,
+        "display_ist": "03 Sep 2026, 12:42:45 PM IST",
+        "meaning": "Duplicate of time_offset (purpose unclear, possibly firmware redundancy)"
+      }
+    }
+  }
+}

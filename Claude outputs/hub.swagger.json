@@ -1,0 +1,290 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Hub API",
+    "version": "1.0.0",
+    "description": "API endpoints for Pi hub management — heartbeat, status, and remote commands (shutdown/reboot)."
+  },
+  "tags": [
+    {
+      "name": "hub",
+      "description": "Pi hub heartbeat, status, and remote command endpoints"
+    }
+  ],
+  "paths": {
+    "/hub/heartbeat": {
+      "post": {
+        "tags": ["hub"],
+        "summary": "Pi heartbeat",
+        "description": "Called by the Pi every ~15s to report liveness, internet quality, mains status, and tunnel URL. If a pending command (shutdown/reboot) has been queued, it is piggybacked on the response. Optionally gated by the `x-hub-secret` header when `HUB_SECRET_KEY` is set on the backend.",
+        "security": [],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-hub-secret",
+            "schema": { "type": "string" },
+            "required": false,
+            "description": "Shared secret for hub auth (required only when HUB_SECRET_KEY is set on the backend)"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["hub_id"],
+                "properties": {
+                  "hub_id": {
+                    "type": "string",
+                    "example": "pi-hub-001",
+                    "description": "Unique identifier for the Pi hub"
+                  },
+                  "home": {
+                    "type": "string",
+                    "example": "665abc1234567890abcdef01",
+                    "description": "Home ObjectId (set via Pi Dashboard first-login modal)"
+                  },
+                  "resident": {
+                    "type": "string",
+                    "example": "665abc1234567890abcdef02",
+                    "description": "Resident ObjectId the hub is monitoring"
+                  },
+                  "internet_level": {
+                    "type": "string",
+                    "enum": ["offline", "online-poor", "online-good", "online-excellent"],
+                    "example": "online-excellent",
+                    "description": "Graded internet quality level"
+                  },
+                  "latency_ms": {
+                    "type": "number",
+                    "example": 42,
+                    "description": "Round-trip latency in milliseconds"
+                  },
+                  "mains_status": {
+                    "type": "string",
+                    "enum": ["mains", "battery"],
+                    "example": "mains",
+                    "description": "Whether the Pi is on mains power or UPS battery"
+                  },
+                  "tunnel_url": {
+                    "type": "string",
+                    "example": "https://p1.awesomliving.com",
+                    "description": "Cloudflare tunnel URL for go2rtc camera access"
+                  },
+                  "camera_count": {
+                    "type": "integer",
+                    "example": 2,
+                    "description": "Number of cameras detected by the Pi"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Heartbeat recorded. If a pending command is queued, it is included in the response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "hub_id": { "type": "string", "example": "pi-hub-001" },
+                        "online": { "type": "boolean", "example": true },
+                        "internet_level": { "type": "string", "example": "online-excellent" },
+                        "pending_command": {
+                          "type": "string",
+                          "enum": ["shutdown", "reboot"],
+                          "nullable": true,
+                          "description": "Command for the Pi to execute (only present when a command is queued and not expired)"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "hub_id is required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "message": { "type": "string", "example": "hub_id is required" }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized — x-hub-secret header missing or incorrect (only when HUB_SECRET_KEY is set)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "message": { "type": "string", "example": "unauthorized" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hub/status/{resident}": {
+      "get": {
+        "tags": ["hub"],
+        "summary": "Get hub status for a resident",
+        "description": "Returns the current hub status for a resident's home. Used by the app on load; live updates arrive over the `hub_status` socket event.",
+        "security": [],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resident",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Resident ObjectId",
+            "example": "665abc1234567890abcdef02"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current hub status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "nullable": true,
+                      "properties": {
+                        "hub_id": { "type": "string", "example": "pi-hub-001" },
+                        "online": { "type": "boolean", "example": true },
+                        "internet_level": { "type": "string", "example": "online-excellent" },
+                        "latency_ms": { "type": "number", "nullable": true, "example": 42 },
+                        "last_seen": { "type": "string", "format": "date-time" },
+                        "resident": { "type": "string", "nullable": true },
+                        "home": { "type": "string", "nullable": true },
+                        "tunnel_url": { "type": "string", "nullable": true },
+                        "camera_count": { "type": "integer", "example": 2 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hub/command": {
+      "post": {
+        "tags": ["hub"],
+        "summary": "Send shutdown or reboot command to Pi",
+        "description": "Queues a shutdown or reboot command for the home's Pi hub. The Pi picks it up on its next heartbeat (~15s). Commands expire after 5 minutes — if the Pi was offline when the command was queued and comes back much later, the stale command is discarded. Requires JWT authentication.",
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["home_id", "command"],
+                "properties": {
+                  "home_id": {
+                    "type": "string",
+                    "example": "665abc1234567890abcdef01",
+                    "description": "Home ObjectId whose hub should receive the command"
+                  },
+                  "command": {
+                    "type": "string",
+                    "enum": ["shutdown", "reboot"],
+                    "example": "reboot",
+                    "description": "Command to send — 'shutdown' powers off the Pi, 'reboot' restarts it"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Command queued successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "hub_id": { "type": "string", "example": "pi-hub-001" },
+                        "command": { "type": "string", "example": "reboot" },
+                        "queued": { "type": "boolean", "example": true }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing required fields",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "message": { "type": "string", "example": "home_id and command are required" }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT token missing or invalid"
+          },
+          "500": {
+            "description": "No hub found for this home or invalid command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "message": { "type": "string", "example": "no hub found for this home" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

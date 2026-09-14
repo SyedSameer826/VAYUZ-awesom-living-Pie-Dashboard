@@ -329,39 +329,65 @@ async def provision_device(
     _dbg(f"WiFi config: {len(wifi_chunks)} chunks, Server config: {len(server_chunks)} chunks")
 
     # ------------------------------------------------------------------
-    # Pre-flight: adapter health check, stale cache cleanup, and a quick
-    # verification scan.  This sequence transitions BlueZ from whatever
-    # state the previous /api/glk/scan left it in into a clean state
-    # ready for a GATT connection.
+    # Pre-flight: adapter health check
     # ------------------------------------------------------------------
     adapter_ok = _check_adapter_health()
     if not adapter_ok:
         _dbg("Adapter health check failed — attempting reset before connecting")
         _reset_bluetooth_adapter()
 
-    _remove_cached_device(address)
+    # ------------------------------------------------------------------
+    # Targeted scan — wait for the device to advertise, then connect
+    # immediately using the fresh BLEDevice from the callback.
+    # This eliminates the timing gap that caused TimeoutError with the
+    # old remove-cache → full-scan → connect-with-retries approach.
+    # The BLEDevice carries correct address-type metadata (public vs
+    # random) that BlueZ requires for the GLK.
+    # ------------------------------------------------------------------
+    from bleak import BleakScanner, BleakClient
 
-    # Quick re-scan to (a) verify the device is still advertising and
-    # (b) warm up the BlueZ adapter — significantly improves connect
-    # reliability after a fresh scan-then-provision sequence.
-    # The returned BLEDevice carries the correct address type (public vs
-    # random) that BlueZ needs — do NOT clear the cache after this scan.
-    device_present, ble_device = await _verify_device_present(address, timeout=5.0)
-    if not device_present:
-        _dbg("WARNING: device not seen in pre-connect scan — will still attempt connect")
+    ble_device = None
+    found_event = asyncio.Event()
 
-    # Use the BLEDevice from the scan when available — it has the address
-    # type metadata.  Fall back to the raw address string otherwise.
-    connect_target = ble_device if ble_device else address
+    def _on_detect(device, adv_data):
+        nonlocal ble_device
+        if device.address.upper() == address.upper():
+            ble_device = device
+            _dbg(f"TARGET DETECTED: {device.name or address} RSSI={adv_data.rssi}")
+            found_event.set()
 
-    # Per-attempt connection timeout.  Keep this shorter than the overall
-    # child-process limit (90 s in server.js) so retries have room.
+    scan_timeout = 20.0
+    _dbg(f"=== PROVISION START for {address} ===")
+    _dbg(f"Scanning for {address} (up to {scan_timeout}s) ...")
+    scanner = BleakScanner(detection_callback=_on_detect)
+    await scanner.start()
+    try:
+        await asyncio.wait_for(found_event.wait(), timeout=scan_timeout)
+    except asyncio.TimeoutError:
+        _dbg(f"Timed out — {address} did not advertise in {scan_timeout}s")
+    finally:
+        await scanner.stop()
+
+    if ble_device is None:
+        _dbg(f"Device {address} never advertised — cannot connect")
+        return _result(False, detail=(
+            f"GLK device {address} not found. "
+            "Make sure the device is powered on and in BLE mode, then try again."
+        ))
+
+    # Connect immediately using the fresh BLEDevice — no retries needed,
+    # we just detected the device advertising so the connection should
+    # succeed on the first attempt.
     connect_timeout = min(timeout, 15.0)
-    _dbg(f"Connecting to {address} (per-attempt timeout={connect_timeout}s) ...")
+    _dbg(f"Connecting to {address} with fresh BLEDevice (timeout={connect_timeout}s) ...")
 
     client = None
     try:
-        client = await _connect_with_retries(connect_target, connect_timeout)
+        client = BleakClient(ble_device, timeout=connect_timeout)
+        await client.connect()
+        if not client.is_connected:
+            raise RuntimeError("connect() succeeded but is_connected=False")
+        _dbg(f"CONNECTED to {address}")
 
         # Log discovered services for debugging
         for service in client.services:

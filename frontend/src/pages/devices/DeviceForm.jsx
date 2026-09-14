@@ -2,6 +2,7 @@ import { Button } from "../../components/buttons";
 const DeviceForm = ({
   editingId,
   form,
+  residents,
   isSaving,
   onChange,
   onClose,
@@ -39,6 +40,20 @@ const DeviceForm = ({
               <option value="motion">Motion</option>
               <option value="switch">Switch</option>
               <option value="presence">Presence</option>
+              <option value="temperature">Temperature</option>
+              <option value="leak">Leak</option>
+              <option value="zigbee">Zigbee</option>
+            </select>
+          </label>
+          <label className="form-field">
+            <span>Resident</span>
+            <select name="resident" value={form.resident} onChange={onChange}>
+              <option value="">Select Resident</option>
+              {(residents || []).map((resident) => (
+                <option key={resident._id} value={resident._id}>
+                  {resident.name || resident.full_name}
+                </option>
+              ))}
             </select>
           </label>
           <div className="form-actions">
