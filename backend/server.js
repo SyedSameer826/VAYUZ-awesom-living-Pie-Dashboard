@@ -704,26 +704,54 @@ const BP_SCRIPT =
   process.env.BP_PROVISION_CMD || path.join(__dirname, "bp", "bp_provision.py");
 
 // Scan for BP monitors advertising Blood Pressure Service (0x1810).
-app.post("/api/bp/scan", (req, res) => {
-  execFile(
-    BP_PYTHON,
-    [BP_SCRIPT, "scan", "--timeout", "10"],
-    { timeout: 25000, cwd: path.join(__dirname, "bp") },
-    (err, stdout, stderr) => {
-      if (err && !stdout) {
-        return res
-          .status(500)
-          .json({ error: stderr || err.message || "BP scan failed" });
-      }
-      try {
-        return res.json(JSON.parse(stdout));
-      } catch {
-        return res
-          .status(500)
-          .json({ error: "Unexpected scan output", raw: stdout, stderr });
-      }
-    },
-  );
+// IMPORTANT: bp-bridge must be stopped BEFORE scanning — it runs a
+// continuous BLE scanner and will grab the cuff's connection during our
+// scan, causing ERR 10 (bond key mismatch) before /api/bp/pair can run.
+// bp-bridge stays stopped until /api/bp/pair's finally block restarts it.
+app.post("/api/bp/scan", async (req, res) => {
+  const _exec_quiet = (cmd) =>
+    new Promise((resolve) => {
+      exec(cmd, { timeout: 8000 }, (err, stdout, stderr) => {
+        if (err) console.warn(`[BP scan] ${cmd}: ${stderr || err.message}`);
+        resolve();
+      });
+    });
+
+  try {
+    console.log("[BP scan] stopping bp-bridge to prevent BLE race ...");
+    await _exec_quiet("pm2 stop bp-bridge");
+    // Brief pause so BlueZ releases any active connection
+    await new Promise((r) => setTimeout(r, 1500));
+
+    const result = await new Promise((resolve, reject) => {
+      execFile(
+        BP_PYTHON,
+        [BP_SCRIPT, "scan", "--timeout", "10"],
+        { timeout: 25000, cwd: path.join(__dirname, "bp") },
+        (err, stdout, stderr) => {
+          if (err && !stdout) {
+            return reject({ status: 500, body: { error: stderr || err.message || "BP scan failed" } });
+          }
+          try {
+            resolve(JSON.parse(stdout));
+          } catch {
+            reject({ status: 500, body: { error: "Unexpected scan output", raw: stdout, stderr } });
+          }
+        },
+      );
+    });
+
+    return res.json(result);
+  } catch (err) {
+    if (err.status && err.body) {
+      return res.status(err.status).json(err.body);
+    }
+    return res.status(500).json({ error: err.message || "BP scan failed" });
+  }
+  // NOTE: bp-bridge is intentionally left stopped here.
+  // /api/bp/pair's finally block restarts it after pairing completes.
+  // If the user scans but does not pair, bp-bridge stays stopped until
+  // the next pair attempt or a manual PM2 restart.
 });
 
 // Pair (bond) with a chosen BP monitor, then map it to a resident.
