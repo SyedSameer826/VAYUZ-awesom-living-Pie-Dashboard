@@ -12,8 +12,25 @@ const DeviceForm = ({
   const motion_sensors = (devices || []).filter(
     (d) => d.type === "motion" && d.ieee_address !== form.ieee_address,
   );
+
+  // Collect window/door sensor IEEEs already paired to OTHER motion sensors
+  const paired_window_iees = new Set(
+    (devices || [])
+      .filter(
+        (d) =>
+          d.type === "motion" &&
+          d.paired_window_ieee &&
+          d.ieee_address !== form.ieee_address,
+      )
+      .map((d) => d.paired_window_ieee),
+  );
+
+  // Only show unpaired contact sensors (+ the one already paired to THIS device)
   const contact_sensors = (devices || []).filter(
-    (d) => d.type === "contact" || d.type === "door & window",
+    (d) =>
+      (d.type === "contact" || d.type === "door & window") &&
+      (!paired_window_iees.has(d.ieee_address) ||
+        d.ieee_address === form.paired_window_ieee),
   );
 
   const is_motion = form.type === "motion";
