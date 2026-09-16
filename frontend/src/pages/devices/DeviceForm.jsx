@@ -19,10 +19,10 @@ const DeviceForm = ({
       .filter(
         (d) =>
           d.type === "motion" &&
-          d.paired_window_ieee &&
+          d.paired_with?.window_ieee &&
           d.ieee_address !== form.ieee_address,
       )
-      .map((d) => d.paired_window_ieee),
+      .map((d) => d.paired_with.window_ieee),
   );
 
   // Only show unpaired contact sensors (+ the one already paired to THIS device)

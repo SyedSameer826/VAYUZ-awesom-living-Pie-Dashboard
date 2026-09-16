@@ -142,8 +142,8 @@ function Devices() {
       device: device.device === "Unnamed Device" ? "" : device.device,
       ieee_address: device.ieee_address === "-" ? "" : device.ieee_address,
       type: device.type === "unknown" || !device.type ? "" : device.type,
-      paired_motion_ieee: device.paired_motion_ieee || "",
-      paired_window_ieee: device.paired_window_ieee || "",
+      paired_motion_ieee: device.paired_with?.paired_motion_ieee || "",
+      paired_window_ieee: device.paired_with?.window_ieee || "",
     });
 
     setEditingId(device.id);
