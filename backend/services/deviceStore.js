@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 // Main backend this Pi maps devices to. Overridable via env; defaults to the EC2.
 const REMOTE_BACKEND =
-  process.env.REMOTE_BACKEND_URL || "https://awesomliving.com";
+  process.env.REMOTE_BACKEND_URL || "http://51.20.102.125";
 // Store device data OUTSIDE the code folder so code updates / git pulls can
 // never overwrite it (a committed empty devices.json was wiping mapped devices
 // on every deploy). Overridable via env; defaults to ~/awesomliving-data/.
@@ -126,9 +126,15 @@ export const upsertDevice = (device) => {
 
       if (index !== -1) {
         const existing = devices[index];
-        // Preserve a mapped device's identity — only refresh its type.
+        // Preserve a mapped device's identity — only refresh its type and
+        // pairing info (paired_with is set when editing a motion sensor's
+        // paired motion / window sensors via the dashboard form).
         if (existing.status === "mapped" && existing.is_unassigned === false) {
-          devices[index] = { ...existing, type: device.type || existing.type };
+          devices[index] = {
+            ...existing,
+            type: device.type || existing.type,
+            ...(device.paired_with !== undefined && { paired_with: device.paired_with }),
+          };
         } else {
           devices[index] = { ...existing, ...device };
         }
