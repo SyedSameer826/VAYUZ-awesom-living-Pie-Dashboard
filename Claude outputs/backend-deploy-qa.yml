@@ -1,0 +1,285 @@
+name: Deploy Backend to QA (EC2)
+
+on:
+  push:
+    branches:
+      - qa
+
+jobs:
+  deploy-qa:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint code
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Build application
+        run: npm run build
+
+      - name: Deploy to EC2 (QA)
+        run: |
+          echo "Deploying Backend to QA on EC2..."
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2-key.pem
+          chmod 600 ~/.ssh/ec2-key.pem
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          ssh -i ~/.ssh/ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'ENDSSH'
+          cd /home/ubuntu/qa/backend-nodejs
+
+          echo "Resetting files that the deploy overwrites..."
+          # The deploy copies QA-specific docker-compose.yml and Dockerfile.qa
+          # into the repo root, which makes them show as modified. Without this
+          # reset, the next `git pull` refuses to merge ("Your local changes
+          # would be overwritten"). These two are tracked in git, so checkout
+          # restores the committed version before pulling.
+          git checkout -- docker-compose.yml Dockerfile.qa 2>/dev/null || true
+
+          echo "Pulling latest QA code..."
+          git pull origin qa
+
+          echo "Restoring QA config files..."
+          # From the repo just pulled above, not from ~/qa-environment. The
+          # host copy is only refreshed by a manual scp, so it silently went
+          # stale and Compose kept reading a file with no abhi-qa service in
+          # it ("no such service: abhi-qa"). These two carry no secrets, so
+          # tracking them in git is the whole point — they should follow the
+          # branch automatically.
+          cp qa-environment/backend/docker-compose.yml .
+          cp qa-environment/backend/Dockerfile.qa .
+
+          echo "Preserving QA .env..."
+          # This one stays host-side on purpose: it holds real credentials, so
+          # the host copy is authoritative and is never overwritten from git.
+          cp ~/qa-environment/backend/env-qa-backend.txt .env
+
+          echo "Applying nginx config (port 80)..."
+          # `nginx -t` runs against the new file BEFORE any reload; a failure
+          # leaves the running config untouched. This file also serves
+          # production, so it must never reload something unvalidated.
+          sudo cp qa-environment/nginx/awesomliving.conf /etc/nginx/sites-available/awesomliving.conf
+          if sudo nginx -t; then
+            sudo systemctl reload nginx
+            echo "nginx reloaded"
+          else
+            echo "nginx config invalid — NOT reloading, previous config still live"
+          fi
+
+          echo "Ensuring /abhi is routed on HTTPS..."
+          # qa-ssl.conf owns 443 and is where real traffic lands, but it lives
+          # only on the server so it cannot just be copied from the repo. This
+          # inserts the block if missing, and is a no-op once it is there.
+          sudo bash qa-environment/apply-abhi-nginx.sh
+
+          echo "Rebuilding QA Docker container..."
+          docker compose down
+          docker compose build --no-cache
+          # abhi's image is in a private Docker Hub repo, so pulling it needs
+          # a login on this host — pushing from the other repo's CI does not
+          # give this machine any access. Logged out again right after; the
+          # token is short-lived here on purpose.
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+          # abhi-qa's tag is static and gets overwritten on Docker Hub on every
+          # push from the awesomliving_ai repo — `up -d` alone won't notice a
+          # newer image under the same tag, so pull it explicitly first.
+          # (No-op for backend-qa: it has no `image:`, so nothing to pull.)
+          docker compose pull abhi-qa || true
+          docker logout
+          docker compose up -d
+          sleep 5
+          echo "QA Backend deployment completed!"
+          docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep qa
+          ENDSSH
+
+      - name: Health check
+        run: |
+          echo "Waiting for container to start..."
+          sleep 10
+          ssh -i ~/.ssh/ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "curl -sf --max-time 5 http://localhost:3002/api/health || echo 'Health check failed — container may still be starting'"
+        continue-on-error: true
+
+      - name: Health check (abhi)
+        run: |
+          ssh -i ~/.ssh/ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'ENDSSH'
+          # Retry instead of one shot: a cold start needs a moment to bind.
+          # Exits non-zero on real failure so the run goes red — a deploy that
+          # silently left nothing serving is the thing worth catching.
+          for i in $(seq 1 10); do
+            if curl -sf --max-time 5 http://localhost:8001/abhi/health; then
+              echo ""
+              echo "abhi-qa healthy (attempt $i)"
+              exit 0
+            fi
+            echo "attempt $i/10 — not up yet, retrying in 3s"
+            sleep 3
+          done
+          echo "abhi-qa never became healthy"
+          exit 1
+          ENDSSH
+
+      # The check that matters to a caller: the real public URL, from outside
+      # the server. The localhost check above passes even when nginx has no
+      # /abhi route at all, which is exactly how a healthy container still
+      # served 404s to the domain.
+      - name: Health check (public domain)
+        if: always()
+        run: |
+          URL="https://qa.awesomliving.com/abhi/health"
+          echo "GET $URL"
+          for i in $(seq 1 5); do
+            CODE=$(curl -s -o /tmp/abhi_body -w '%{http_code}' --max-time 10 "$URL" || echo "000")
+            echo "attempt $i/5 -> HTTP $CODE"
+            # A 200 is not enough. When nginx has no /abhi route the request
+            # falls through to the admin SPA, which also answers 200 — with
+            # HTML. Require the API's own envelope so that cannot pass.
+            if [ "$CODE" = "200" ] && grep -q '"success_code"' /tmp/abhi_body; then
+              echo "--- body ---"
+              cat /tmp/abhi_body; echo ""
+              echo "PUBLIC ROUTE OK"
+              exit 0
+            fi
+            if [ "$CODE" = "200" ]; then
+              echo "  200, but not the API — something else is serving this path"
+            fi
+            sleep 4
+          done
+          echo "--- last response body (first 40 lines) ---"
+          head -40 /tmp/abhi_body 2>/dev/null || echo "(empty)"
+          echo ""
+          echo "PUBLIC ROUTE FAILED — see the nginx diagnosis below for which hop broke."
+          exit 1
+
+      # Triangulates the three hops so the failing one is obvious:
+      #   container ok + nginx ok + domain bad -> DNS / Cloudflare
+      #   container ok + nginx bad             -> config not applied or not reloaded
+      #   container bad                        -> the app itself, see the step after
+      - name: Diagnose nginx routing
+        if: always()
+        run: |
+          ssh -i ~/.ssh/ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'ENDSSH'
+          echo "=================== does the LIVE nginx config know /abhi? ==================="
+          # The live file, not the one in the repo — these drift when the copy
+          # step is skipped, which is the failure this whole step exists to catch.
+          sudo grep -n "abhi" /etc/nginx/sites-available/awesomliving.conf \
+            || echo "NO /abhi BLOCK IN THE LIVE CONFIG — the copy+reload never happened"
+
+          echo ""
+          echo "=================== is that config enabled? ==================="
+          ls -la /etc/nginx/sites-enabled/
+
+          echo ""
+          echo "=================== which config actually handles 443? ==================="
+          # Cloudflare reaches this box over HTTPS, so whatever owns 443 is the
+          # file that matters — editing only the port-80 config changes nothing
+          # for real traffic.
+          sudo grep -rln "listen.*443" /etc/nginx/sites-enabled/ || echo "  no 443 listener found in sites-enabled"
+
+          echo ""
+          echo "=================== server blocks serving qa.awesomliving.com ==================="
+          # More than one is the problem: nginx keeps the first and logs
+          # "conflicting server name", silently ignoring the rest.
+          sudo grep -rn "server_name.*qa\.awesomliving\.com" /etc/nginx/sites-enabled/ || true
+
+          echo ""
+          echo "=================== does the 443 config know /abhi? ==================="
+          for f in /etc/nginx/sites-enabled/*; do
+            if sudo grep -q "listen.*443" "$f" 2>/dev/null; then
+              echo "--- $f ---"
+              sudo grep -n "location\|server_name\|listen" "$f" | head -40
+              echo "    /abhi present: $(sudo grep -c 'abhi' "$f" 2>/dev/null || echo 0)"
+            fi
+          done
+
+          echo ""
+          echo "=================== nginx -t ==================="
+          sudo nginx -t
+
+          echo ""
+          echo "=================== hop 1: container directly ==================="
+          curl -s -o /dev/null -w '  localhost:8001/abhi/health -> HTTP %{http_code}\n' \
+            --max-time 5 http://localhost:8001/abhi/health || echo "  unreachable"
+
+          echo ""
+          echo "=================== hop 2: nginx, bypassing DNS and Cloudflare ==================="
+          # Same request nginx would get from the domain, but straight to :80.
+          # If this is 200 and the public URL is not, the problem is outside
+          # this server (DNS, Cloudflare rules, or SSL).
+          curl -s -o /dev/null -w '  localhost:80 (Host: qa.awesomliving.com) -> HTTP %{http_code}\n' \
+            --max-time 5 -H "Host: qa.awesomliving.com" http://localhost/abhi/health || echo "  unreachable"
+
+          echo ""
+          echo "=================== hop 3: the public URL, from the server ==================="
+          curl -s -o /dev/null -w '  https://qa.awesomliving.com/abhi/health -> HTTP %{http_code}\n' \
+            --max-time 10 https://qa.awesomliving.com/abhi/health || echo "  unreachable"
+          ENDSSH
+        continue-on-error: true
+
+      # Runs whatever the outcome, so the logs that explain a failure are in
+      # the run itself rather than needing someone to SSH in and go looking.
+      - name: Diagnose abhi-qa
+        if: always()
+        run: |
+          ssh -i ~/.ssh/ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'ENDSSH'
+          cd /home/ubuntu/qa/backend-nodejs
+
+          echo "=================== containers ==================="
+          docker compose ps
+
+          echo ""
+          echo "=================== is abhi-qa even in the compose file? ==================="
+          # Check this before blaming the pull: if the service is absent, the
+          # deployed compose file is stale and nothing was ever attempted.
+          if docker compose config --services 2>/dev/null | grep -qx abhi-qa; then
+            echo "yes — abhi-qa is defined"
+          else
+            echo "NO — the compose file on this host has no abhi-qa service."
+            echo "     Nothing was pulled or started. The deployed file is stale;"
+            echo "     it should come from qa-environment/ in the repo."
+          fi
+
+          echo ""
+          echo "=================== abhi image present? ==================="
+          # Only meaningful once the service exists above. Missing then means
+          # the pull itself failed — usually the DOCKERHUB_* secrets, since the
+          # image is in a private repo.
+          docker images --format '{{.Repository}}:{{.Tag}}  {{.CreatedSince}}' | grep -i abhi \
+            || echo "no abhi image on this host (if the service exists above, check DOCKERHUB_USERNAME / DOCKERHUB_TOKEN in this repo's Actions secrets)"
+
+          echo ""
+          echo "=================== abhi-qa logs (last 100) ==================="
+          # The startup crash, if there is one, is here — a missing or malformed
+          # setting shows up as a pydantic ValidationError naming the field.
+          docker compose logs abhi-qa --tail=100 --no-color 2>&1 \
+            || echo "no logs — the container was never created"
+
+          echo ""
+          echo "=================== settings the container received ==================="
+          # Names only, never values: this output lands in a CI log.
+          # A name missing from this list is a setting that never reached the
+          # container, which is what an empty required field looks like.
+          docker compose exec -T abhi-qa env 2>/dev/null | grep -oE '^[A-Z][A-Z0-9_]*' | sort \
+            || echo "container not running, so its environment cannot be read"
+
+          echo ""
+          echo "=================== port 8001 ==================="
+          curl -sv --max-time 5 http://localhost:8001/abhi/health 2>&1 | tail -20 || true
+          ENDSSH
+        continue-on-error: true
+
+      - name: Deployment complete
+        run: |
+          echo "QA Backend deployment completed"
+          echo "QA Backend: https://qa.awesomliving.com/api"
