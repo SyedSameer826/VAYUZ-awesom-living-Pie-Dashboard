@@ -1,0 +1,103 @@
+From 7bf74624320edb5d341297330963c1f82751956e Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 16 Sep 2026 03:37:25 +0000
+Subject: [PATCH] remove resident dropdown from device edit form
+
+The home_id from hub setup is already sent automatically when mapping
+devices - no need for a separate resident selection. The backend
+assign-name endpoint never used the resident field anyway.
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01K9QKDncXrF7j2UToGt4AGj
+---
+ frontend/src/constants/device.js          |  1 -
+ frontend/src/pages/devices/DeviceForm.jsx | 12 ------------
+ frontend/src/pages/devices/index.jsx      |  2 --
+ frontend/src/services/deviceService.js    |  2 --
+ 4 files changed, 17 deletions(-)
+
+diff --git a/frontend/src/constants/device.js b/frontend/src/constants/device.js
+index f38033b..7568d54 100644
+--- a/frontend/src/constants/device.js
++++ b/frontend/src/constants/device.js
+@@ -2,7 +2,6 @@ export const emptyDeviceForm = {
+   device: "",
+   ieee_address: "",
+   type: "",
+-  resident: "",
+   paired_motion_ieee: "",
+   paired_window_ieee: "",
+ };
+diff --git a/frontend/src/pages/devices/DeviceForm.jsx b/frontend/src/pages/devices/DeviceForm.jsx
+index baa0b3e..b5b58e7 100644
+--- a/frontend/src/pages/devices/DeviceForm.jsx
++++ b/frontend/src/pages/devices/DeviceForm.jsx
+@@ -2,7 +2,6 @@ import { Button } from "../../components/buttons";
+ const DeviceForm = ({
+   editingId,
+   form,
+-  residents,
+   isSaving,
+   onChange,
+   onClose,
+@@ -45,17 +44,6 @@ const DeviceForm = ({
+               <option value="zigbee">Zigbee</option>
+             </select>
+           </label>
+-          <label className="form-field">
+-            <span>Resident</span>
+-            <select name="resident" value={form.resident} onChange={onChange}>
+-              <option value="">Select Resident</option>
+-              {(residents || []).map((resident) => (
+-                <option key={resident._id} value={resident._id}>
+-                  {resident.name || resident.full_name}
+-                </option>
+-              ))}
+-            </select>
+-          </label>
+           <div className="form-actions">
+             <Button variant="outline" onClick={onClose}>
+               Cancel
+diff --git a/frontend/src/pages/devices/index.jsx b/frontend/src/pages/devices/index.jsx
+index efd2913..15d4cf7 100644
+--- a/frontend/src/pages/devices/index.jsx
++++ b/frontend/src/pages/devices/index.jsx
+@@ -144,7 +144,6 @@ function Devices() {
+       device: device.device === "Unnamed Device" ? "" : device.device,
+       ieee_address: device.ieee_address === "-" ? "" : device.ieee_address,
+       type: device.type === "unknown" || !device.type ? "" : device.type,
+-      resident: device.resident || "",
+     });
+ 
+     setEditingId(device.id);
+@@ -397,7 +396,6 @@ function Devices() {
+           zigbee_type:
+             nextDevice.type == "contact" ? "door & window" : nextDevice.type,
+           home_id: homeId,
+-          resident: form.resident,
+         });
+         setDevices((current) =>
+           current.map((device, index) => {
+diff --git a/frontend/src/services/deviceService.js b/frontend/src/services/deviceService.js
+index 184edde..1cf6c8d 100644
+--- a/frontend/src/services/deviceService.js
++++ b/frontend/src/services/deviceService.js
+@@ -60,7 +60,6 @@ export const assignDeviceName = async ({
+   zigbee_ieee,
+   zigbee_name,
+   zigbee_type,
+-  resident,
+   home_id,
+   paired_motion_ieee,
+   paired_window_ieee,
+@@ -69,7 +68,6 @@ export const assignDeviceName = async ({
+     zigbee_ieee,
+     zigbee_name,
+     zigbee_type,
+-    resident,
+     home_id,
+   };
+ 
+-- 
+2.43.0
+
