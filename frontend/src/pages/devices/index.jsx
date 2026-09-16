@@ -382,33 +382,27 @@ function Devices() {
     };
 
     try {
-      try {
-        await assignDeviceName({
-          zigbee_ieee: nextDevice.ieee_address,
-          zigbee_name: nextDevice.device,
-          zigbee_type:
-            nextDevice.type == "contact" ? "door & window" : nextDevice.type,
-          home_id: homeId,
-          paired_motion_ieee: form.paired_motion_ieee,
-          paired_window_ieee: form.paired_window_ieee,
-        });
-        setDevices((current) =>
-          current.map((device, index) => {
-            const id = getDeviceId(device, index);
-
-            return id === editingId ? { ...device, ...nextDevice } : device;
-          }),
-        );
-        closeForm();
-      } catch {
-        closeForm();
-        alert(
-          "Something went wrong while saving the device.Please try again later or contact support.",
-        );
-        // Keep the UI responsive when the local Zigbee API is unavailable.
-      }
+      await assignDeviceName({
+        zigbee_ieee: nextDevice.ieee_address,
+        zigbee_name: nextDevice.device,
+        zigbee_type:
+          nextDevice.type == "contact" ? "door & window" : nextDevice.type,
+        home_id: homeId,
+        paired_motion_ieee: form.paired_motion_ieee,
+        paired_window_ieee: form.paired_window_ieee,
+      });
+      closeForm();
+      // Re-fetch all devices so paired sensors also show as mapped in the UI
+      // (the backend mapped them too, but the old code only updated the
+      // primary device in React state).
+      await loadData();
     } catch (saveError) {
-      setError(saveError.message || "Unable to save device");
+      closeForm();
+      const msg =
+        saveError?.response?.data?.error ||
+        saveError.message ||
+        "Something went wrong while saving the device. Please try again later or contact support.";
+      setError(msg);
     } finally {
       setIsSaving(false);
     }
