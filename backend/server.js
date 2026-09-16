@@ -1952,9 +1952,9 @@ app.post("/api/bp/pair", async (req, res) => {
     }
     const token = authHeader.split(" ")[1];
 
-    if (!address || !resident) {
+    if (!address) {
       return res.status(400).json({
-        error: "address and resident are required",
+        error: "address is required",
       });
     }
 

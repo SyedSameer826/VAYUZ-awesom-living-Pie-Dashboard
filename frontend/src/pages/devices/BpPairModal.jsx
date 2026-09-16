@@ -9,19 +9,12 @@ const BpPairModal = ({
   devices,
   isScanning,
   isPairing,
-  residents,
   onScan,
   onPair,
   onClose,
   error,
 }) => {
   const [selected, setSelected] = useState(null); // the chosen device object
-  const [form, setForm] = useState({
-    resident: "",
-  });
-
-  const change = (e) =>
-    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
   // Auto-select the first device when scan results arrive
   useEffect(() => {
@@ -30,7 +23,7 @@ const BpPairModal = ({
     }
   }, [devices]);
 
-  const canPair = selected && form.resident;
+  const canPair = !!selected;
 
   const submit = (e) => {
     e.preventDefault();
@@ -38,7 +31,6 @@ const BpPairModal = ({
     onPair({
       address: selected.address,
       name: selected.name,
-      resident: form.resident,
     });
   };
 
@@ -68,7 +60,7 @@ const BpPairModal = ({
             <b>Instructions:</b>
             <ol style={{ margin: "6px 0 0", paddingLeft: 18 }}>
               <li>Keep the BP monitor <b>within 1 meter</b> of the Pi and <b>take a measurement</b> (or press START) so it appears in the scan below.</li>
-              <li>Select the device and choose a <b>Resident</b>.</li>
+              <li>Select the device from the list below.</li>
               <li><b>Now</b> put the cuff in pairing mode: hold <b>START ~3 seconds</b> until <b>Pr</b> blinks on the display.</li>
               <li>Click <b>Pair &amp; Map</b> <b>immediately</b> — the cuff only advertises for ~30 seconds.</li>
               <li>If you see <b>ERR 10</b>, remove batteries for 30 seconds, reinsert, and repeat from step 3.</li>
@@ -131,23 +123,6 @@ const BpPairModal = ({
               mode, then rescan.
             </p>
           )}
-
-          {/* 2) Resident (enabled once a device is selected) */}
-          <label className="form-field">
-            <span>Resident</span>
-            <select
-              name="resident"
-              value={form.resident}
-              onChange={change}
-            >
-              <option value="">Select Resident</option>
-              {residents.map((r) => (
-                <option key={r._id} value={r._id}>
-                  {r.name || r.full_name}
-                </option>
-              ))}
-            </select>
-          </label>
 
           <div className="form-actions" style={{ marginTop: 14 }}>
             <Button variant="outline" onClick={onClose}>

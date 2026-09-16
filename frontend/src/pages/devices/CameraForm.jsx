@@ -140,18 +140,6 @@ const CameraForm = ({
               placeholder="e.g. living_room"
             />
           </label>
-          <label className="form-field">
-            <span>Resident</span>
-            <select name="resident" value={form.resident} onChange={onChange}>
-              <option value="">Select Resident</option>
-              {(residents || []).map((resident) => (
-                <option key={resident._id} value={resident._id}>
-                  {resident.name || resident.full_name}
-                </option>
-              ))}
-            </select>
-          </label>
-
           <div className="form-actions">
             <Button variant="outline" onClick={onClose}>
               Cancel

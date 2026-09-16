@@ -60,7 +60,6 @@ export const assignDeviceName = async ({
   zigbee_ieee,
   zigbee_name,
   zigbee_type,
-  resident,
   home_id,
   paired_motion_ieee,
   paired_window_ieee,
@@ -69,7 +68,6 @@ export const assignDeviceName = async ({
     zigbee_ieee,
     zigbee_name,
     zigbee_type,
-    resident,
     home_id,
   };
 
@@ -218,11 +216,11 @@ export const scanBp = async () => {
 };
 
 // Bond with a BP monitor and map it to a resident on the cloud backend.
-export const pairBp = async ({ address, name, resident }) => {
+export const pairBp = async ({ address, name }) => {
   const response = await fetch(`${API_BASE_URL}bp/pair`, {
     method: "POST",
     headers: getAuthHeaders(),
-    body: JSON.stringify({ address, name, resident }),
+    body: JSON.stringify({ address, name }),
   });
 
   const data = await response.json().catch(() => ({}));

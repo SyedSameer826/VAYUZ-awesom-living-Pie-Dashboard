@@ -32,7 +32,6 @@ const emptyCameraForm = {
   local_ip: "",
   camera_password: "",
   room: "living_room",
-  resident: "",
 };
 
 function Devices() {
@@ -133,7 +132,6 @@ function Devices() {
         local_ip: device.local_ip || "",
         camera_password: "",
         room: "living_room",
-        resident: "",
       });
       setError("");
       setIsCameraOpen(true);
@@ -144,7 +142,6 @@ function Devices() {
       device: device.device === "Unnamed Device" ? "" : device.device,
       ieee_address: device.ieee_address === "-" ? "" : device.ieee_address,
       type: device.type === "unknown" || !device.type ? "" : device.type,
-      resident: device.resident || "",
     });
 
     setEditingId(device.id);
@@ -182,11 +179,6 @@ function Devices() {
       return;
     }
 
-    if (!cameraForm.resident) {
-      setError("Resident is required");
-      return;
-    }
-
     setIsSaving(true);
     setError("");
 
@@ -206,7 +198,6 @@ function Devices() {
         local_ip: ip,
         rtsp_url,
         home_id: homeId,
-        resident: cameraForm.resident,
         room: cameraForm.room.trim() || "living_room",
       });
       closeCameraForm();
@@ -355,7 +346,6 @@ function Devices() {
       local_ip: cam.ip || "",
       camera_password: "",
       room: "living_room",
-      resident: "",
     });
     setError("");
     setIsCameraOpen(true);
@@ -397,7 +387,6 @@ function Devices() {
           zigbee_type:
             nextDevice.type == "contact" ? "door & window" : nextDevice.type,
           home_id: homeId,
-          resident: form.resident,
         });
         setDevices((current) =>
           current.map((device, index) => {
@@ -572,7 +561,6 @@ function Devices() {
           devices={bpDevices}
           isScanning={isBpScanning}
           isPairing={isBpPairing}
-          residents={residents}
           error={error}
           onScan={runBpScan}
           onPair={handleBpPair}
