@@ -25,12 +25,15 @@ const DeviceForm = ({
       .map((d) => d.paired_with.window_ieee),
   );
 
-  // Only show unpaired contact sensors (+ the one already paired to THIS device)
+  // Only show unpaired + unmapped contact sensors (+ the one already paired to THIS device)
   const contact_sensors = (devices || []).filter(
     (d) =>
       (d.type === "contact" || d.type === "door & window") &&
-      (!paired_window_iees.has(d.ieee_address) ||
-        d.ieee_address === form.paired_window_ieee),
+      // Keep the sensor currently paired to THIS device visible for re-editing
+      (d.ieee_address === form.paired_window_ieee ||
+        // Otherwise exclude already-mapped and already-paired sensors
+        (d.status !== "mapped" &&
+          !paired_window_iees.has(d.ieee_address))),
   );
 
   const is_motion = form.type === "motion";
