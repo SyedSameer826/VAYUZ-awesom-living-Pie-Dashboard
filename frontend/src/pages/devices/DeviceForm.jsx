@@ -2,11 +2,22 @@ import { Button } from "../../components/buttons";
 const DeviceForm = ({
   editingId,
   form,
+  devices,
   isSaving,
   onChange,
   onClose,
   onSubmit,
 }) => {
+  // Filter available sensors for pairing dropdowns (exclude the device being edited)
+  const motion_sensors = (devices || []).filter(
+    (d) => d.type === "motion" && d.ieee_address !== form.ieee_address,
+  );
+  const contact_sensors = (devices || []).filter(
+    (d) => d.type === "contact" || d.type === "door & window",
+  );
+
+  const is_motion = form.type === "motion";
+
   return (
     <div className="device-form-modal">
       <div className="modal-backdrop" onClick={onClose}>
@@ -44,6 +55,42 @@ const DeviceForm = ({
               <option value="zigbee">Zigbee</option>
             </select>
           </label>
+
+          {is_motion && (
+            <>
+              <label className="form-field">
+                <span>Paired Motion Sensor</span>
+                <select
+                  name="paired_motion_ieee"
+                  value={form.paired_motion_ieee}
+                  onChange={onChange}
+                >
+                  <option value="">Select paired motion sensor</option>
+                  {motion_sensors.map((d) => (
+                    <option key={d.ieee_address} value={d.ieee_address}>
+                      {d.device || d.friendly_name || d.ieee_address}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="form-field">
+                <span>Paired Window / Door Sensor</span>
+                <select
+                  name="paired_window_ieee"
+                  value={form.paired_window_ieee}
+                  onChange={onChange}
+                >
+                  <option value="">Select paired window sensor</option>
+                  {contact_sensors.map((d) => (
+                    <option key={d.ieee_address} value={d.ieee_address}>
+                      {d.device || d.friendly_name || d.ieee_address}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          )}
+
           <div className="form-actions">
             <Button variant="outline" onClick={onClose}>
               Cancel

@@ -142,6 +142,8 @@ function Devices() {
       device: device.device === "Unnamed Device" ? "" : device.device,
       ieee_address: device.ieee_address === "-" ? "" : device.ieee_address,
       type: device.type === "unknown" || !device.type ? "" : device.type,
+      paired_motion_ieee: device.paired_motion_ieee || "",
+      paired_window_ieee: device.paired_window_ieee || "",
     });
 
     setEditingId(device.id);
@@ -387,6 +389,8 @@ function Devices() {
           zigbee_type:
             nextDevice.type == "contact" ? "door & window" : nextDevice.type,
           home_id: homeId,
+          paired_motion_ieee: form.paired_motion_ieee,
+          paired_window_ieee: form.paired_window_ieee,
         });
         setDevices((current) =>
           current.map((device, index) => {
@@ -514,6 +518,7 @@ function Devices() {
         <DeviceForm
           editingId={editingId}
           form={form}
+          devices={devices}
           isSaving={isSaving}
           onChange={handleFormChange}
           onClose={closeForm}
