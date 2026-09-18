@@ -146,6 +146,8 @@ function Devices() {
       paired_window_ieee: device.paired_with?.window_ieee || "",
       occupancy_group: device.occupancy_group || "",
       sensor_role: device.sensor_role || "",
+      paired_motion_role: device.paired_motion_role || "",
+      paired_window_role: device.paired_window_role || "",
     });
 
     setEditingId(device.id);
@@ -394,6 +396,8 @@ function Devices() {
         paired_window_ieee: form.paired_window_ieee,
         occupancy_group: form.occupancy_group,
         sensor_role: form.sensor_role,
+        paired_motion_role: form.paired_motion_role,
+        paired_window_role: form.paired_window_role,
       });
       closeForm();
       // Re-fetch all devices so paired sensors also show as mapped in the UI

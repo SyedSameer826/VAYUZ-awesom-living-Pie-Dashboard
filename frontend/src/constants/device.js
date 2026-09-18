@@ -6,6 +6,8 @@ export const emptyDeviceForm = {
   paired_window_ieee: "",
   occupancy_group: "",
   sensor_role: "",
+  paired_motion_role: "",
+  paired_window_role: "",
 };
 
 export const sensorRoleOptions = [

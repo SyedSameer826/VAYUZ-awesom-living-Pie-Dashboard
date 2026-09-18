@@ -230,6 +230,7 @@ app.post("/api/assign-name", async (req, res) => {
       zigbee_ieee, zigbee_name, home_id, zigbee_type, room, resident,
       paired_motion_ieee, paired_window_ieee,
       occupancy_group, sensor_role,
+      paired_motion_role, paired_window_role,
     } = req.body;
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -281,17 +282,23 @@ app.post("/api/assign-name", async (req, res) => {
     if (sensor_role) occ_extra.sensor_role = sensor_role;
     mapSingleDevice(zigbee_ieee, zigbee_name, detectedType, occ_extra);
 
-    // Step 2: If motion type with paired devices, also map them
+    // Step 2: If motion type with paired devices, also map them (with occupancy fields)
     if (detectedType === "motion" && paired_motion_ieee) {
       const motion2_name = zigbee_name.replace(/motion/i, "motion_2") ||
         `${zigbee_name}_motion_2`;
-      mapSingleDevice(paired_motion_ieee, motion2_name, "motion");
+      const motion2_occ = {};
+      if (occupancy_group) motion2_occ.occupancy_group = occupancy_group;
+      if (paired_motion_role) motion2_occ.sensor_role = paired_motion_role;
+      mapSingleDevice(paired_motion_ieee, motion2_name, "motion", motion2_occ);
     }
 
     if (detectedType === "motion" && paired_window_ieee) {
       const window_name = zigbee_name.replace(/motion/i, "window") ||
         `${zigbee_name}_window`;
-      mapSingleDevice(paired_window_ieee, window_name, "contact");
+      const window_occ = {};
+      if (occupancy_group) window_occ.occupancy_group = occupancy_group;
+      if (paired_window_role) window_occ.sensor_role = paired_window_role;
+      mapSingleDevice(paired_window_ieee, window_name, "contact", window_occ);
     }
 
     // Step 3: Send primary device to remote backend
@@ -321,7 +328,7 @@ app.post("/api/assign-name", async (req, res) => {
       const motion2_name = zigbee_name.replace(/motion/i, "motion_2") ||
         `${zigbee_name}_motion_2`;
       try {
-        const r = await axios.post(`${REMOTE_BACKEND}/api/user/devices`, {
+        const paired_motion_payload = {
           type: "Zigbee",
           name: motion2_name,
           id: motion2_name,
@@ -330,7 +337,10 @@ app.post("/api/assign-name", async (req, res) => {
           room: resolved_room,
           home: resolved_home,
           resident: resident || undefined,
-        });
+        };
+        if (occupancy_group) paired_motion_payload.occupancy_group = occupancy_group;
+        if (paired_motion_role) paired_motion_payload.sensor_role = paired_motion_role;
+        const r = await axios.post(`${REMOTE_BACKEND}/api/user/devices`, paired_motion_payload);
         paired_results.push({ ieee: paired_motion_ieee, success: true, data: r.data });
       } catch (err2) {
         console.error("Failed to map paired motion to remote:", err2.response?.data || err2.message);
@@ -342,7 +352,7 @@ app.post("/api/assign-name", async (req, res) => {
       const window_name = zigbee_name.replace(/motion/i, "window") ||
         `${zigbee_name}_window`;
       try {
-        const r = await axios.post(`${REMOTE_BACKEND}/api/user/devices`, {
+        const paired_window_payload = {
           type: "Zigbee",
           name: window_name,
           id: window_name,
@@ -351,7 +361,10 @@ app.post("/api/assign-name", async (req, res) => {
           room: resolved_room,
           home: resolved_home,
           resident: resident || undefined,
-        });
+        };
+        if (occupancy_group) paired_window_payload.occupancy_group = occupancy_group;
+        if (paired_window_role) paired_window_payload.sensor_role = paired_window_role;
+        const r = await axios.post(`${REMOTE_BACKEND}/api/user/devices`, paired_window_payload);
         paired_results.push({ ieee: paired_window_ieee, success: true, data: r.data });
       } catch (err3) {
         console.error("Failed to map paired window to remote:", err3.response?.data || err3.message);

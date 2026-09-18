@@ -65,6 +65,8 @@ export const assignDeviceName = async ({
   paired_window_ieee,
   occupancy_group,
   sensor_role,
+  paired_motion_role,
+  paired_window_role,
 }) => {
   const payload = {
     zigbee_ieee,
@@ -87,6 +89,14 @@ export const assignDeviceName = async ({
 
   if (sensor_role) {
     payload.sensor_role = sensor_role;
+  }
+
+  if (paired_motion_role) {
+    payload.paired_motion_role = paired_motion_role;
+  }
+
+  if (paired_window_role) {
+    payload.paired_window_role = paired_window_role;
   }
 
   const response = await fetch(`${API_BASE_URL}assign-name`, {
