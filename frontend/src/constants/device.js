@@ -4,7 +4,16 @@ export const emptyDeviceForm = {
   type: "",
   paired_motion_ieee: "",
   paired_window_ieee: "",
+  occupancy_group: "",
+  sensor_role: "",
 };
+
+export const sensorRoleOptions = [
+  { value: "", label: "None" },
+  { value: "threshold_motion", label: "Threshold Motion (curtain/doorway PIR)" },
+  { value: "room_motion", label: "Room Motion (in-room PIR)" },
+  { value: "occupancy_door", label: "Occupancy Door (contact sensor)" },
+];
 
 export const deviceHeaders = [
   { fieldName: "device", headerName: "Device" },

@@ -126,14 +126,15 @@ export const upsertDevice = (device) => {
 
       if (index !== -1) {
         const existing = devices[index];
-        // Preserve a mapped device's identity — only refresh its type and
-        // pairing info (paired_with is set when editing a motion sensor's
-        // paired motion / window sensors via the dashboard form).
+        // Preserve a mapped device's identity — only refresh its type,
+        // pairing info, and occupancy fields.
         if (existing.status === "mapped" && existing.is_unassigned === false) {
           devices[index] = {
             ...existing,
             type: device.type || existing.type,
             ...(device.paired_with !== undefined && { paired_with: device.paired_with }),
+            ...(device.occupancy_group !== undefined && { occupancy_group: device.occupancy_group }),
+            ...(device.sensor_role !== undefined && { sensor_role: device.sensor_role }),
           };
         } else {
           devices[index] = { ...existing, ...device };

@@ -1,4 +1,5 @@
 import { Button } from "../../components/buttons";
+import { sensorRoleOptions } from "../../constants/device";
 const DeviceForm = ({
   editingId,
   form,
@@ -37,6 +38,10 @@ const DeviceForm = ({
   );
 
   const is_motion = form.type === "motion";
+  const show_occupancy =
+    form.type === "motion" ||
+    form.type === "contact" ||
+    form.type === "presence";
 
   return (
     <div className="device-form-modal">
@@ -104,6 +109,34 @@ const DeviceForm = ({
                   {contact_sensors.map((d) => (
                     <option key={d.ieee_address} value={d.ieee_address}>
                       {d.device || d.friendly_name || d.ieee_address}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          )}
+
+          {show_occupancy && (
+            <>
+              <label className="form-field">
+                <span>Occupancy Group</span>
+                <input
+                  name="occupancy_group"
+                  value={form.occupancy_group}
+                  onChange={onChange}
+                  placeholder="e.g. bathroom_1"
+                />
+              </label>
+              <label className="form-field">
+                <span>Sensor Role</span>
+                <select
+                  name="sensor_role"
+                  value={form.sensor_role}
+                  onChange={onChange}
+                >
+                  {sensorRoleOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
                     </option>
                   ))}
                 </select>

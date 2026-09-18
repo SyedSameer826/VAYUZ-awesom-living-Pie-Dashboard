@@ -229,6 +229,7 @@ app.post("/api/assign-name", async (req, res) => {
     const {
       zigbee_ieee, zigbee_name, home_id, zigbee_type, room, resident,
       paired_motion_ieee, paired_window_ieee,
+      occupancy_group, sensor_role,
     } = req.body;
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -244,7 +245,7 @@ app.post("/api/assign-name", async (req, res) => {
     const resolved_home = home_id || readHubConfig().home_id || undefined;
 
     // Helper: rename a single device in Z2M and devices.json
-    const mapSingleDevice = (ieee, name, type) => {
+    const mapSingleDevice = (ieee, name, type, extra = {}) => {
       upsertDevice({
         ieee_address: ieee,
         name: name,
@@ -255,6 +256,7 @@ app.post("/api/assign-name", async (req, res) => {
         paired_with: detectedType === "motion"
           ? { motion_ieee: zigbee_ieee, paired_motion_ieee: paired_motion_ieee || undefined, window_ieee: paired_window_ieee || undefined }
           : undefined,
+        ...extra,
       });
 
       try {
@@ -273,8 +275,11 @@ app.post("/api/assign-name", async (req, res) => {
       }
     };
 
-    // Step 1: Map the primary device
-    mapSingleDevice(zigbee_ieee, zigbee_name, detectedType);
+    // Step 1: Map the primary device (with occupancy fields if provided)
+    const occ_extra = {};
+    if (occupancy_group) occ_extra.occupancy_group = occupancy_group;
+    if (sensor_role) occ_extra.sensor_role = sensor_role;
+    mapSingleDevice(zigbee_ieee, zigbee_name, detectedType, occ_extra);
 
     // Step 2: If motion type with paired devices, also map them
     if (detectedType === "motion" && paired_motion_ieee) {
@@ -291,20 +296,23 @@ app.post("/api/assign-name", async (req, res) => {
 
     // Step 3: Send primary device to remote backend
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    const remote_payload = {
+      type: "Zigbee",
+      name: zigbee_name,
+      id: zigbee_name,
+      ieee: zigbee_ieee,
+      sensor_type: detectedType,
+      room: resolved_room,
+      home: resolved_home,
+      resident: resident || undefined,
+      paired_motion_ieee: paired_motion_ieee || undefined,
+      paired_window_ieee: paired_window_ieee || undefined,
+    };
+    if (occupancy_group) remote_payload.occupancy_group = occupancy_group;
+    if (sensor_role) remote_payload.sensor_role = sensor_role;
     const response = await axios.post(
       `${REMOTE_BACKEND}/api/user/devices`,
-      {
-        type: "Zigbee",
-        name: zigbee_name,
-        id: zigbee_name,
-        ieee: zigbee_ieee,
-        sensor_type: detectedType,
-        room: resolved_room,
-        home: resolved_home,
-        resident: resident || undefined,
-        paired_motion_ieee: paired_motion_ieee || undefined,
-        paired_window_ieee: paired_window_ieee || undefined,
-      },
+      remote_payload,
     );
 
     // Step 4: Send paired devices to remote backend too
