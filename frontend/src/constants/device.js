@@ -17,6 +17,19 @@ export const sensorRoleOptions = [
   { value: "occupancy_door", label: "Occupancy Door (contact sensor)" },
 ];
 
+// Roles applicable to motion-type paired sensors
+export const motionRoleOptions = [
+  { value: "", label: "None" },
+  { value: "threshold_motion", label: "Threshold Motion (curtain/doorway PIR)" },
+  { value: "room_motion", label: "Room Motion (in-room PIR)" },
+];
+
+// Roles applicable to contact-type paired sensors
+export const contactRoleOptions = [
+  { value: "", label: "None" },
+  { value: "occupancy_door", label: "Occupancy Door (contact sensor)" },
+];
+
 export const deviceHeaders = [
   { fieldName: "device", headerName: "Device" },
   { fieldName: "ieee_address", headerName: "IEEE Address" },

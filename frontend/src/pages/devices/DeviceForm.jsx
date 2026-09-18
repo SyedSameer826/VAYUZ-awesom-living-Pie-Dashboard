@@ -1,5 +1,5 @@
 import { Button } from "../../components/buttons";
-import { sensorRoleOptions } from "../../constants/device";
+import { sensorRoleOptions, motionRoleOptions, contactRoleOptions } from "../../constants/device";
 const DeviceForm = ({
   editingId,
   form,
@@ -129,7 +129,7 @@ const DeviceForm = ({
                 />
               </label>
               <label className="form-field">
-                <span>Sensor Role</span>
+                <span>Sensor Role (Master)</span>
                 <select
                   name="sensor_role"
                   value={form.sensor_role}
@@ -142,6 +142,38 @@ const DeviceForm = ({
                   ))}
                 </select>
               </label>
+              {form.paired_motion_ieee && (
+                <label className="form-field">
+                  <span>Sensor Role (Paired Motion)</span>
+                  <select
+                    name="paired_motion_role"
+                    value={form.paired_motion_role}
+                    onChange={onChange}
+                  >
+                    {motionRoleOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {form.paired_window_ieee && (
+                <label className="form-field">
+                  <span>Sensor Role (Paired Contact)</span>
+                  <select
+                    name="paired_window_role"
+                    value={form.paired_window_role}
+                    onChange={onChange}
+                  >
+                    {contactRoleOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
             </>
           )}
 

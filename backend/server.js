@@ -230,6 +230,7 @@ app.post("/api/assign-name", async (req, res) => {
       zigbee_ieee, zigbee_name, home_id, zigbee_type, room, resident,
       paired_motion_ieee, paired_window_ieee,
       occupancy_group, sensor_role,
+      paired_motion_role, paired_window_role,
     } = req.body;
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -283,16 +284,16 @@ app.post("/api/assign-name", async (req, res) => {
 
     // Step 2: If motion type with paired devices, also map them.
     // Paired devices inherit the same occupancy_group from the primary
-    // sensor and get their own sensor_role automatically:
-    //   paired_motion_ieee  → sensor_role: "room_motion"
-    //   paired_window_ieee  → sensor_role: "occupancy_door"
+    // sensor. Each paired device gets the role selected by the user on the
+    // form (paired_motion_role / paired_window_role), falling back to the
+    // original defaults when the form field is empty.
     if (detectedType === "motion" && paired_motion_ieee) {
       const motion2_name = zigbee_name.replace(/motion/i, "motion_2") ||
         `${zigbee_name}_motion_2`;
       const motion2_occ = {};
       if (occupancy_group) {
         motion2_occ.occupancy_group = occupancy_group;
-        motion2_occ.sensor_role = "room_motion";
+        motion2_occ.sensor_role = paired_motion_role || "room_motion";
       }
       mapSingleDevice(paired_motion_ieee, motion2_name, "motion", motion2_occ);
     }
@@ -303,7 +304,7 @@ app.post("/api/assign-name", async (req, res) => {
       const window_occ = {};
       if (occupancy_group) {
         window_occ.occupancy_group = occupancy_group;
-        window_occ.sensor_role = "occupancy_door";
+        window_occ.sensor_role = paired_window_role || "occupancy_door";
       }
       mapSingleDevice(paired_window_ieee, window_name, "contact", window_occ);
     }
@@ -345,10 +346,10 @@ app.post("/api/assign-name", async (req, res) => {
           home: resolved_home,
           resident: resident || undefined,
         };
-        // Paired motion_2 inherits occupancy_group with role "room_motion"
+        // Paired motion_2 inherits occupancy_group with user-selected role
         if (occupancy_group) {
           motion2_payload.occupancy_group = occupancy_group;
-          motion2_payload.sensor_role = "room_motion";
+          motion2_payload.sensor_role = paired_motion_role || "room_motion";
         }
         const r = await axios.post(`${REMOTE_BACKEND}/api/user/devices`, motion2_payload);
         paired_results.push({ ieee: paired_motion_ieee, success: true, data: r.data });
@@ -372,10 +373,10 @@ app.post("/api/assign-name", async (req, res) => {
           home: resolved_home,
           resident: resident || undefined,
         };
-        // Paired window/door sensor inherits occupancy_group with role "occupancy_door"
+        // Paired window/door sensor inherits occupancy_group with user-selected role
         if (occupancy_group) {
           window_payload.occupancy_group = occupancy_group;
-          window_payload.sensor_role = "occupancy_door";
+          window_payload.sensor_role = paired_window_role || "occupancy_door";
         }
         const r = await axios.post(`${REMOTE_BACKEND}/api/user/devices`, window_payload);
         paired_results.push({ ieee: paired_window_ieee, success: true, data: r.data });

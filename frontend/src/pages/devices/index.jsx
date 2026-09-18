@@ -138,16 +138,26 @@ function Devices() {
       return;
     }
 
+    // Look up paired devices to pre-fill their sensor roles
+    const paired_motion_ieee = device.paired_with?.paired_motion_ieee || "";
+    const paired_window_ieee = device.paired_with?.window_ieee || "";
+    const paired_motion_dev = paired_motion_ieee
+      ? devices.find((d) => d.ieee_address === paired_motion_ieee)
+      : null;
+    const paired_window_dev = paired_window_ieee
+      ? devices.find((d) => d.ieee_address === paired_window_ieee)
+      : null;
+
     setForm({
       device: device.device === "Unnamed Device" ? "" : device.device,
       ieee_address: device.ieee_address === "-" ? "" : device.ieee_address,
       type: device.type === "unknown" || !device.type ? "" : device.type,
-      paired_motion_ieee: device.paired_with?.paired_motion_ieee || "",
-      paired_window_ieee: device.paired_with?.window_ieee || "",
+      paired_motion_ieee,
+      paired_window_ieee,
       occupancy_group: device.occupancy_group || "",
       sensor_role: device.sensor_role || "",
-      paired_motion_role: device.paired_motion_role || "",
-      paired_window_role: device.paired_window_role || "",
+      paired_motion_role: paired_motion_dev?.sensor_role || (paired_motion_ieee ? "room_motion" : ""),
+      paired_window_role: paired_window_dev?.sensor_role || (paired_window_ieee ? "occupancy_door" : ""),
     });
 
     setEditingId(device.id);
@@ -362,7 +372,24 @@ function Devices() {
 
   const handleFormChange = (event) => {
     const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
+    setForm((current) => {
+      const next = { ...current, [name]: value };
+      // Auto-default role when a paired device is first selected
+      if (name === "paired_motion_ieee" && value && !current.paired_motion_role) {
+        next.paired_motion_role = "room_motion";
+      }
+      if (name === "paired_window_ieee" && value && !current.paired_window_role) {
+        next.paired_window_role = "occupancy_door";
+      }
+      // Clear role when paired device is deselected
+      if (name === "paired_motion_ieee" && !value) {
+        next.paired_motion_role = "";
+      }
+      if (name === "paired_window_ieee" && !value) {
+        next.paired_window_role = "";
+      }
+      return next;
+    });
   };
 
   const handleSave = async (event) => {
