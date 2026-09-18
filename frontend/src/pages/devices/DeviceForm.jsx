@@ -38,11 +38,11 @@ const DeviceForm = ({
   );
 
   const is_motion = form.type === "motion";
-  const show_occupancy =
-    form.type === "motion" ||
-    form.type === "contact" ||
-    form.type === "door & window" ||
-    form.type === "presence";
+  // Occupancy fields (occupancy_group, sensor_role) are ONLY relevant for
+  // motion sensors. Contact sensors used in an occupancy group get their
+  // occupancy fields automatically via the motion sensor's pairing flow —
+  // they should never be editable on the contact form itself.
+  const show_occupancy = form.type === "motion";
 
   return (
     <div className="device-form-modal">
@@ -143,40 +143,6 @@ const DeviceForm = ({
                 </select>
               </label>
             </>
-          )}
-
-          {is_motion && form.paired_motion_ieee && (
-            <label className="form-field">
-              <span>Paired Motion Sensor Role</span>
-              <select
-                name="paired_motion_role"
-                value={form.paired_motion_role}
-                onChange={onChange}
-              >
-                {sensorRoleOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-
-          {is_motion && form.paired_window_ieee && (
-            <label className="form-field">
-              <span>Paired Door/Window Sensor Role</span>
-              <select
-                name="paired_window_role"
-                value={form.paired_window_role}
-                onChange={onChange}
-              >
-                {sensorRoleOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </label>
           )}
 
           <div className="form-actions">
