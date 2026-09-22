@@ -1,0 +1,623 @@
+import { useEffect, useMemo, useState } from "react";
+import DataTable from "../../components/table/dataTable";
+import {
+  deviceHeaders,
+  emptyDeviceForm,
+  // sampleDevices,
+} from "../../constants/device";
+import {
+  assignDeviceName,
+  assignCamera,
+  scanCameras,
+  enableCameraDhcp,
+  openCameraSetup,
+  scanGlk,
+  pairGlk,
+  scanBp,
+  pairBp,
+  getDeviceDetails,
+  getResidents,
+  getHubSetup,
+  deleteDevice,
+} from "../../services/deviceService";
+import { getDeviceId, mapDeviceRows } from "../../utils/devices";
+import DeviceForm from "./DeviceForm";
+import CameraForm from "./CameraForm";
+import CameraPairModal from "./CameraPairModal";
+import GlkPairModal from "./GlkPairModal";
+import BpPairModal from "./BpPairModal";
+
+const emptyCameraForm = {
+  stream_name: "",
+  local_ip: "",
+  camera_password: "",
+  room: "living_room",
+};
+
+function Devices() {
+  const [devices, setDevices] = useState([]);
+  const [form, setForm] = useState(emptyDeviceForm);
+  const [editingId, setEditingId] = useState("");
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [search, setSearch] = useState("");
+  const [error, setError] = useState("");
+  const [residents, setResidents] = useState([]);
+  const [cameraForm, setCameraForm] = useState(emptyCameraForm);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isPairOpen, setIsPairOpen] = useState(false);
+  const [discoveredCameras, setDiscoveredCameras] = useState([]);
+  const [isScanning, setIsScanning] = useState(false);
+  const [isGlkOpen, setIsGlkOpen] = useState(false);
+  const [glkDevices, setGlkDevices] = useState([]);
+  const [isGlkScanning, setIsGlkScanning] = useState(false);
+  const [isGlkPairing, setIsGlkPairing] = useState(false);
+  const [isBpOpen, setIsBpOpen] = useState(false);
+  const [bpDevices, setBpDevices] = useState([]);
+  const [isBpScanning, setIsBpScanning] = useState(false);
+  const [isBpPairing, setIsBpPairing] = useState(false);
+  const [homeId, setHomeId] = useState("");
+  const tableRows = useMemo(() => mapDeviceRows(devices), [devices]);
+  const filteredRows = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    if (!query) {
+      return tableRows;
+    }
+
+    return tableRows.filter((device) => {
+      return [device.device, device.ieee_address, device.type, device.status]
+        .join(" ")
+        .toLowerCase()
+        .includes(query);
+    });
+  }, [search, tableRows]);
+
+  const activeCount = tableRows.filter(
+    (device) => device.status === "mapped",
+  ).length;
+  const inactiveCount = tableRows.length - activeCount;
+
+  const loadData = async (showLoader = false) => {
+    if (showLoader) {
+      setIsLoading(true);
+    }
+
+    // Devices come from the Pi backend — this is the source of truth for the
+    // listing. Load it INDEPENDENTLY so a failure of the remote resident API
+    // (Render free tier cold-starts / DNS hiccups) can never wipe the device
+    // list. Only an explicit delete should ever remove a device from the UI.
+    try {
+      const deviceData = await getDeviceDetails();
+      setDevices(deviceData);
+      setError("");
+    } catch {
+      setError(
+        "Could not load devices — backend may be restarting. Click Refresh to retry.",
+      );
+    }
+
+    // Fetch the home_id mapped to this Pi hub (set during first-time setup).
+    // Used to automatically include home_id in device/camera mapping payloads
+    // and to filter the resident list for GLK pairing.
+    let hid = "";
+    try {
+      const hubData = await getHubSetup();
+      hid = hubData.home_id || "";
+      if (hid) setHomeId(hid);
+    } catch {
+      // Hub setup endpoint may not be available in dev mode.
+    }
+
+    // Residents come from the remote backend. Only needed for the GLK pairing
+    // dropdown — device and camera forms use home_id automatically.
+    try {
+      const residentData = await getResidents({ home_id: hid });
+      setResidents(residentData);
+    } catch {
+      // Keep whatever residents we already have — the dropdown may be stale.
+    }
+
+    if (showLoader) {
+      setIsLoading(false);
+    }
+  };
+
+  const openEditForm = (device) => {
+    // Camera rows go to the camera mapping flow, pre-filled — not the Zigbee form.
+    if (device.type === "camera") {
+      setCameraForm({
+        stream_name: device.stream_name || device.ieee_address || "",
+        local_ip: device.local_ip || "",
+        camera_password: "",
+        room: "living_room",
+      });
+      setError("");
+      setIsCameraOpen(true);
+      return;
+    }
+
+    // Look up paired devices to pre-fill their sensor roles
+    const paired_motion_ieee = device.paired_with?.paired_motion_ieee || "";
+    const paired_window_ieee = device.paired_with?.window_ieee || "";
+    const paired_motion_dev = paired_motion_ieee
+      ? devices.find((d) => d.ieee_address === paired_motion_ieee)
+      : null;
+    const paired_window_dev = paired_window_ieee
+      ? devices.find((d) => d.ieee_address === paired_window_ieee)
+      : null;
+
+    // Only populate occupancy fields for motion-type devices — contact,
+    // switch, and other sensor types must never carry occupancy_group /
+    // sensor_role (those are for the 3-device occupancy state machine).
+    const resolved_type =
+      device.type === "unknown" || !device.type ? "" : device.type;
+    const is_motion = resolved_type === "motion";
+
+    setForm({
+      device: device.device === "Unnamed Device" ? "" : device.device,
+      ieee_address: device.ieee_address === "-" ? "" : device.ieee_address,
+      type: resolved_type,
+      paired_motion_ieee: is_motion ? paired_motion_ieee : "",
+      paired_window_ieee: is_motion ? paired_window_ieee : "",
+      occupancy_group: is_motion ? (device.occupancy_group || "") : "",
+      sensor_role: is_motion ? (device.sensor_role || "") : "",
+      paired_motion_role: is_motion
+        ? (paired_motion_dev?.sensor_role || (paired_motion_ieee ? "room_motion" : ""))
+        : "",
+      paired_window_role: is_motion
+        ? (paired_window_dev?.sensor_role || (paired_window_ieee ? "occupancy_door" : ""))
+        : "",
+    });
+
+    setEditingId(device.id);
+    setError("");
+    setIsFormOpen(true);
+  };
+
+  const closeForm = () => {
+    setForm(emptyDeviceForm);
+    setEditingId("");
+    setIsFormOpen(false);
+  };
+
+  const openCameraForm = () => {
+    setCameraForm(emptyCameraForm);
+    setError("");
+    setIsCameraOpen(true);
+  };
+
+  const closeCameraForm = () => {
+    setCameraForm(emptyCameraForm);
+    setIsCameraOpen(false);
+  };
+
+  const handleCameraChange = (event) => {
+    const { name, value } = event.target;
+    setCameraForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleSaveCamera = async (event) => {
+    event.preventDefault();
+
+    if (!cameraForm.stream_name.trim()) {
+      setError("Stream name is required");
+      return;
+    }
+
+    setIsSaving(true);
+    setError("");
+
+    // Build the RTSP URL from the IP + admin password the user entered. Only
+    // needed to (re)register a new camera's stream in go2rtc; if left blank the
+    // stream is assumed to already exist.
+    const ip = cameraForm.local_ip.trim();
+    const password = (cameraForm.camera_password || "").trim();
+    const rtsp_url =
+      password && ip
+        ? `rtsp://admin:${encodeURIComponent(password)}@${ip}:554/video/live?channel=1&subtype=0`
+        : "";
+
+    try {
+      await assignCamera({
+        stream_name: cameraForm.stream_name.trim(),
+        local_ip: ip,
+        rtsp_url,
+        home_id: homeId,
+        room: cameraForm.room.trim() || "living_room",
+      });
+      closeCameraForm();
+      await loadData();
+    } catch (cameraError) {
+      setError(cameraError.message || "Unable to map camera");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Sweep the network for cameras (same approach used to find the first one).
+  const runCameraScan = async () => {
+    setIsScanning(true);
+    setError("");
+    try {
+      const result = await scanCameras();
+      setDiscoveredCameras(result.cameras || []);
+      await loadData(); // newly discovered cameras now appear as unmapped
+    } catch (scanError) {
+      setError(scanError.message || "Camera scan failed");
+      setDiscoveredCameras([]);
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const openPairModal = () => {
+    setDiscoveredCameras([]);
+    setIsPairOpen(true);
+    runCameraScan();
+  };
+
+  // Turn on DHCP for a camera that's stuck on a static 192.168.1.x address.
+  // The Pi can reach it even though the laptop can't; after this the camera
+  // reboots onto the main network and the next Rescan finds it normally.
+  const handleEnableDhcp = async (cam) => {
+    const password = window.prompt(
+      `Enter the admin password for the camera at ${cam.ip} to turn on DHCP:`,
+    );
+    if (!password) return; // cancelled
+
+    setError("");
+    try {
+      const result = await enableCameraDhcp({ ip: cam.ip, password });
+      alert(
+        result.message ||
+          "DHCP enabled. Wait ~1 minute for the camera to reboot, then Rescan.",
+      );
+    } catch (dhcpError) {
+      setError(dhcpError.message || "Unable to enable DHCP on the camera");
+      alert(dhcpError.message || "Unable to enable DHCP on the camera");
+    }
+  };
+
+  // ---- GLK sleep monitor pairing ----
+  const runGlkScan = async () => {
+    setIsGlkScanning(true);
+    setError("");
+    try {
+      const result = await scanGlk();
+      setGlkDevices(result.devices || []);
+    } catch (glkError) {
+      setError(glkError.message || "GLK scan failed");
+      setGlkDevices([]);
+    } finally {
+      setIsGlkScanning(false);
+    }
+  };
+
+  const openGlkModal = () => {
+    setGlkDevices([]);
+    setError("");
+    setIsGlkOpen(true);
+    runGlkScan();
+  };
+
+  const handleGlkPair = async (payload) => {
+    setIsGlkPairing(true);
+    setError("");
+    try {
+      await pairGlk(payload);
+      setIsGlkOpen(false);
+      await loadData();
+    } catch (glkError) {
+      setError(glkError.message || "GLK pairing failed");
+    } finally {
+      setIsGlkPairing(false);
+    }
+  };
+
+  // ---- BP monitor pairing ----
+  const runBpScan = async () => {
+    setIsBpScanning(true);
+    setError("");
+    try {
+      const result = await scanBp();
+      setBpDevices(result.devices || []);
+    } catch (bpError) {
+      setError(bpError.message || "BP scan failed");
+      setBpDevices([]);
+    } finally {
+      setIsBpScanning(false);
+    }
+  };
+
+  const openBpModal = () => {
+    setBpDevices([]);
+    setError("");
+    setIsBpOpen(true);
+    runBpScan();
+  };
+
+  const handleBpPair = async (payload) => {
+    setIsBpPairing(true);
+    setError("");
+    try {
+      await pairBp(payload);
+      setIsBpOpen(false);
+      await loadData();
+    } catch (bpError) {
+      setError(bpError.message || "BP pairing failed");
+    } finally {
+      setIsBpPairing(false);
+    }
+  };
+
+  // Open a stuck camera's own page THROUGH the Pi (reverse proxy), so the user
+  // can flip DHCP on even though the laptop can't reach the camera's subnet.
+  const handleOpenCameraSetup = async (cam) => {
+    setError("");
+    try {
+      const { url } = await openCameraSetup({ ip: cam.ip });
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (setupError) {
+      setError(setupError.message || "Unable to open the camera setup page");
+      alert(setupError.message || "Unable to open the camera setup page");
+    }
+  };
+
+  // From a discovered camera, jump straight into the Map Camera form, pre-filled.
+  const mapDiscoveredCamera = (cam) => {
+    setIsPairOpen(false);
+    setCameraForm({
+      stream_name: cam.stream_name || "",
+      local_ip: cam.ip || "",
+      camera_password: "",
+      room: "living_room",
+    });
+    setError("");
+    setIsCameraOpen(true);
+  };
+  useEffect(() => {
+    loadData(true);
+  }, []);
+
+  const handleFormChange = (event) => {
+    const { name, value } = event.target;
+    setForm((current) => {
+      const next = { ...current, [name]: value };
+      // Auto-default role when a paired device is first selected
+      if (name === "paired_motion_ieee" && value && !current.paired_motion_role) {
+        next.paired_motion_role = "room_motion";
+      }
+      if (name === "paired_window_ieee" && value && !current.paired_window_role) {
+        next.paired_window_role = "occupancy_door";
+      }
+      // Clear role when paired device is deselected
+      if (name === "paired_motion_ieee" && !value) {
+        next.paired_motion_role = "";
+      }
+      if (name === "paired_window_ieee" && !value) {
+        next.paired_window_role = "";
+      }
+      return next;
+    });
+  };
+
+  const handleSave = async (event) => {
+    event.preventDefault();
+
+    if (!form.device.trim() || !form.type.trim()) {
+      setError("Device and Type are required");
+      return;
+    }
+
+    setIsSaving(true);
+    setError("");
+
+    const nextDevice = {
+      device: form.device.trim(),
+      name: form.device.trim(),
+      ieee_address: form.ieee_address.trim(),
+      type: form.type.trim(),
+      status: "mapped",
+      is_unassigned: false,
+    };
+
+    // Only send occupancy/pairing fields for motion-type devices.
+    // Non-motion devices must never carry occupancy_group or sensor_role.
+    const is_motion_type = nextDevice.type === "motion";
+
+    try {
+      await assignDeviceName({
+        zigbee_ieee: nextDevice.ieee_address,
+        zigbee_name: nextDevice.device,
+        zigbee_type:
+          nextDevice.type == "contact" ? "door & window" : nextDevice.type,
+        home_id: homeId,
+        paired_motion_ieee: is_motion_type ? form.paired_motion_ieee : "",
+        paired_window_ieee: is_motion_type ? form.paired_window_ieee : "",
+        occupancy_group: is_motion_type ? form.occupancy_group : "",
+        sensor_role: is_motion_type ? form.sensor_role : "",
+        paired_motion_role: is_motion_type ? form.paired_motion_role : "",
+        paired_window_role: is_motion_type ? form.paired_window_role : "",
+      });
+      closeForm();
+      // Re-fetch all devices so paired sensors also show as mapped in the UI
+      // (the backend mapped them too, but the old code only updated the
+      // primary device in React state).
+      await loadData();
+    } catch (saveError) {
+      closeForm();
+      const msg =
+        saveError?.response?.data?.error ||
+        saveError.message ||
+        "Something went wrong while saving the device. Please try again later or contact support.";
+      setError(msg);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  const handleDelete = async (ieee_address) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this device?",
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await deleteDevice(ieee_address);
+      await loadData(); // refresh from server after delete
+    } catch (deleteError) {
+      console.log("Delete error:", deleteError);
+      alert(
+        "Something went wrong while deleting the device. Please try again later or contact support.",
+      );
+    }
+  };
+  return (
+    <main className="crud-page">
+      <header className="crud-header">
+        <div>
+          <p className="breadcrumb-line">
+            <span className="breadcrumb-icon">::</span>
+            <span>/</span>
+            <strong>Device</strong>
+          </p>
+          <h1>Device Listing</h1>
+        </div>
+      </header>
+
+      {error && <p className="crud-alert">{error}</p>}
+
+      <section className="device-summary-grid" aria-label="Device summary">
+        <article className="summary-card total">
+          <div>
+            <span className="summary-icon">+</span>
+            <p>Total Device</p>
+          </div>
+          <strong>{tableRows.length}</strong>
+        </article>
+        <article className="summary-card active">
+          <div>
+            <span className="summary-icon">+</span>
+            <p>Mapped Device</p>
+          </div>
+          <strong>{activeCount}</strong>
+        </article>
+        <article className="summary-card inactive">
+          <div>
+            <span className="summary-icon">+</span>
+            <p>Unmapped Device</p>
+          </div>
+          <strong>{inactiveCount}</strong>
+        </article>
+      </section>
+
+      <section className="crud-card">
+        <div className="crud-card-title table-toolbar">
+          <div className="header-actions">
+            <button
+              className="outline-button"
+              onClick={() => loadData(true)}
+              disabled={isLoading}
+            >
+              {isLoading ? "Refreshing..." : "Refresh"}
+            </button>
+            <button className="submit-button" onClick={openPairModal}>
+              Pair Camera
+            </button>
+            <button className="submit-button" onClick={openCameraForm}>
+              Map Camera
+            </button>
+            <button className="submit-button" onClick={openGlkModal}>
+              Pair GLK
+            </button>
+            <button className="submit-button" onClick={openBpModal}>
+              Pair BP
+            </button>
+          </div>
+          <label className="table-search">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m20.71 19.29-4.1-4.1A7.5 7.5 0 1 0 15.2 16.6l4.1 4.1 1.41-1.41ZM5.5 10.5a5 5 0 1 1 10 0 5 5 0 0 1-10 0Z" />
+            </svg>
+            <input
+              className="table-search-input"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search device"
+            />
+          </label>
+        </div>
+
+        <DataTable
+          data={filteredRows}
+          headers={deviceHeaders}
+          loading={isLoading}
+          onEdit={openEditForm}
+          onDelete={handleDelete}
+        />
+      </section>
+
+      {isFormOpen && (
+        <DeviceForm
+          editingId={editingId}
+          form={form}
+          devices={devices}
+          isSaving={isSaving}
+          onChange={handleFormChange}
+          onClose={closeForm}
+          onSubmit={handleSave}
+        />
+      )}
+
+      {isCameraOpen && (
+        <CameraForm
+          form={cameraForm}
+          isSaving={isSaving}
+          onChange={handleCameraChange}
+          onClose={closeCameraForm}
+          onSubmit={handleSaveCamera}
+        />
+      )}
+
+      {isPairOpen && (
+        <CameraPairModal
+          cameras={discoveredCameras}
+          isScanning={isScanning}
+          onMap={mapDiscoveredCamera}
+          onEnableDhcp={handleEnableDhcp}
+          onOpenSetup={handleOpenCameraSetup}
+          onRescan={runCameraScan}
+          onClose={() => setIsPairOpen(false)}
+        />
+      )}
+
+      {isGlkOpen && (
+        <GlkPairModal
+          devices={glkDevices}
+          isScanning={isGlkScanning}
+          isPairing={isGlkPairing}
+          residents={residents}
+          error={error}
+          onScan={runGlkScan}
+          onPair={handleGlkPair}
+          onClose={() => setIsGlkOpen(false)}
+        />
+      )}
+
+      {isBpOpen && (
+        <BpPairModal
+          devices={bpDevices}
+          isScanning={isBpScanning}
+          isPairing={isBpPairing}
+          error={error}
+          onScan={runBpScan}
+          onPair={handleBpPair}
+          onClose={() => setIsBpOpen(false)}
+        />
+      )}
+    </main>
+  );
+}
+
+export default Devices;
