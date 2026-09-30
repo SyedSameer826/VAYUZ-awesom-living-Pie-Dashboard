@@ -1,5 +1,5 @@
 import { Button } from "../../components/buttons";
-import { sensorRoleOptions, motionRoleOptions } from "../../constants/device";
+import { motionRoleOptions } from "../../constants/device";
 const DeviceForm = ({
   editingId,
   form,
@@ -53,8 +53,6 @@ const DeviceForm = ({
               <option value="motion">Motion</option>
               <option value="switch">Switch</option>
               <option value="presence">Presence</option>
-              <option value="temperature">Temperature</option>
-              <option value="leak">Leak</option>
               <option value="zigbee">Zigbee</option>
             </select>
           </label>
@@ -89,20 +87,6 @@ const DeviceForm = ({
                   onChange={onChange}
                   placeholder="e.g. bathroom_1"
                 />
-              </label>
-              <label className="form-field">
-                <span>Sensor Role (Master)</span>
-                <select
-                  name="sensor_role"
-                  value={form.sensor_role}
-                  onChange={onChange}
-                >
-                  {sensorRoleOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
               </label>
               {form.paired_motion_ieee && (
                 <label className="form-field">
