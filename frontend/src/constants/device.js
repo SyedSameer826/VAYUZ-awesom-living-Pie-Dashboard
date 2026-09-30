@@ -12,7 +12,6 @@ export const sensorRoleOptions = [
   { value: "", label: "None" },
   { value: "threshold_motion", label: "Threshold Motion (v3 curtain/doorway PIR)" },
   { value: "room_motion", label: "Room Motion (v3 in-room PIR)" },
-  { value: "occupancy_door", label: "Occupancy Door (v3 contact sensor)" },
   { value: "doorway", label: "Doorway (v4 door-frame PIR)" },
   { value: "inside", label: "Inside (v4 in-room PIR)" },
 ];
