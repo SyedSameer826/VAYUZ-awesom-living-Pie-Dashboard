@@ -1,0 +1,476 @@
+<title>Occupancy Detection Guide</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #f7f6f3;
+  --surface: #ffffff;
+  --text: #1a1a1a;
+  --text-secondary: #5a5a5a;
+  --accent: #2563eb;
+  --accent-light: #dbeafe;
+  --border: #e2e0db;
+  --green: #16a34a;
+  --green-light: #dcfce7;
+  --amber: #d97706;
+  --amber-light: #fef3c7;
+  --red: #dc2626;
+  --red-light: #fee2e2;
+  --purple: #7c3aed;
+  --purple-light: #ede9fe;
+  --tag-bg: #f0efeb;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141413;
+    --surface: #1e1e1c;
+    --text: #e8e6e1;
+    --text-secondary: #9a9890;
+    --accent: #60a5fa;
+    --accent-light: #1e3a5f;
+    --border: #2e2e2b;
+    --green: #4ade80;
+    --green-light: #14352a;
+    --amber: #fbbf24;
+    --amber-light: #3b2f10;
+    --red: #f87171;
+    --red-light: #3b1515;
+    --purple: #a78bfa;
+    --purple-light: #2a1f4e;
+    --tag-bg: #262623;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141413;
+  --surface: #1e1e1c;
+  --text: #e8e6e1;
+  --text-secondary: #9a9890;
+  --accent: #60a5fa;
+  --accent-light: #1e3a5f;
+  --border: #2e2e2b;
+  --green: #4ade80;
+  --green-light: #14352a;
+  --amber: #fbbf24;
+  --amber-light: #3b2f10;
+  --red: #f87171;
+  --red-light: #3b1515;
+  --purple: #a78bfa;
+  --purple-light: #2a1f4e;
+  --tag-bg: #262623;
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  line-height: 1.7;
+  padding-inline: 20px;
+  padding-block: 32px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 0 8px;
+  text-wrap: balance;
+}
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin: 0 0 36px;
+}
+
+h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 40px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+  text-wrap: balance;
+}
+h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 24px 0 10px;
+}
+
+p { margin: 0 0 14px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  margin: 16px 0;
+}
+
+.sensor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.sensor-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.sensor-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+.sensor-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+.sensor-role {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.state-flow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+  justify-content: center;
+}
+.state-box {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: 'IBM Plex Mono', monospace;
+  white-space: nowrap;
+}
+.state-vacant { background: var(--tag-bg); color: var(--text-secondary); }
+.state-entry { background: var(--accent-light); color: var(--accent); }
+.state-occupied { background: var(--green-light); color: var(--green); }
+.state-exit { background: var(--amber-light); color: var(--amber); }
+.state-arrow {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.tag-warning { background: var(--amber-light); color: var(--amber); }
+.tag-critical { background: var(--red-light); color: var(--red); }
+.tag-emergency { background: var(--purple-light); color: var(--purple); }
+
+.alert-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 0.9rem;
+}
+.alert-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--tag-bg);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+.alert-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.alert-table tr:last-child td { border-bottom: none; }
+
+.step {
+  display: flex;
+  gap: 14px;
+  margin: 14px 0;
+}
+.step-num {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.step-text {
+  flex: 1;
+  font-size: 0.92rem;
+}
+.step-text strong { font-weight: 600; }
+
+.callout {
+  background: var(--accent-light);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  padding: 14px 16px;
+  margin: 16px 0;
+  font-size: 0.9rem;
+}
+
+.mono {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.88em;
+}
+
+.timer-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+.timer-row:last-child { border-bottom: none; }
+.timer-label { color: var(--text-secondary); }
+.timer-value { font-weight: 600; font-family: 'IBM Plex Mono', monospace; }
+</style>
+
+<h1>How the Room Occupancy System Works</h1>
+<p class="subtitle">A plain-language guide to how three sensors detect if someone is inside a room, and how alerts escalate when they stay too long.</p>
+
+<h2>The Three Sensors</h2>
+<p>The system uses three Zigbee sensors working together. No single sensor can tell the full story — it's the combination of all three that gives us a reliable picture.</p>
+
+<div class="sensor-grid">
+  <div class="sensor-card">
+    <div class="sensor-icon">🚪</div>
+    <div class="sensor-name">Door Sensor</div>
+    <div class="sensor-role">Detects when the door opens and closes. Tells us someone passed through.</div>
+  </div>
+  <div class="sensor-card">
+    <div class="sensor-icon">👁️</div>
+    <div class="sensor-name">Curtain Sensor</div>
+    <div class="sensor-role">PIR sensor outside the door. Detects someone approaching or leaving the room.</div>
+  </div>
+  <div class="sensor-card">
+    <div class="sensor-icon">📡</div>
+    <div class="sensor-name">Motion Sensor (Master)</div>
+    <div class="sensor-role">PIR sensor inside the room. Confirms someone is actually moving around inside.</div>
+  </div>
+</div>
+
+<h2>How Entry Detection Works</h2>
+<p>The system doesn't mark the room as "occupied" from a single sensor. It waits until all three sensors confirm someone entered. The signals can come in any order — what matters is that all three happen within a time window.</p>
+
+<div class="card">
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-text"><strong>Curtain sensor fires</strong> — someone walked up to the door from outside</div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-text"><strong>Door opens and closes</strong> — someone passed through the doorway</div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-text"><strong>Master motion fires inside the room</strong> — confirms a person is now inside</div>
+  </div>
+</div>
+
+<p>Once all three signals are received, the room is marked <span class="tag" style="background:var(--green-light);color:var(--green);">OCCUPIED</span> and the family gets a "Room Occupied" notification. If only one or two sensors fire (say the door opens but nobody goes in), the system stays in "Entry Pending" and eventually resets — no false alarm.</p>
+
+<div class="callout">
+  <strong>Why three sensors?</strong> A door sensor alone can't tell if someone walked in or just opened the door. The curtain sensor alone can't tell if they entered the room or walked past it. All three together eliminate false positives.
+</div>
+
+<h2>How Exit Detection Works</h2>
+<p>When someone leaves, the system looks for another combination of signals:</p>
+
+<div class="card">
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-text"><strong>Door opens and closes</strong> — someone passed through the doorway again</div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-text"><strong>Curtain sensor fires</strong> — someone walked away from the door outside</div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-text"><strong>Master motion goes silent</strong> — no more movement detected inside</div>
+  </div>
+</div>
+
+<p>Once all three conditions are met, the room flips to <span class="tag state-vacant" style="display:inline-block;">VACANT</span> and the family gets a "Room Vacant" notification.</p>
+
+<h2>The Room States</h2>
+<p>At any moment, the room is in one of four states:</p>
+
+<div class="state-flow">
+  <div class="state-box state-vacant">Vacant</div>
+  <div class="state-arrow">→</div>
+  <div class="state-box state-entry">Entry Pending</div>
+  <div class="state-arrow">→</div>
+  <div class="state-box state-occupied">Occupied</div>
+  <div class="state-arrow">→</div>
+  <div class="state-box state-exit">Exit Pending</div>
+  <div class="state-arrow">→</div>
+  <div class="state-box state-vacant">Vacant</div>
+</div>
+
+<div class="card">
+  <div class="timer-row">
+    <span class="timer-label">Vacant</span>
+    <span>Nobody is in the room. Waiting for entry signals.</span>
+  </div>
+  <div class="timer-row">
+    <span class="timer-label">Entry Pending</span>
+    <span>Some sensors fired but not all three yet. Waiting for the rest.</span>
+  </div>
+  <div class="timer-row">
+    <span class="timer-label">Occupied</span>
+    <span>Confirmed — someone is inside. Timer starts for alerts.</span>
+  </div>
+  <div class="timer-row">
+    <span class="timer-label">Exit Pending</span>
+    <span>Exit signals started. Waiting for confirmation they actually left.</span>
+  </div>
+</div>
+
+<h2>What Happens While Someone Is Inside</h2>
+<p>Once the room is occupied, two types of monitoring kick in:</p>
+
+<h3>1. Stillness Alert</h3>
+<p>If the master motion sensor stops detecting movement for more than <strong>1 minute</strong> and no other sensor activity is seen, the system sends an emergency notification: <em>"No movement detected — please check."</em> This catches situations where someone might have collapsed or become unresponsive.</p>
+
+<h3>2. Long Stay Alerts (Escalating)</h3>
+<p>If someone stays in the room beyond normal durations, alerts escalate in three levels:</p>
+
+<div style="overflow-x:auto;">
+<table class="alert-table">
+  <thead>
+    <tr>
+      <th>Level</th>
+      <th>Time</th>
+      <th>Severity</th>
+      <th>What Happens</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Level 1</strong></td>
+      <td class="mono">30 min</td>
+      <td><span class="tag tag-warning">warning</span></td>
+      <td>Simple notification — "Someone has been in the room for over 30 minutes."</td>
+    </tr>
+    <tr>
+      <td><strong>Level 2</strong></td>
+      <td class="mono">35 min</td>
+      <td><span class="tag tag-critical">critical</span></td>
+      <td>Stronger notification — "Extended stay — please check in."</td>
+    </tr>
+    <tr>
+      <td><strong>Level 3</strong></td>
+      <td class="mono">40 min</td>
+      <td><span class="tag tag-emergency">emergency</span></td>
+      <td>Full-screen P0 alert on the app. Requires acknowledgement from the family member.</td>
+    </tr>
+    <tr>
+      <td><strong>Repeat</strong></td>
+      <td class="mono">Every 5 min after L3</td>
+      <td><span class="tag tag-emergency">emergency</span></td>
+      <td>Keeps repeating with updated time until the room becomes vacant or family acknowledges.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout">
+  <strong>Night mode:</strong> The thresholds can be configured differently for nighttime hours (e.g., bathroom visits at 2 AM may have longer acceptable durations).
+</div>
+
+<h2>Safety Ceiling</h2>
+<p>If the room stays occupied for <strong>4 hours</strong> regardless of any other alerts, a safety ceiling alert fires. This is the absolute backstop — something is clearly wrong if someone has been in a room for that long without leaving.</p>
+
+<h2>Time Windows</h2>
+<p>The system uses time windows to avoid false triggers:</p>
+
+<div class="card">
+  <div class="timer-row">
+    <span class="timer-label">Entry window</span>
+    <span class="timer-value">2 min</span>
+  </div>
+  <div class="timer-row">
+    <span class="timer-label">Exit window</span>
+    <span class="timer-value">5 min</span>
+  </div>
+  <div class="timer-row">
+    <span class="timer-label">Exit silence timeout</span>
+    <span class="timer-value">1 min</span>
+  </div>
+  <div class="timer-row">
+    <span class="timer-label">Stillness threshold</span>
+    <span class="timer-value">1 min</span>
+  </div>
+  <div class="timer-row">
+    <span class="timer-label">Long stay L1 / L2 / L3</span>
+    <span class="timer-value">30 / 35 / 40 min</span>
+  </div>
+  <div class="timer-row">
+    <span class="timer-label">Emergency repeat interval</span>
+    <span class="timer-value">5 min</span>
+  </div>
+  <div class="timer-row">
+    <span class="timer-label">Safety ceiling</span>
+    <span class="timer-value">4 hours</span>
+  </div>
+</div>
+
+<p style="color:var(--text-secondary);font-size:0.85rem;margin-top:6px;">These are production values. Test mode uses shorter timers (3 / 3.5 / 4 min for long stay, 30-second repeat) for quick walk-through testing.</p>
+
+<h2>How It All Connects</h2>
+<p>Here's the data flow from sensor to notification:</p>
+
+<div class="card" style="font-size:0.9rem; line-height:1.8;">
+  <strong>Sensor triggers</strong> → Zigbee radio signal → <strong>ZBDongle-E</strong> (USB coordinator on Pi) → <strong>Zigbee2MQTT</strong> (translates to MQTT message) → <strong>MQTT broker</strong> on the Pi → <strong>Backend service</strong> (room_occupancy_service.js processes the state machine) → <strong>Cron job</strong> every 30 seconds (occupancy_alert_checker.js checks all occupied rooms for alert thresholds) → <strong>Push notification</strong> to the family's phone app + <strong>Socket event</strong> for real-time dashboard update.
+</div>
+
+<h2>Key Things to Know</h2>
+
+<div class="card">
+  <div class="step">
+    <div class="step-num" style="background:var(--green);">✓</div>
+    <div class="step-text">The system is <strong>passive</strong> — the elderly parent doesn't need to do anything. No buttons to press, no app to use. The sensors work silently.</div>
+  </div>
+  <div class="step">
+    <div class="step-num" style="background:var(--green);">✓</div>
+    <div class="step-text">All three sensors must agree before the room is marked occupied. This prevents false alarms from pets, curtain movement, or doors opening in the wind.</div>
+  </div>
+  <div class="step">
+    <div class="step-num" style="background:var(--green);">✓</div>
+    <div class="step-text">PIR motion sensors detect movement only — they cannot see through walls, identify who the person is, or record any video/audio.</div>
+  </div>
+  <div class="step">
+    <div class="step-num" style="background:var(--green);">✓</div>
+    <div class="step-text">Alert levels are configurable per room and can have different settings for day vs night.</div>
+  </div>
+  <div class="step">
+    <div class="step-num" style="background:var(--amber);">!</div>
+    <div class="step-text">PIR sensors can't detect a person sitting perfectly still. That's what the <strong>stillness alert</strong> is for — if motion stops, it flags it.</div>
+  </div>
+</div>
+
+<p style="color:var(--text-secondary);font-size:0.82rem;text-align:center;margin-top:40px;">Awesom Living — Room Occupancy Detection System</p>
