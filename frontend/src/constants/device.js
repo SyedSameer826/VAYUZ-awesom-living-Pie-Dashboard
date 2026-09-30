@@ -3,18 +3,18 @@ export const emptyDeviceForm = {
   ieee_address: "",
   type: "",
   paired_motion_ieee: "",
-  paired_window_ieee: "",
   occupancy_group: "",
   sensor_role: "",
   paired_motion_role: "",
-  paired_window_role: "",
 };
 
 export const sensorRoleOptions = [
   { value: "", label: "None" },
-  { value: "threshold_motion", label: "Threshold Motion (curtain/doorway PIR)" },
-  { value: "room_motion", label: "Room Motion (in-room PIR)" },
-  { value: "occupancy_door", label: "Occupancy Door (contact sensor)" },
+  { value: "threshold_motion", label: "Threshold Motion (v3 curtain/doorway PIR)" },
+  { value: "room_motion", label: "Room Motion (v3 in-room PIR)" },
+  { value: "occupancy_door", label: "Occupancy Door (v3 contact sensor)" },
+  { value: "doorway", label: "Doorway (v4 door-frame PIR)" },
+  { value: "inside", label: "Inside (v4 in-room PIR)" },
 ];
 
 // Roles applicable to motion-type paired sensors
@@ -24,11 +24,6 @@ export const motionRoleOptions = [
   { value: "room_motion", label: "Room Motion (in-room PIR)" },
 ];
 
-// Roles applicable to contact-type paired sensors
-export const contactRoleOptions = [
-  { value: "", label: "None" },
-  { value: "occupancy_door", label: "Occupancy Door (contact sensor)" },
-];
 
 export const deviceHeaders = [
   { fieldName: "device", headerName: "Device" },

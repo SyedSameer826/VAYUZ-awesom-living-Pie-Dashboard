@@ -1,5 +1,5 @@
 import { Button } from "../../components/buttons";
-import { sensorRoleOptions, motionRoleOptions, contactRoleOptions } from "../../constants/device";
+import { sensorRoleOptions, motionRoleOptions } from "../../constants/device";
 const DeviceForm = ({
   editingId,
   form,
@@ -12,29 +12,6 @@ const DeviceForm = ({
   // Filter available sensors for pairing dropdowns (exclude the device being edited)
   const motion_sensors = (devices || []).filter(
     (d) => d.type === "motion" && d.ieee_address !== form.ieee_address,
-  );
-
-  // Collect window/door sensor IEEEs already paired to OTHER motion sensors
-  const paired_window_iees = new Set(
-    (devices || [])
-      .filter(
-        (d) =>
-          d.type === "motion" &&
-          d.paired_with?.window_ieee &&
-          d.ieee_address !== form.ieee_address,
-      )
-      .map((d) => d.paired_with.window_ieee),
-  );
-
-  // Only show unpaired + unmapped contact sensors (+ the one already paired to THIS device)
-  const contact_sensors = (devices || []).filter(
-    (d) =>
-      (d.type === "contact" || d.type === "door & window") &&
-      // Keep the sensor currently paired to THIS device visible for re-editing
-      (d.ieee_address === form.paired_window_ieee ||
-        // Otherwise exclude already-mapped and already-paired sensors
-        (d.status !== "mapped" &&
-          !paired_window_iees.has(d.ieee_address))),
   );
 
   const is_motion = form.type === "motion";
@@ -99,21 +76,6 @@ const DeviceForm = ({
                   ))}
                 </select>
               </label>
-              <label className="form-field">
-                <span>Paired Window / Door Sensor</span>
-                <select
-                  name="paired_window_ieee"
-                  value={form.paired_window_ieee}
-                  onChange={onChange}
-                >
-                  <option value="">Select paired window sensor</option>
-                  {contact_sensors.map((d) => (
-                    <option key={d.ieee_address} value={d.ieee_address}>
-                      {d.device || d.friendly_name || d.ieee_address}
-                    </option>
-                  ))}
-                </select>
-              </label>
             </>
           )}
 
@@ -151,22 +113,6 @@ const DeviceForm = ({
                     onChange={onChange}
                   >
                     {motionRoleOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-              {form.paired_window_ieee && (
-                <label className="form-field">
-                  <span>Sensor Role (Paired Contact)</span>
-                  <select
-                    name="paired_window_role"
-                    value={form.paired_window_role}
-                    onChange={onChange}
-                  >
-                    {contactRoleOptions.map((opt) => (
                       <option key={opt.value} value={opt.value}>
                         {opt.label}
                       </option>
